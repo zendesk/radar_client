@@ -1,0 +1,35 @@
+{
+  "predef":    [
+    "$", "_"
+  ],
+
+  "bitwise":  false,
+  "newcap":   false,
+  "eqeqeq":   false,
+  "eqnull":   true,
+  "immed":    true,
+  "nomen":    false,
+  "onevar":   false,
+  "plusplus": false,
+  "regexp":   false,
+  "strict":   false,
+  "undef":    true,
+  "white":    false,
+
+  "debug":    false,
+  "es5":      false,
+  "evil":     false,
+  "forin":    false,
+  "laxbreak": false,
+  "sub":      false,
+
+  "maxlen":    0,
+  "indent":    2,
+  "maxerr":    50,
+  "passfail":  false,
+  "browser":   true,
+  "rhino":     false,
+  "devel":     true,
+  "lastsemic": false,
+  "expr":      true
+}
