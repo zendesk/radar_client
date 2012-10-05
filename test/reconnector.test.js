@@ -1,5 +1,4 @@
 var assert = require('assert'),
-    MiniEventEmitter = require('miniee'),
     Reconnector = require('../lib/reconnector.js');
 
 exports['given a reconnector'] = {

@@ -14,6 +14,7 @@ build:
 	--npm microee \
 	--replace engine.io-client=window.eio,minilog=window.Minilog \
 	--global RadarClient \
+	--main lib/index.js \
 	--out dist/radar_client.js
 
 test:

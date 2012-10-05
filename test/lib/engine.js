@@ -1,4 +1,4 @@
-var MiniEventEmitter = require('miniee'),
+var MicroEE = require('microee'),
     log = require('minilog')('test');
 
 
@@ -7,7 +7,7 @@ function Socket() {
   this._written = [];
 };
 
-MiniEventEmitter.mixin(Socket);
+MicroEE.mixin(Socket);
 
 Socket.prototype.sendPacket = function(nop, data) {
   console.log(arguments);

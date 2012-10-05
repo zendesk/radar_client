@@ -1,6 +1,6 @@
 (function(){function require(p, context, parent){ context || (context = 0); var path = require.resolve(p, context), mod = require.modules[context][path]; if (!mod) throw new Error('failed to require "' + p + '" from ' + parent); if(mod.context) { context = mod.context; path = mod.main; mod = require.modules[context][mod.main]; if (!mod) throw new Error('failed to require "' + path + '" from ' + context); } if (!mod.exports) { mod.exports = {}; mod.call(mod.exports, mod, mod.exports, require.relative(path, context)); } return mod.exports;}require.modules = [{}];require.resolve = function(path, context){ var orig = path, reg = path + '.js', index = path + '/index.js'; return require.modules[context][reg] && reg || require.modules[context][index] && index || orig;};require.relative = function(relativeTo, context) { return function(p){ if ('.' != p.charAt(0)) return require(p, context, relativeTo); var path = relativeTo.split('/') , segs = p.split('/'); path.pop(); for (var i = 0; i < segs.length; i++) { var seg = segs[i]; if ('..' == seg) path.pop(); else if ('.' != seg) path.push(seg); } return require(path.join('/'), context, relativeTo); };};
-require.modules[0] = { "engine.io-client": { exports: window.eio },
-"lib/backoff.js": function(module, exports, require){function Backoff() {
+require.modules[0] = { "engine.io-client": { exports: window.eio }
+,"lib/backoff.js": function(module, exports, require){function Backoff() {
   this.failures = 0;
 }
 
@@ -19,8 +19,7 @@ Backoff.prototype.success = function() {
 };
 
 module.exports = Backoff;
-},
-"lib/index.js": function(module, exports, require){var Client = require('./radar_client'),
+},"lib/index.js": function(module, exports, require){var Client = require('./radar_client'),
     instance = new Client();
 
 instance._log = require('minilog');
@@ -28,9 +27,8 @@ instance._log = require('minilog');
 // This module makes radar_client a singleton to prevent multiple connections etc.
 
 module.exports = instance;
-},
-"lib/radar_client.js": function(module, exports, require){var log = require('minilog')('radar_client'),
-    MiniEventEmitter = require('miniee'),
+},"lib/radar_client.js": function(module, exports, require){var log = require('minilog')('radar_client'),
+    MicroEE = require('microee'),
     eio = require('engine.io-client'),
     Scope = require('./scope.js'),
     StateMachine = require('./state.js');
@@ -67,7 +65,7 @@ function Client(backend) {
   };
 }
 
-MiniEventEmitter.mixin(Client);
+MicroEE.mixin(Client);
 
 // alloc() and dealloc() rather than connect() and disconnect() - see readme.md
 Client.prototype.alloc = function(name, callback) {
@@ -194,8 +192,7 @@ Client.prototype._batch = function(msg) {
 Client.setBackend = function(lib) { eio = lib; };
 
 module.exports = Client;
-},
-"lib/reconnector.js": function(module, exports, require){var log = require('minilog')('radar_reconnect');
+},"lib/reconnector.js": function(module, exports, require){var log = require('minilog')('radar_reconnect');
 
 function Reconnector(client) {
   this.subscriptions = {};
@@ -268,8 +265,7 @@ Reconnector.prototype.restore = function(done) {
 };
 
 module.exports = Reconnector;
-},
-"lib/scope.js": function(module, exports, require){function Scope(prefix, client) {
+},"lib/scope.js": function(module, exports, require){function Scope(prefix, client) {
   this.prefix = prefix;
   this.client = client;
 }
@@ -291,8 +287,7 @@ for(var i = 0; i < props.length; i++){
 }
 
 module.exports = Scope;
-},
-"lib/state.js": function(module, exports, require){var log = require('minilog')('radar_state'),
+},"lib/state.js": function(module, exports, require){var log = require('minilog')('radar_state'),
     Reconnector = require('./reconnector'),
     Backoff = require('./backoff');
 
@@ -494,12 +489,12 @@ StateMachine._setTimeout = function(fn) {
 };
 
 module.exports = StateMachine;
-},
-"microee": {"context":1,"main":"/index.js"},
-"minilog": { exports: window.Minilog }};
+},"microee": {"context":1,"main":"/index.js"},"minilog": { exports: window.Minilog }
+};
 require.modules[1] = { "/index.js": function(module, exports, require){function M() { this._events = {}; }
 M.prototype = {
   on: function(ev, cb) {
+    this._events || (this._events = {});
     var e = this._events;
     (e[ev] || (e[ev] = [])).push(cb);
     return this;
@@ -515,6 +510,7 @@ M.prototype = {
     else { this._events[ev] && (this._events[ev] = []); }
   },
   emit: function(ev) {
+    this._events || (this._events = {});
     var args = Array.prototype.slice.call(arguments, 1), i, e = this._events[ev] || [];
     for(i = e.length-1; i >= 0 && e[i]; i--){
       e[i].apply(this, args);
@@ -525,20 +521,23 @@ M.prototype = {
     return this.once(ev, cb, true);
   },
   once: function(ev, cb, when) {
-    function c() { cb && (cb.apply(this, arguments) || !when) && this.removeListener(ev, c); }
+    if(!cb) return this;
+    function c() {
+      if(!when) this.removeListener(ev, c);
+      if(cb.apply(this, arguments) && when) this.removeListener(ev, c);
+    }
     c.cb = cb;
     this.on(ev, c);
     return this;
-  },
-  mixin: function(dest) {
-    var o = M.prototype, k;
-    for (k in o) {
-      o.hasOwnProperty(k) && (dest.prototype[k] = o[k]);
-    }
   }
 };
-
+M.mixin = function(dest) {
+  var o = M.prototype, k;
+  for (k in o) {
+    o.hasOwnProperty(k) && (dest.prototype[k] = o[k]);
+  }
+};
 module.exports = M;
 }};
-RadarClient = require('index.js');
+RadarClient = require('lib/index.js');
 }());

@@ -1,10 +1,10 @@
 var assert = require('assert'),
-    MiniEventEmitter = require('miniee'),
+    MicroEE = require('microee'),
     log = require('minilog')('state.test'),
     StateMachine = require('../lib/state.js');
 
-var Source = new MiniEventEmitter(),
-    MyApp = new MiniEventEmitter(),
+var Source = new MicroEE(),
+    MyApp = new MicroEE(),
     events = [];
 
 Source.close = Source.disconnect = function() {

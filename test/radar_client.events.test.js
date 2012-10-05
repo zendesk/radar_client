@@ -30,35 +30,12 @@ exports['given a new presence'] = {
 
   },
 
-  'can set a wildcard event handler and receive messages': function(done) {
-    var client = this.client;
-    // initialize regex event handler
-    client.once(new RegExp('^presence:tickets:.*'), function(changes){
-      assert.deepEqual([1], changes.online);
-      assert.deepEqual([2], changes.offline);
-      done();
-    });
-    client.emit('presence:tickets:21', { online: [1], offline: [2]});
-  },
-
   'can remove a single callback': function(done) {
     var client = this.client;
     client.once('presence:tickets:21', function() {
       assert.ok(false);
     });
     client.removeAllListeners('presence:tickets:21');
-    client.emit('presence:tickets:21', { online: [1], offline: [2]});
-    setTimeout(function() {
-      done();
-    }, 10);
-  },
-
-  'can remove a single regexp': function(done) {
-    var client = this.client;
-    client.once(new RegExp('^presence:tickets:*'), function() {
-      assert.ok(false);
-    });
-    client.removeAllListeners(new RegExp('^presence:tickets:*'));
     client.emit('presence:tickets:21', { online: [1], offline: [2]});
     setTimeout(function() {
       done();
@@ -74,21 +51,6 @@ exports['given a new presence'] = {
       assert.ok(false);
     });
     client.removeAllListeners('presence:tickets:21');
-    client.emit('presence:tickets:21', { online: [1], offline: [2]});
-    setTimeout(function() {
-      done();
-    }, 10);
-  },
-
-  'can remove all listeners from an event by regexp': function(done) {
-    var client = this.client;
-    client.once(new RegExp('^presence:tickets:*'), function() {
-      assert.ok(false);
-    });
-    client.once(new RegExp('^presence:tickets:*'), function() {
-      assert.ok(false);
-    });
-    client.removeAllListeners(new RegExp('^presence:tickets:*'));
     client.emit('presence:tickets:21', { online: [1], offline: [2]});
     setTimeout(function() {
       done();
