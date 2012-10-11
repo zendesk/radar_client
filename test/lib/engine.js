@@ -10,7 +10,6 @@ function Socket() {
 MicroEE.mixin(Socket);
 
 Socket.prototype.sendPacket = function(nop, data) {
-  console.log(arguments);
   var message = JSON.parse(data);
   current._written.push(message);
   log(message);

@@ -139,6 +139,21 @@ exports['given a new presence'] = {
     done();
   },
 
+  'if a authentication token is set, it gets sent on each operation': function(done) {
+    client.configure({ userId: 123, accountName: 'dev', auth: 'AUTH'});
+    client.message('user/123').publish('hello world');
+    assert.ok(
+      MockEngine.current._written.some(function(message) {
+        return (message.op == 'publish' &&
+          message.to == 'message:/dev/user/123' &&
+          message.value == 'hello world' &&
+          message.auth == 'AUTH'
+        )
+      })
+    );
+    done();
+  },
+
   'synchronization batch filters out duplicate messages to the same channel by time': function(done) {
     var received = [];
     client.on('foo', function(msg) {
