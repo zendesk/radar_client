@@ -6,11 +6,11 @@
   "dependencies": {
     "microee": "git://github.com/mixu/microee.git#master",
     "minilog": "*",
-    "gluejs": "~0.1.x"
+    "gluejs": "~0.1.x",
+    "engine.io-client": "0.2.x"
   },
   "devDependencies": {
-    "mocha": "*",
-    "engine.io-client": "0.2.x"
+    "mocha": "*"
   },
   "scripts": {
     "test": "make test"
