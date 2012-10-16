@@ -1,5 +1,9 @@
 # Radar Client
 
+## Documentation
+
+See http://radar.zendesk.com/ for detailed documentation.
+
 ## Copyright and License
 
 Copyright 2012, Zendesk Inc.
