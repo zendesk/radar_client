@@ -345,7 +345,6 @@ StateMachine.prototype.set = function(to) {
 StateMachine.prototype.configure = function(sink, config) {
   config || (config = {});
   config.upgrade = false;
-  this.id = config.userId || 0;
   this.socketConfig = config;
   sink && (this.sink = sink);
 };
@@ -432,7 +431,7 @@ StateMachine.prototype.run = function() {
   var self = this,
       s = StateMachine.states;
 
-  log.debug('[C '+this.id+'] run state', this._state);
+  log.debug('[C '+this.socketConfig.userId+'] run state', this._state);
 
   switch(this._state) {
     case s.permanently_disconnected:
