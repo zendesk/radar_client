@@ -126,7 +126,35 @@ exports['given a new presence'] = {
     });
   },
 
-  'can publish messages to a user': function (done) {
+  'can set options for a get operation': function(done) {
+    client.presence('tickets/21').get({ version: 2}, function(results) {
+      assert.ok(
+        MockEngine.current._written.some(function(message) {
+          return (message.op == 'get' &&
+            message.to == 'presence:/dev/tickets/21' &&
+            message.options &&
+            message.options.version == 2
+          )
+        })
+      );
+      done();
+    });
+  },
+
+  'can set options for a sync operation': function() {
+    client.presence('tickets/21').sync({ version: 2 });
+    assert.ok(
+      MockEngine.current._written.some(function(message) {
+        return (message.op == 'sync' &&
+          message.to == 'presence:/dev/tickets/21' &&
+          message.options &&
+          message.options.version == 2
+        )
+      })
+    );
+  },
+
+  'can publish messages to a user': function () {
     client.message('user/123').publish('hello world');
     assert.ok(
       MockEngine.current._written.some(function(message) {
@@ -136,7 +164,6 @@ exports['given a new presence'] = {
         )
       })
     );
-    done();
   },
 
   'if a authentication token is set, it gets sent on each operation': function(done) {

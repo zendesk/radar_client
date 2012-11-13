@@ -13,7 +13,7 @@ Socket.prototype.sendPacket = function(nop, data) {
   var message = JSON.parse(data);
   current._written.push(message);
   log(message);
-  if(message.op == 'get') {
+  if(message.op == 'get' || message.op == 'sync') {
     current.emit('message', data);
   }
   // ACKs should be returned immediately

@@ -1,5 +1,6 @@
-(function(){function require(p, context, parent){ context || (context = 0); var path = require.resolve(p, context), mod = require.modules[context][path]; if (!mod) throw new Error('failed to require "' + p + '" from ' + parent); if(mod.context) { context = mod.context; path = mod.main; mod = require.modules[context][mod.main]; if (!mod) throw new Error('failed to require "' + path + '" from ' + context); } if (!mod.exports) { mod.exports = {}; mod.call(mod.exports, mod, mod.exports, require.relative(path, context)); } return mod.exports;}require.modules = [{}];require.resolve = function(path, context){ var orig = path, reg = path + '.js', index = path + '/index.js'; return require.modules[context][reg] && reg || require.modules[context][index] && index || orig;};require.relative = function(relativeTo, context) { return function(p){ if ('.' != p.charAt(0)) return require(p, context, relativeTo); var path = relativeTo.split('/') , segs = p.split('/'); path.pop(); for (var i = 0; i < segs.length; i++) { var seg = segs[i]; if ('..' == seg) path.pop(); else if ('.' != seg) path.push(seg); } return require(path.join('/'), context, relativeTo); };};
-require.modules[0] = { "engine.io-client": { exports: window.eio },
+(function(){function require(e,t){for(var n=[],r=e.split("/"),i,s,o=0;s=r[o++];)".."==s?n.pop():"."!=s&&n.push(s);n=n.join("/"),o=require,s=o.m[t||0],i=s[n+".js"]||s[n+"/index.js"]||s[n];if(s=i.c)i=o.m[t=s][e=i.m];return i.exports||i(i,i.exports={},function(n){return o("."!=n.charAt(0)?n:e+"/../"+n,t)}),i.exports};
+require.m = [];
+require.m[0] = { "engine.io-client": { exports: window.eio },
 "lib/backoff.js": function(module, exports, require){function Backoff() {
   this.failures = 0;
 }
@@ -141,14 +142,22 @@ Client.prototype.unsubscribe = function(scope, callback) {
 
 // Sync and get return the actual value of the operation
 var init = function(name) {
-  Client.prototype[name] = function(scope, callback) {
-    this.when('get', function(message) {
-      if(!message || !message.to || message.to != scope) { return false; }
-      callback && callback(message);
-      return true;
-    });
-
-    return this._write({ op: name, to: scope });
+  Client.prototype[name] = function(scope, options, callback) {
+    var message = { op: name, to: scope };
+    // options is a optional argument
+    if(typeof options == 'function') {
+      callback = options;
+    } else {
+      message.options = options;
+    }
+    if(name == 'get') {
+      this.when('get', function(message) {
+        if(!message || !message.to || message.to != scope) { return false; }
+        callback && callback(message);
+        return true;
+      });
+    }
+    return this._write(message);
   };
 };
 
@@ -501,9 +510,9 @@ StateMachine._setTimeout = function(fn) {
 
 module.exports = StateMachine;
 },
-"microee": {"context":1,"main":"/index.js"},
+"microee": {"c":1,"m":"/index.js"},
 "minilog": { exports: window.Minilog }};
-require.modules[1] = { "/index.js": function(module, exports, require){function M() { this._events = {}; }
+require.m[1] = { "/index.js": function(module, exports, require){function M() { this._events = {}; }
 M.prototype = {
   on: function(ev, cb) {
     this._events || (this._events = {});
