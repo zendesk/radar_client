@@ -150,13 +150,11 @@ var init = function(name) {
     } else {
       message.options = options;
     }
-    if(name == 'get') {
-      this.when('get', function(message) {
-        if(!message || !message.to || message.to != scope) { return false; }
-        callback && callback(message);
-        return true;
-      });
-    }
+    this.when('get', function(message) {
+      if(!message || !message.to || message.to != scope) { return false; }
+      callback && callback(message);
+      return true;
+    });
     return this._write(message);
   };
 };
