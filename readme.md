@@ -1,5 +1,9 @@
 # Radar Client
 
+High level API and backend for writing web apps that use push messaging
+
+[![Build Status](https://secure.travis-ci.org/zendesk/radar_client.png?branch=master)](https://travis-ci.org/zendesk/radar_client)
+
 ## Documentation
 
 See http://radar.zendesk.com/ for detailed documentation.
