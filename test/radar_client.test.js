@@ -24,14 +24,26 @@ exports['before connecting'] = {
     done();
   },
 
-  'making set() calls should not cause errors when not connected': function(done) {
+  'making set() calls should not cause errors when not connected': function() {
     client.presence('tickets/21').set('online');
     client.presence('tickets/21').subscribe();
     client.presence('tickets/21').unsubscribe();
     client.message('user/123').publish('hello world');
     client.presence('tickets/21').get(function() {});
+    client.status('user/123').set('foo', 'bar');
     client.on('foo', function() {});
-    done();
+  },
+
+  'calling alloc or dealloc before configure call should not cause errors': function(done) {
+    client.dealloc('test');
+    client.alloc('test', function() {
+      // this should never be called because of the dealloc
+      assert.ok(false);
+    });
+    client.dealloc('test');
+    client.dealloc('test2');
+    client.alloc('test2', done);
+    client.configure({ userId: 123, accountName: 'dev' });
   }
 
 };
