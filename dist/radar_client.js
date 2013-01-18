@@ -50,7 +50,6 @@ function Client(backend) {
     return new backend.Socket(config);
   };
   this.manager.handleMessage = function (msg) {
-    log.info('[C '+self._me.userId+'] In', msg);
     try {
       msg = JSON.parse(msg);
     } catch(e) { throw e; }
@@ -66,6 +65,8 @@ function Client(backend) {
       default:
         self.emit(msg.to, msg);
     }
+    msg.direction = 'in';
+    log.info(msg);
   };
 }
 
@@ -73,15 +74,18 @@ MicroEE.mixin(Client);
 
 // alloc() and dealloc() rather than connect() and disconnect() - see readme.md
 Client.prototype.alloc = function(name, callback) {
-  log.info('alloc', name);
+  var self = this;
+  log.info({ op: 'alloc', name: name });
   this._users[name] = true;
-  callback && this.once('ready', callback);
+  callback && this.once('ready', function() {
+    self._users.hasOwnProperty(name) && callback();
+  });
   this.manager.connect();
   return this;
 };
 
 Client.prototype.dealloc = function(name) {
-  log.info('dealloc', name);
+  log.info({ op: 'dealloc', name: name });
   delete this._users[name];
   var count = 0, key;
   for(key in this._users) {
@@ -150,11 +154,18 @@ var init = function(name) {
     } else {
       message.options = options;
     }
-    this.when('get', function(message) {
-      if(!message || !message.to || message.to != scope) { return false; }
-      callback && callback(message);
-      return true;
-    });
+    // sync v1 for presence scopes acts inconsistently. The result should be a "get" message,
+    // but it is actually a "online" message.
+    if(name == 'sync' && !message.options && scope.match(/^presence.+/)) {
+      this.once(scope, callback);
+    } else {
+      this.when('get', function(message) {
+        if(!message || !message.to || message.to != scope) { return false; }
+        callback && callback(message);
+        return true;
+      });
+    }
+    // sync/get never register or retuin acks (since they always send back a data message)
     return this._write(message);
   };
 };
@@ -180,7 +191,6 @@ Client.prototype._write = function(message, callback) {
       return true;
     });
   }
-  log.info('[C '+this._me.userId+'] Out', JSON.stringify(message));
   this.manager.send(message);
   return this;
 };
@@ -255,7 +265,7 @@ Reconnector.prototype.restore = function(done) {
       done();
     }
   }
-  log.info('Restoring subscriptions and presence scopes.');
+  log.info({ event: 'restore-subscriptions' });
   for (to in this.subscriptions) {
     if (!this.subscriptions.hasOwnProperty(to)) { continue; }
     var item = this.subscriptions[to];
@@ -272,7 +282,7 @@ Reconnector.prototype.restore = function(done) {
   }
   message = this.mqueue.shift();
   while(message) {
-    this.client.manager.socket.sendPacket('message', JSON.stringify(message));
+    this.client.manager._sendPacket(JSON.stringify(message));
     message = this.mqueue.shift();
   }
   // if we didn't do anything, just trigger done()
@@ -308,9 +318,11 @@ module.exports = Scope;
 },
 "lib/state.js": function(module, exports, require){var log = require('minilog')('radar_state'),
     Reconnector = require('./reconnector'),
+    MicroEE = require('microee'),
     Backoff = require('./backoff');
 
 function StateMachine() {
+  var self = this;
   this.connections = 0;
   this._state = StateMachine.states.stopped;
   this.socket = null;
@@ -322,10 +334,14 @@ function StateMachine() {
   this._timeout = null;
 
   // set sink, createSocket and handleMessage after creating the state machine
-  this.sink = null;
+  this.sink = new MicroEE();
   this.createSocket = null;
   this.handleMessage = null;
   this.reconnector = null;
+  this.waitingForConfig = false;
+  // audit trail
+  this.auditSent = 0;
+  this.auditReceived = 0;
 }
 
 // Map of states
@@ -344,7 +360,7 @@ var states = StateMachine.states = {
 
 StateMachine.prototype.set = function(to) {
   if(typeof to !== 'undefined') {
-    log.debug('change state from', this._state, 'to', to);
+    log.debug({ op: 'change-state', from: this._state, to: to });
     this._state = to;
   }
 };
@@ -354,13 +370,19 @@ StateMachine.prototype.configure = function(sink, config) {
   config.upgrade = false;
   this.socketConfig = config;
   sink && (this.sink = sink);
+  if(this.waitingForConfig && this._state == states.stopped) {
+    this.waitingForConfig = false;
+    this.connect();
+  }
 };
 
 StateMachine.prototype.connect = function() {
-  this.reconnector = new Reconnector(this.sink);
-  if(this._state == states.stopped) {
+  if(this._state == states.stopped && this.socketConfig) {
+    this.reconnector = new Reconnector(this.sink);
     // you can only start if you've stopped. Other states have a defined transition path.
     this.set(states.reconnect);
+  } else {
+    this.waitingForConfig = true;
   }
   this.run();
 };
@@ -373,26 +395,39 @@ StateMachine.prototype.send = function(message) {
     // otherwise connect automatically
     this.connect();
   }
+  // memorize if necessary
+  this.reconnector.memorize(message);
   if(this._state < 5) {
     this.reconnector.queue(message);
+  } else {
+    this._sendPacket(JSON.stringify(message));
+    message.direction = 'out';
+    log.info(message);
   }
-  // persistence
-  this.reconnector.memorize(message);
-  this.socket.sendPacket('message', JSON.stringify(message));
+};
+
+StateMachine.prototype._sendPacket = function(data){
+  this.auditSent++;
+  this.socket.sendPacket('message', data);
 };
 
 StateMachine.prototype.disconnect = function() {
   var self = this;
-  log.info('disconnect() called');
+  log.info({ op: 'explicit-disconnect' });
+  if(!this.socketConfig) {
+    this.waitingForConfig = false;
+    return;
+  }
   this.set(states.disconnecting);
-  // clear listeners
-  this.socket.removeAllListeners('close');
-  // stop
-  this.socket.on('close', function() {
-    self.set(states.stopped);
-  });
-
-  this.socket.close();
+  if(this.socket) {
+    // clear listeners
+    this.socket.removeAllListeners('close');
+    // stop
+    this.socket.on('close', function() {
+      self.set(states.stopped);
+    });
+    this.socket.close();
+  }
   this.run();
 };
 
@@ -405,15 +440,20 @@ StateMachine.prototype._connect = function() {
   var self = this;
   // reconnect, guard against duplicate connections if a connect attempt is already on the way
   var socket = this.socket = this.createSocket(this.socketConfig);
+  this.auditSent = 0;
+  this.auditReceived = 0;
   socket.once('open', function () {
     self.set(states.connected);
     self.run();
   });
   socket.on('message', this.handleMessage);
+  socket.on('message', function() {
+    self.auditReceived++;
+  });
   socket.once('close', function() { self.handleDisconnect(); });
 
   this._startGuard(function() {
-    log.warn('Connect guard timed out');
+    log.warn({ event: 'connection-guard-timeout' });
     self.handleDisconnect();
   }, this.backoff.get() + 6000);
   this.set(states.connecting);
@@ -431,14 +471,16 @@ StateMachine.prototype.handleDisconnect = function() {
     this.retransition(this.backoff.get());
   }
   this.sink.emit('disconnected');
-  log.info('disconnected - reconnecting in', this.backoff.get());
+  log.info({ event: 'disconnected', wait: this.backoff.get() });
 };
 
 StateMachine.prototype.run = function() {
   var self = this,
       s = StateMachine.states;
 
-  log.debug('[C '+this.socketConfig.userId+'] run state', this._state);
+  if(this.socketConfig){
+    log.debug({ op: 'run-state', state: this._state });
+  }
 
   switch(this._state) {
     case s.permanently_disconnected:
@@ -491,13 +533,13 @@ StateMachine.prototype.retransition = function(timeout) {
 };
 
 StateMachine.prototype._startGuard = function(callback, timeout) {
-  log.debug('start guard', timeout);
+  log.debug({ event: 'start guard', timeout: timeout });
   this.guard && clearTimeout(this.guard);
   this.guard = setTimeout(callback, timeout);
 };
 
 StateMachine.prototype._cancelGuard = function() {
-  log.debug('cancel guard');
+  log.debug({ event: 'cancel-guard' });
   this.guard && clearTimeout(this.guard);
 };
 
