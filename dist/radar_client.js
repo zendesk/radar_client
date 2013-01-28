@@ -53,6 +53,8 @@ function Client(backend) {
     try {
       msg = JSON.parse(msg);
     } catch(e) { throw e; }
+    msg.direction = 'in';
+    log.info(msg);
     switch(msg.op) {
       case 'err':
       case 'ack':
@@ -65,8 +67,6 @@ function Client(backend) {
       default:
         self.emit(msg.to, msg);
     }
-    msg.direction = 'in';
-    log.info(msg);
   };
 }
 
