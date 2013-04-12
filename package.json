@@ -9,13 +9,13 @@
       "type": "git",
       "url": "https://github.com/zendesk/engine.io.git"
   },
-  "devDependencies":{
-    "gluejs": "~0.2.x",
-  },
   "dependencies": {
     "microee": "git://github.com/mixu/microee.git#master",
     "minilog": "*",
     "engine.io-client": "0.2.x"
+  },
+  "devDependencies":{
+    "gluejs": "~0.2.x"
   },
   "devDependencies": {
     "mocha": "*"
