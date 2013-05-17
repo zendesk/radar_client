@@ -15,9 +15,7 @@
     "engine.io-client": "0.2.x"
   },
   "devDependencies":{
-    "gluejs": "~0.2.x"
-  },
-  "devDependencies": {
+    "gluejs": "~0.2.x",
     "mocha": "*"
   },
   "scripts": {
