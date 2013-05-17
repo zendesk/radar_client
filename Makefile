@@ -18,7 +18,7 @@ build:
 	--out dist/radar_client.js
 
 test:
-	@sudo -E ./node_modules/.bin/mocha \
+	./node_modules/.bin/mocha \
 		--ui exports \
 		--reporter $(REPORTER) \
 		--slow 2000ms \
