@@ -1,5 +1,4 @@
 TESTS += test/backoff.test.js
-TESTS += test/reconnector.test.js
 TESTS += test/radar_client.alloc.test.js
 TESTS += test/radar_client.events.test.js
 TESTS += test/radar_client.test.js

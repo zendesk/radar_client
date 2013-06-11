@@ -5,9 +5,6 @@ var assert = require('assert'),
 
 RadarClient.setBackend(MockEngine);
 
-// load order is significant, we need to setBackend first
-var client = new RadarClient();
-
 exports['given an instance of Radar client'] = {
   afterEach: function(done) {
     MockEngine.current._written = [];
@@ -15,12 +12,14 @@ exports['given an instance of Radar client'] = {
   },
 
   'calls to operations do not cause errors before the client is configured, but dont write either': function(done) {
+    var client = new RadarClient();
     client.status('test/foo').set('bar');
     assert.equal(MockEngine.current._written.length, 0);
     done();
   },
 
   'as long as the client is configured, any operation that requires a send will automatically connect': function(done) {
+    var client = new RadarClient();
     client.configure({ userId: 123, accountName: 'dev' });
     client.status('test/foo').set('bar', function() {
       assert.equal(MockEngine.current._written.length, 1);
@@ -35,7 +34,7 @@ exports['given an instance of Radar client'] = {
     setTimeout(function() {
       // we use a setTimeout, because connecting with the fake backend
       // is also async, it just takes 5 ms rather than a real connect duration
-      assert.equal(client.manager._state, 6); // = Ready state
+      assert.ok(client.manager.is('ready'));
       done();
     }, 10);
   },
@@ -53,12 +52,9 @@ exports['given an instance of Radar client'] = {
       allocDoneCount++;
     }
     client.alloc('foo', onAlloc);
-    // should not be ready yet, due to async connect time
-    assert.equal(readyCount, 0);
-    assert.equal(allocDoneCount, 0);
     setTimeout(function() {
-      assert.equal(client.manager._state, 6); // = Ready state
-      assert.equal(readyCount, 1);
+      assert.ok(client.manager.is('ready')); // = Ready state
+      assert.equal(readyCount, 3);
       assert.equal(allocDoneCount, 1);
       // if the connect code would trigger, then these would
       // not run the on('ready') action immediately.
@@ -68,7 +64,7 @@ exports['given an instance of Radar client'] = {
       client.alloc('foo');
       client.alloc('foo', onAlloc);
       client.alloc('foo');
-      assert.equal(readyCount, 4);
+      assert.equal(readyCount, 6);
       assert.equal(allocDoneCount, 2);
       done();
     }, 10);
@@ -83,13 +79,13 @@ exports['given an instance of Radar client'] = {
     client.alloc('baz');
     client.dealloc('baz');
     setTimeout(function() {
-      assert.equal(client.manager._state, 6); // = Ready state
+      assert.ok(client.manager.is('ready')); // = Ready state
       client.dealloc('bar');
       setTimeout(function() {
-        assert.equal(client.manager._state, 6); // = Ready state
+        assert.ok(client.manager.is('ready')); // = Ready state
         client.dealloc('foo');
         setTimeout(function() {
-          assert.equal(client.manager._state, -1); // = Stopped state
+          assert.ok(client.manager.is('closed')); // = Stopped state
           done();
         }, 10);
       }, 10);

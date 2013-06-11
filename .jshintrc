@@ -24,12 +24,13 @@
   "sub":      false,
 
   "maxlen":    0,
-  "indent":    2,
   "maxerr":    50,
   "passfail":  false,
   "browser":   true,
   "rhino":     false,
   "devel":     true,
   "lastsemic": false,
-  "expr":      true
+  "expr":      true,
+
+  "node":      true
 }
