@@ -1,7 +1,7 @@
 {
   "name": "radar_client",
   "description": "Realtime apps with a high level API based on engine.io",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "author": "Mikito Takada <mikito.takada@gmail.com>",
   "main": "lib/index.js",
   "keywords": ["realtime", "socket.io", "engine.io", "comet", "ajax"],
@@ -11,13 +11,12 @@
   },
   "dependencies": {
     "microee": "git://github.com/mixu/microee.git#master",
-    "minilog": "*",
-    "engine.io-client": "0.2.x"
+    "minilog": "0.1.0",
+    "engine.io-client": "0.2.x",
+    "sfsm": "0.0.3"
   },
   "devDependencies":{
-    "gluejs": "~0.2.x"
-  },
-  "devDependencies": {
+    "gluejs": "~0.2.x",
     "mocha": "*"
   },
   "scripts": {

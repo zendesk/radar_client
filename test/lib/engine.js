@@ -5,7 +5,7 @@ var MicroEE = require('microee'),
 function Socket() {
   var self = this;
   this._written = [];
-};
+}
 
 MicroEE.mixin(Socket);
 
@@ -36,7 +36,7 @@ function wrap() {
     current.emit('open');
   }, 5);
   return current;
-};
+}
 
 module.exports = {
   Socket: wrap,

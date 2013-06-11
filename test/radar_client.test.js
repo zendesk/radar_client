@@ -49,18 +49,8 @@ exports['before connecting'] = {
 };
 
 exports['given a new presence'] = {
-
-  before: function(done) {
-    RadarClient.setBackend(MockEngine);
-    done();
-  },
-  after: function(done) {
-    RadarClient.setBackend({});
-    done();
-  },
-
   beforeEach: function(done) {
-    client = new RadarClient().configure({ userId: 123, accountName: 'dev' })
+    client = new RadarClient(MockEngine).configure({ userId: 123, accountName: 'dev' })
       .alloc('test', done);
   },
 
@@ -70,66 +60,74 @@ exports['given a new presence'] = {
   },
 
   'can configure my id': function(done) {
-    assert.equal(123, client._me.userId);
+    assert.equal(123, client.configuration.userId);
     done();
   },
 
   'can set presence online in a scope': function(done) {
     client.presence('tickets/21').set('online');
 
-    assert.ok(
-      MockEngine.current._written.some(function(message) {
-        return (message.op == 'set' &&
-          message.to == 'presence:/dev/tickets/21' &&
-          message.value == 'online')
-      })
-    );
+    setTimeout(function() {
+      assert.ok(
+        MockEngine.current._written.some(function(message) {
+          return (message.op == 'set' &&
+            message.to == 'presence:/dev/tickets/21' &&
+            message.value == 'online');
+        })
+      );
 
-    done();
+      done();
+    }, 5);
   },
 
   'can set presence offline in a scope': function(done) {
     client.presence('tickets/21').set('offline');
-    assert.ok(
-      MockEngine.current._written.some(function(message) {
-        return (
-          message.op == 'set' &&
-          message.to == 'presence:/dev/tickets/21' &&
-          message.value == 'offline' &&
-          message.key == '123'
-        )
-      })
-    );
+    setTimeout(function() {
+      assert.ok(
+        MockEngine.current._written.some(function(message) {
+          return (
+            message.op == 'set' &&
+            message.to == 'presence:/dev/tickets/21' &&
+            message.value == 'offline' &&
+            message.key == '123'
+          );
+        })
+      );
 
-    done();
+      done();
+    }, 5);
   },
 
   'can subscribe to a presence scope': function(done) {
     client.presence('tickets/21').subscribe();
 
-    assert.ok(
-      MockEngine.current._written.some(function(message) {
-        return (message.op == 'subscribe' &&
-          message.to == 'presence:/dev/tickets/21'
-        )
-      })
-    );
+    setTimeout(function() {
+      assert.ok(
+        MockEngine.current._written.some(function(message) {
+          return (message.op == 'subscribe' &&
+            message.to == 'presence:/dev/tickets/21'
+          );
+        })
+      );
 
-    done();
+      done();
+    }, 5);
   },
 
   'can unsubscribe from a presence scope': function(done) {
     client.presence('tickets/21').unsubscribe();
 
-    assert.ok(
-      MockEngine.current._written.some(function(message) {
-        return (message.op == 'unsubscribe' &&
-          message.to == 'presence:/dev/tickets/21'
-        )
-      })
-    );
+    setTimeout(function() {
+      assert.ok(
+        MockEngine.current._written.some(function(message) {
+          return (message.op == 'unsubscribe' &&
+            message.to == 'presence:/dev/tickets/21'
+          );
+        })
+      );
 
-    done();
+      done();
+    }, 5);
   },
 
   'can do a one time get for a scope': function(done) {
@@ -146,51 +144,62 @@ exports['given a new presence'] = {
             message.to == 'presence:/dev/tickets/21' &&
             message.options &&
             message.options.version == 2
-          )
+          );
         })
       );
       done();
     });
   },
 
-  'can set options for a sync operation': function() {
+  'can set options for a sync operation': function(done) {
     client.presence('tickets/21').sync({ version: 2 });
-    assert.ok(
-      MockEngine.current._written.some(function(message) {
-        return (message.op == 'sync' &&
-          message.to == 'presence:/dev/tickets/21' &&
-          message.options &&
-          message.options.version == 2
-        )
-      })
-    );
+
+    setTimeout(function() {
+      assert.ok(
+        MockEngine.current._written.some(function(message) {
+          return (message.op == 'sync' &&
+            message.to == 'presence:/dev/tickets/21' &&
+            message.options &&
+            message.options.version == 2
+          );
+        })
+      );
+
+      done();
+    }, 5);
   },
 
-  'can publish messages to a user': function () {
+  'can publish messages to a user': function (done) {
     client.message('user/123').publish('hello world');
-    assert.ok(
-      MockEngine.current._written.some(function(message) {
-        return (message.op == 'publish' &&
-          message.to == 'message:/dev/user/123' &&
-          message.value == 'hello world'
-        )
-      })
-    );
+    setTimeout(function() {
+      assert.ok(
+        MockEngine.current._written.some(function(message) {
+          return (message.op == 'publish' &&
+            message.to == 'message:/dev/user/123' &&
+            message.value == 'hello world'
+          );
+        })
+      );
+
+      done();
+    }, 5);
   },
 
   'if a authentication token is set, it gets sent on each operation': function(done) {
     client.configure({ userId: 123, accountName: 'dev', auth: 'AUTH'});
     client.message('user/123').publish('hello world');
-    assert.ok(
-      MockEngine.current._written.some(function(message) {
-        return (message.op == 'publish' &&
-          message.to == 'message:/dev/user/123' &&
-          message.value == 'hello world' &&
-          message.auth == 'AUTH'
-        )
-      })
-    );
-    done();
+    setTimeout(function() {
+      assert.ok(
+        MockEngine.current._written.some(function(message) {
+          return (message.op == 'publish' &&
+            message.to == 'message:/dev/user/123' &&
+            message.value == 'hello world' &&
+            message.auth == 'AUTH'
+          );
+        })
+      );
+      done();
+    }, 5);
   },
 
   'synchronization batch filters out duplicate messages to the same channel by time': function(done) {

@@ -1,4 +1,4 @@
-(function(){function require(e,t){for(var n=[],r=e.split("/"),i,s,o=0;s=r[o++];)".."==s?n.pop():"."!=s&&n.push(s);n=n.join("/"),o=require,s=o.m[t||0],i=s[n+".js"]||s[n+"/index.js"]||s[n];if(s=i.c)i=o.m[t=s][e=i.m];return i.exports||i(i,i.exports={},function(n){return o("."!=n.charAt(0)?n:e+"/../"+n,t)}),i.exports};
+(function(){function require(e,t){for(var n=[],r=e.split("/"),i,s,o=0;s=r[o++];)".."==s?n.pop():"."!=s&&n.push(s);n=n.join("/"),o=require,s=o.m[t||0],i=s[n+".js"]||s[n+"/index.js"]||s[n],r='Cannot require("'+n+'")';if(!i)throw Error(r);if(s=i.c)i=o.m[t=s][e=i.m];if(!i)throw Error(r);return i.exports||i(i,i.exports={},function(n){return o("."!=n.charAt(0)?n:e+"/../"+n,t)}),i.exports};
 require.m = [];
 require.m[0] = { "engine.io-client": { exports: window.eio },
 "lib/backoff.js": function(module, exports, require){function Backoff() {
@@ -8,7 +8,7 @@ require.m[0] = { "engine.io-client": { exports: window.eio },
 Backoff.durations = [1000, 2000, 4000, 8000, 16000, 32000]; // seconds (ticks)
 
 Backoff.prototype.get = function() {
-  return Backoff.durations[this.failures] || 99999000;
+  return Backoff.durations[this.failures] || 60000;
 };
 
 Backoff.prototype.increment = function() {
@@ -17,6 +17,10 @@ Backoff.prototype.increment = function() {
 
 Backoff.prototype.success = function() {
   this.failures = 0;
+};
+
+Backoff.prototype.unavailable = function() {
+  return Backoff.durations.length >= this.failures;
 };
 
 module.exports = Backoff;
@@ -38,39 +42,39 @@ module.exports = instance;
 
 function Client(backend) {
   var self = this;
-  this._me = { accountName: '', userId: 0, userType: 0 };
+  this.connections = 0;
+  this.configuration = this._me = { accountName: '', userId: 0, userType: 0 };
   this._ackCounter = 1;
   this._channelSyncTimes = {};
   this._users = {};
 
-  this.manager = new StateMachine();
   // allow backend substitution for tests
-  if (!backend) { backend = eio; }
-  this.manager.createSocket = function(config) {
-    return new backend.Socket(config);
-  };
-  this.manager.handleMessage = function (msg) {
-    try {
-      msg = JSON.parse(msg);
-    } catch(e) { throw e; }
-    msg.direction = 'in';
-    log.info(msg);
-    switch(msg.op) {
-      case 'err':
-      case 'ack':
-      case 'get':
-        self.emit(msg.op, msg);
-        break;
-      case 'sync':
-        self._batch(msg);
-        break;
-      default:
-        self.emit(msg.to, msg);
+  this.backend = backend || eio;
+  this.manager = StateMachine.create(this);
+
+  // this should be overridden by removing it with client.removeAllListeners('authenticateMessage');
+  this.on('authenticateMessage', function(message) {
+    if (this.configuration.auth) {
+      message.auth = this.configuration.auth;
+      message.userId = this.configuration.userId;
+      message.userType = this.configuration.userType;
+      message.accountName = this.configuration.accountName;
     }
-  };
+
+    this.emit('messageAuthenticated', message);
+  });
+
+  // this should be overridden by removing it with client.removeAllListeners('authenticate');
+  this.on('authenticate', function() {
+    this.emit('authenticated');
+  });
 }
 
 MicroEE.mixin(Client);
+
+Client.prototype.createSocket = function() {
+  return new this.backend.Socket(this.configuration);
+};
 
 // alloc() and dealloc() rather than connect() and disconnect() - see readme.md
 Client.prototype.alloc = function(name, callback) {
@@ -80,7 +84,8 @@ Client.prototype.alloc = function(name, callback) {
   callback && this.once('ready', function() {
     self._users.hasOwnProperty(name) && callback();
   });
-  this.manager.connect();
+
+  this.manager.start();
   return this;
 };
 
@@ -92,30 +97,77 @@ Client.prototype.dealloc = function(name) {
     if(this._users.hasOwnProperty(key)) count++;
   }
   if(count === 0) {
-    this.manager.disconnect();
+    this.manager.close();
   }
 };
 
-Client.prototype.configure = function(config) {
-  config || (config = {});
-  config.userType || (config.userType = 0);
-  this._me = config;
-  this.manager.configure(this, config);
+Client.prototype.configure = function(configuration) {
+  configuration = configuration || {};
+  configuration.userType = configuration.userType || 0;
+  this.configuration = this._me = configuration;
+  this.manager.configure(configuration);
   return this;
 };
 
+Client.prototype.authenticate = function() {
+  this.emit('authenticate');
+};
+
+Client.prototype.authenticateMessage = function(message) {
+  this.emit('authenticateMessage', message);
+};
+
+Client.prototype.ready = function() {
+  this.emit('ready');
+};
+
+Client.prototype.connected = function() {
+  this.emit(++this.connections > 1 ? 'reconnect' : 'connect');
+  this.emit('ready');
+};
+
+Client.prototype.disconnected = function(permanent) {
+  this.emit('disconnected');
+
+  if (permanent) {
+    this.unavailable();
+  }
+};
+
+Client.prototype.unavailable = function() {
+  this.emit('unavailable');
+};
+
+Client.prototype.messageReceived = function (msg) {
+  var message = JSON.parse(msg);
+  message.direction = 'in';
+  log.info(message);
+  switch(message.op) {
+    case 'err':
+    case 'ack':
+    case 'get':
+      this.emit(message.op, message);
+      break;
+    case 'sync':
+      this._batch(message);
+      break;
+    default:
+      this.emit(message.to, message);
+  }
+};
+
 Client.prototype.message = function(scope) {
-  return new Scope('message:/'+this._me.accountName+'/'+scope, this);
+  return new Scope('message:/'+this.configuration.accountName+'/'+scope, this);
 };
 
 // Access the "presence" chainable operations
 Client.prototype.presence = function(scope) {
-  return new Scope('presence:/'+this._me.accountName+'/'+scope, this);
+  return new Scope('presence:/'+this.configuration.accountName+'/'+scope, this);
 };
 
 // Access the "status" chainable operations
 Client.prototype.status = function(scope) {
-  return new Scope('status:/'+this._me.accountName+'/'+scope, this);
+  return new Scope('status:/'+this.configuration.accountName+'/'+scope, this);
 };
 
 Client.prototype.set = function(scope, value, callback) {
@@ -123,8 +175,8 @@ Client.prototype.set = function(scope, value, callback) {
     op: 'set',
     to: scope,
     value: value,
-    key: this._me.userId,
-    type: this._me.userType
+    key: this.configuration.userId,
+    type: this.configuration.userType
   }, callback);
 };
 
@@ -176,11 +228,11 @@ for(var i = 0; i < props.length; i++){
 }
 
 Client.prototype._write = function(message, callback) {
-  if(this._me && this._me.auth) {
-    message.auth = this._me.auth;
-    message.userId = this._me.userId;
-    message.userType = this._me.userType;
-    message.accountName = this._me.accountName;
+  if(this.configuration && this.configuration.auth) {
+    message.auth = this.configuration.auth;
+    message.userId = this.configuration.userId;
+    message.userType = this.configuration.userType;
+    message.accountName = this.configuration.accountName;
   }
   if(callback) {
     message.ack = this._ackCounter++;
@@ -319,8 +371,202 @@ module.exports = Scope;
 "lib/state.js": function(module, exports, require){var log = require('minilog')('radar_state'),
     Reconnector = require('./reconnector'),
     MicroEE = require('microee'),
-    Backoff = require('./backoff');
+    Backoff = require('./backoff'),
+    Machine = require('sfsm'),
+    ONE_HOUR = 60 * 60 * 1000;
 
+function create(client) {
+  var connections = 0,
+      backoff = new Backoff(),
+      machine = Machine.create({
+    initial: 'opened',
+
+    error: function() {
+      console.error(arguments);
+      log.error('state-machine-error', arguments);
+    },
+
+    events: [
+      { name: 'configure',     from: [ 'opened', 'connected', 'ready' ], to: 'configured' },
+      { name: 'connect',       from: [ 'opened', 'configured', 'disconnected' ], to: 'connecting' },
+      { name: 'established',   from: 'connecting', to: 'connected' },
+      { name: 'authenticate',  from: 'connected', to: 'authenticating' },
+      { name: 'ready',         from: [ 'authenticating', 'ready' ], to: 'ready' },
+      { name: 'disconnect',    from: [ 'connecting', 'connected', 'authenticating', 'ready', 'disconnected' ], to: 'disconnected' },
+      { name: 'close',         from: [ 'opened', 'configured', 'disconnected', 'connecting', 'connected', 'authenticating', 'ready', 'closed' ], to: 'closed' },
+      { name: 'open',          from: 'closed', to: 'opened' }
+    ],
+
+    callbacks: {
+      onbeforeevent: function(event, from, to) {
+        log.info('before-' + event + ' from: ' + from + ', to: ' + to, Array.prototype.slice.call(arguments));
+
+        var listeners = machine.listeners[event], i, l;
+        if (listeners) {
+          for (i = 0, l = listeners.length; i < l; ++i) {
+            listeners[i].call(machine);
+          }
+        }
+      },
+
+      onconfigure: function(event, from, to, configuration) {
+        client.removeAllListeners('messageAuthenticated');
+        client.on('messageAuthenticated', function(message) {
+          machine.sendAuthenticatedMessage(message);
+        });
+
+        client.removeAllListeners('authenticated');
+        client.on('authenticated', function() {
+          machine.ready();
+        });
+
+        machine.configuration = configuration;
+
+        if (!machine.is('connected') || !machine.is('ready') || !machine.is('connecting')) {
+          machine.connect();
+        }
+      },
+
+      onconnecting: function() {
+        machine.cancelGuard();
+
+        var socket = machine.socket = client.createSocket();
+
+        socket.once('open', function () {
+          machine.established();
+        });
+
+        socket.on('message', function(message) {
+          client.messageReceived(message);
+        });
+
+        socket.once('close', function() {
+          if (!machine.is('closed')) {
+            machine.disconnect(false);
+          }
+        });
+
+        machine.startGuard();
+      },
+
+      onestablished: function() {
+        machine.cancelGuard();
+
+        machine.authenticate();
+        backoff.success();
+        client.connected();
+      },
+
+      onauthenticate: function() {
+        client.authenticate();
+      },
+
+      onready: function(event, from, to) {
+        client.ready();
+
+        if (machine.list && machine.list.length) {
+          var item, i = 0, length = machine.list.length, oneHourAgo = new Date() - ONE_HOUR;
+          for (; i < length; ++i) {
+            item = machine.list[i];
+            // dont't send messages that are over an hour old
+            if (item && item._date > oneHourAgo) {
+              machine.send(item);
+            }
+          }
+          machine.list = machine.list.slice(length);
+        }
+      },
+
+      ondisconnect: function(event, from, to, permanent) {
+        if (!permanent) {
+          backoff.increment();
+          machine.connect();
+
+          if (backoff.unavailable()) {
+            client.unavailable();
+          }
+        }
+
+        client.disconnected(permanent);
+      },
+
+      onafterclose: function(event, from, to, socketClosed) {
+        if (!socketClosed && machine.socket) {
+          machine.socket.close();
+          client.disconnected(true);
+        }
+      }
+    }
+  });
+
+  machine.start = function() {
+    if (this.is('closed')) {
+      this.open();
+    }
+
+    if (this.is('ready')) {
+      client.ready();
+    }
+  };
+
+  machine.queueLimit = 100;
+
+  machine.queue = function(message) {
+    message._date = new Date();
+    this.list = this.list || [];
+
+    // limit the number of messages that can be queue
+    if (this.list.length > this.queueLimit) {
+      this.list = this.list.slice(this.list.length - this.queueLimit);
+    }
+
+    return this.list.push(message);
+  };
+
+  machine.startGuard = function() {
+    machine._guard = setTimeout(function() {
+      machine.disconnect(false);
+    }, machine.guardDelay());
+  };
+
+  machine.cancelGuard = function() {
+    if (machine._guard) {
+      clearTimeout(machine._guard);
+      delete machine._guard;
+    }
+  };
+
+  machine.guardDelay = function() {
+    return backoff.get() + 6000;
+  };
+
+  machine.send = function(message) {
+    if (this.is('ready')) {
+      return client.authenticateMessage(message);
+    // only queue after the machine has been configured
+    } else if (this.configuration) {
+      if (this.can('connect')) {
+        this.connect();
+      }
+
+      return this.queue(message);
+    }
+
+    return false;
+  };
+
+  machine.sendAuthenticatedMessage = function(message) {
+    this.socket.sendPacket('message', JSON.stringify(message));
+
+    message.direction = 'out';
+    log.info(message);
+  };
+
+  return machine;
+}
+
+module.exports = { create: create };
+/*
 function StateMachine() {
   var self = this;
   this.connections = 0;
@@ -544,11 +790,11 @@ StateMachine.prototype._cancelGuard = function() {
 };
 
 StateMachine._setTimeout = function(fn) {
-  /*globals setTimeout:true */
   setTimeout = fn;
 };
 
 module.exports = StateMachine;
+//*/
 },
 "microee": {"c":1,"m":"/index.js"},
 "minilog": { exports: window.Minilog }};
