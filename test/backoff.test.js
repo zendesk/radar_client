@@ -46,7 +46,7 @@ Some properties of a nice backoff system:
     b.increment();
     b.increment();
     b.increment();
-    assert.equal(b.get(), 99999000);
+    assert.equal(b.get(), 60000);
     done();
   }
 
