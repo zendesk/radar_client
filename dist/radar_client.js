@@ -1,4 +1,4 @@
-(function(){function require(e,t){for(var n=[],r=e.split("/"),i,s,o=0;s=r[o++];)".."==s?n.pop():"."!=s&&n.push(s);n=n.join("/"),o=require,s=o.m[t||0],i=s[n+".js"]||s[n+"/index.js"]||s[n],r='Cannot require("'+n+'")';if(!i)throw Error(r);if(s=i.c)i=o.m[t=s][e=i.m];if(!i)throw Error(r);return i.exports||i(i,i.exports={},function(n){return o("."!=n.charAt(0)?n:e+"/../"+n,t)}),i.exports};
+(function(){function require(e,t){for(var n=[],r=e.split("/"),i,s,o=0;s=r[o++];)".."==s?n.pop():"."!=s&&n.push(s);n=n.join("/"),o=require,s=o.m[t||0],i=s[n+".js"]||s[n+"/index.js"]||s[n];if(s=i.c)i=o.m[t=s][e=i.m];return i.exports||i(i,i.exports={},function(n){return o("."!=n.charAt(0)?n:e+"/../"+n,t)}),i.exports};
 require.m = [];
 require.m[0] = { "engine.io-client": { exports: window.eio },
 "lib/backoff.js": function(module, exports, require){function Backoff() {
@@ -271,80 +271,6 @@ Client.setBackend = function(lib) { eio = lib; };
 
 module.exports = Client;
 },
-"lib/reconnector.js": function(module, exports, require){var log = require('minilog')('radar_reconnect');
-
-function Reconnector(client) {
-  this.subscriptions = {};
-  this.presences = {};
-  this.mqueue = [];
-  this.client = client;
-  this.waitCounter = 0;
-}
-
-Reconnector.prototype.memorize = function(message) {
-  switch(message.op) {
-    case 'unsubscribe':
-      // remove from queue
-      if(this.subscriptions[message.to]) {
-        delete this.subscriptions[message.to];
-      }
-      break;
-    case 'sync':
-    case 'subscribe':
-      if(this.subscriptions[message.to] != 'sync') {
-        this.subscriptions[message.to] = message.op;
-      }
-      break;
-    case 'set':
-      if (message.to.substr(0, 'presence:/'.length) == 'presence:/') {
-        this.presences[message.to] = message.value;
-      }
-      break;
-  }
-};
-
-Reconnector.prototype.queue = function(message) {
-  log.info('Queue message', message);
-  this.mqueue.push(message);
-};
-
-Reconnector.prototype.restore = function(done) {
-  var self = this, total = 0, to, message;
-
-  function ack() {
-    self.waitCounter--;
-    if(self.waitCounter === 0) {
-      done();
-    }
-  }
-  log.info({ event: 'restore-subscriptions' });
-  for (to in this.subscriptions) {
-    if (!this.subscriptions.hasOwnProperty(to)) { continue; }
-    var item = this.subscriptions[to];
-    this.waitCounter++;
-    total++;
-    this.client[item](to, ack);
-  }
-
-  for (to in this.presences) {
-    if (!this.presences.hasOwnProperty(to)) { continue; }
-    this.waitCounter++;
-    total++;
-    this.client.set(to, this.presences[to], ack);
-  }
-  message = this.mqueue.shift();
-  while(message) {
-    this.client.manager._sendPacket(JSON.stringify(message));
-    message = this.mqueue.shift();
-  }
-  // if we didn't do anything, just trigger done()
-  if(total === 0) {
-    done();
-  }
-};
-
-module.exports = Reconnector;
-},
 "lib/scope.js": function(module, exports, require){function Scope(prefix, client) {
   this.prefix = prefix;
   this.client = client;
@@ -369,8 +295,6 @@ for(var i = 0; i < props.length; i++){
 module.exports = Scope;
 },
 "lib/state.js": function(module, exports, require){var log = require('minilog')('radar_state'),
-    Reconnector = require('./reconnector'),
-    MicroEE = require('microee'),
     Backoff = require('./backoff'),
     Machine = require('sfsm'),
     ONE_HOUR = 60 * 60 * 1000;
@@ -382,7 +306,6 @@ function create(client) {
     initial: 'opened',
 
     error: function() {
-      console.error(arguments);
       log.error('state-machine-error', arguments);
     },
 
@@ -399,7 +322,7 @@ function create(client) {
 
     callbacks: {
       onbeforeevent: function(event, from, to) {
-        log.info('before-' + event + ' from: ' + from + ', to: ' + to, Array.prototype.slice.call(arguments));
+        log.info('before-' + event + ', from: ' + from + ', to: ' + to, Array.prototype.slice.call(arguments));
 
         var listeners = machine.listeners[event], i, l;
         if (listeners) {
@@ -566,235 +489,7 @@ function create(client) {
 }
 
 module.exports = { create: create };
-/*
-function StateMachine() {
-  var self = this;
-  this.connections = 0;
-  this._state = StateMachine.states.stopped;
-  this.socket = null;
-  this.queue = [];
-  this.transitionTimer = null;
-  this.socketConfig = null;
-  this.guard = null;
-  this.backoff = new Backoff();
-  this._timeout = null;
 
-  // set sink, createSocket and handleMessage after creating the state machine
-  this.sink = new MicroEE();
-  this.createSocket = null;
-  this.handleMessage = null;
-  this.reconnector = null;
-  this.waitingForConfig = false;
-  // audit trail
-  this.auditSent = 0;
-  this.auditReceived = 0;
-}
-
-// Map of states
-var states = StateMachine.states = {
-  permanently_disconnected: -2, // service unavailable or config error
-  // Disconnect states
-  stopped: -1, // disconnected and not looking to connect
-  waiting: 1, // waiting to reconnect, exponential backoff
-  reconnect: 2, // disconnected for reason other than explicit disconnect()
-  disconnecting: 3, // actively transitioning to "stopped" state
-  // Connect states
-  connecting: 4, // actively transitioning to "connected" state
-  connected: 5, // connected but still need to resync etc.
-  ready: 6 // connected and any lost subs/syncs re-established
-};
-
-StateMachine.prototype.set = function(to) {
-  if(typeof to !== 'undefined') {
-    log.debug({ op: 'change-state', from: this._state, to: to });
-    this._state = to;
-  }
-};
-
-StateMachine.prototype.configure = function(sink, config) {
-  config || (config = {});
-  config.upgrade = false;
-  this.socketConfig = config;
-  sink && (this.sink = sink);
-  if(this.waitingForConfig && this._state == states.stopped) {
-    this.waitingForConfig = false;
-    this.connect();
-  }
-};
-
-StateMachine.prototype.connect = function() {
-  if(this._state == states.stopped && this.socketConfig) {
-    this.reconnector = new Reconnector(this.sink);
-    // you can only start if you've stopped. Other states have a defined transition path.
-    this.set(states.reconnect);
-  } else {
-    this.waitingForConfig = true;
-  }
-  this.run();
-};
-
-// StateMachine manages sending messages, because it can easily handle connecting on demand
-StateMachine.prototype.send = function(message) {
-  if(this._state < 0) {
-    // ignore calls when not configured and not connected
-    if(!this.socketConfig || !this.sink) return;
-    // otherwise connect automatically
-    this.connect();
-  }
-  // memorize if necessary
-  this.reconnector.memorize(message);
-  if(this._state < 5) {
-    this.reconnector.queue(message);
-  } else {
-    this._sendPacket(JSON.stringify(message));
-    message.direction = 'out';
-    log.info(message);
-  }
-};
-
-StateMachine.prototype._sendPacket = function(data){
-  this.auditSent++;
-  this.socket.sendPacket('message', data);
-};
-
-StateMachine.prototype.disconnect = function() {
-  var self = this;
-  log.info({ op: 'explicit-disconnect' });
-  if(!this.socketConfig) {
-    this.waitingForConfig = false;
-    return;
-  }
-  this.set(states.disconnecting);
-  if(this.socket) {
-    // clear listeners
-    this.socket.removeAllListeners('close');
-    // stop
-    this.socket.on('close', function() {
-      self.set(states.stopped);
-    });
-    this.socket.close();
-  }
-  this.run();
-};
-
-// never directly called. Everything goes through the state machine
-StateMachine.prototype._connect = function() {
-  if(this._state != states.reconnect) {
-    log.error('Connect is only allowed from reconnecting state!');
-    return;
-  }
-  var self = this;
-  // reconnect, guard against duplicate connections if a connect attempt is already on the way
-  var socket = this.socket = this.createSocket(this.socketConfig);
-  this.auditSent = 0;
-  this.auditReceived = 0;
-  socket.once('open', function () {
-    self.set(states.connected);
-    self.run();
-  });
-  socket.on('message', this.handleMessage);
-  socket.on('message', function() {
-    self.auditReceived++;
-  });
-  socket.once('close', function() { self.handleDisconnect(); });
-
-  this._startGuard(function() {
-    log.warn({ event: 'connection-guard-timeout' });
-    self.handleDisconnect();
-  }, this.backoff.get() + 6000);
-  this.set(states.connecting);
-};
-
-StateMachine.prototype.handleDisconnect = function() {
-  // exponential backoff
-  this._cancelGuard();
-  this.backoff.increment();
-  this.set(states.reconnect);
-  if(this.backoff.get() > 9000000) {
-    this.set(states.permanently_disconnected);
-    this.retransition(1000);
-  } else {
-    this.retransition(this.backoff.get());
-  }
-  this.sink.emit('disconnected');
-  log.info({ event: 'disconnected', wait: this.backoff.get() });
-};
-
-StateMachine.prototype.run = function() {
-  var self = this,
-      s = StateMachine.states;
-
-  if(this.socketConfig){
-    log.debug({ op: 'run-state', state: this._state });
-  }
-
-  switch(this._state) {
-    case s.permanently_disconnected:
-      this.sink.emit('unavailable');
-      break;
-    case s.stopped:
-      this.sink.emit('disconnected');
-      break;
-    case s.waiting:
-
-      break;
-    case s.reconnect:
-      this._connect(this.socketConfig);
-      break;
-    case s.disconnecting:
-    case s.connecting:
-      // if we are connecting/disconnecting, set a timeout to check again later
-      this.retransition(1000);
-      break;
-    case s.connected:
-      this._cancelGuard();
-      this.reconnector.restore(function() {
-        self.set(s.ready);
-        self.run();
-      });
-      break;
-    case s.ready:
-      this.connections++;
-      this.backoff.success();
-      if(this.connections == 1) {
-        this.sink.emit('connected');
-      } else {
-        this.sink.emit('reconnected');
-      }
-      this.sink.emit('ready');
-      break;
-  }
-};
-
-StateMachine.prototype.retransition = function(timeout) {
-    var self = this;
-    this._timeout = timeout;
-    if(!this.transitionTimer) {
-      this.transitionTimer = setTimeout(function() {
-        self.transitionTimer = null;
-        log.info('Ran transition after', timeout);
-        self.run();
-      }, timeout);
-    }
-};
-
-StateMachine.prototype._startGuard = function(callback, timeout) {
-  log.debug({ event: 'start guard', timeout: timeout });
-  this.guard && clearTimeout(this.guard);
-  this.guard = setTimeout(callback, timeout);
-};
-
-StateMachine.prototype._cancelGuard = function() {
-  log.debug({ event: 'cancel-guard' });
-  this.guard && clearTimeout(this.guard);
-};
-
-StateMachine._setTimeout = function(fn) {
-  setTimeout = fn;
-};
-
-module.exports = StateMachine;
-//*/
 },
 "microee": {"c":1,"m":"/index.js"},
 "minilog": { exports: window.Minilog }};
