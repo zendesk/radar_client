@@ -1,8 +1,7 @@
 var assert = require('assert'),
     RadarClient = require('../lib/radar_client.js'),
-    MockEngine = require('./lib/engine.js');
-
-var client;
+    MockEngine = require('./lib/engine.js'),
+    client;
 
 exports['before connecting'] = {
   before: function(done) {
@@ -60,7 +59,7 @@ exports['given a new presence'] = {
   },
 
   'can configure my id': function(done) {
-    assert.equal(123, client.configuration.userId);
+    assert.equal(123, client._configuration.userId);
     done();
   },
 
@@ -170,8 +169,7 @@ exports['given a new presence'] = {
   },
 
   'can publish messages to a user': function (done) {
-    client.message('user/123').publish('hello world');
-    setTimeout(function() {
+    client.message('user/123').publish('hello world', function() {
       assert.ok(
         MockEngine.current._written.some(function(message) {
           return (message.op == 'publish' &&
@@ -187,8 +185,7 @@ exports['given a new presence'] = {
 
   'if a authentication token is set, it gets sent on each operation': function(done) {
     client.configure({ userId: 123, accountName: 'dev', auth: 'AUTH'});
-    client.message('user/123').publish('hello world');
-    setTimeout(function() {
+    client.message('user/123').publish('hello world', function() {
       assert.ok(
         MockEngine.current._written.some(function(message) {
           return (message.op == 'publish' &&
@@ -199,7 +196,7 @@ exports['given a new presence'] = {
         })
       );
       done();
-    }, 5);
+    });
   },
 
   'synchronization batch filters out duplicate messages to the same channel by time': function(done) {

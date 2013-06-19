@@ -2,6 +2,7 @@ TESTS += test/backoff.test.js
 TESTS += test/radar_client.alloc.test.js
 TESTS += test/radar_client.events.test.js
 TESTS += test/radar_client.test.js
+TESTS += test/radar_client.unit.test.js
 TESTS += test/state.test.js
 
 REPORTER = spec
