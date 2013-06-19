@@ -11,9 +11,9 @@
   },
   "dependencies": {
     "microee": "git://github.com/mixu/microee.git#master",
-    "minilog": "0.1.0",
+    "minilog": "0.0.4",
     "engine.io-client": "0.2.x",
-    "sfsm": "0.0.3"
+    "sfsm": "0.0.4"
   },
   "devDependencies":{
     "gluejs": "0.2.0",
