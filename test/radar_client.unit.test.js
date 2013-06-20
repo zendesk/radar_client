@@ -72,12 +72,11 @@ exports.RadarClient = {
       assert.deepEqual(client._configuration, { accountName: 'test', userId: 123, userType: 2 });
     },
 
-    'should configure the manager with the configuration hash': function() {
+    'should call configure() on the manager': function() {
       var configuration = { accountName: 'test', userId: 456, userType: 2 }, called = false;
 
-      client.manager.configure = function(hash) {
+      client.manager.configure = function() {
         called = true;
-        assert.deepEqual(hash, configuration);
       };
 
       client.configure(configuration);
@@ -552,58 +551,38 @@ exports.RadarClient = {
             assert.ok(called);
           },
 
-          'and calls _batchSend()\'s groups of 5 messages that are queued': function() {
-            var count = 11,
-                called = false;
+          'and _write()s the messages asynchronously': function(done) {
+            var count = 0,
+                called = 0;
 
-            while (--count) {
-              client._queue({ test: count });
+            while (count < 10) {
+              client._queue({ test: count++ });
             }
 
-            client._batchSend = function(messages) {
-              called = true;
-              assert.equal(messages.length, 5);
+            client._write = function(message) {
+              called += 1;
+              if (called == count) {
+                done();
+              }
             };
 
             client._createManager();
             client.manager.emit('activate');
-            assert.ok(called);
           }
         },
 
         'authenticate': function() {
-            //var called = false;
+          var called = false;
 
-            //client.manager.activate = function() {
-              //called = true;
-            //};
+          client._createManager();
 
-            //client._createManager();
-            //client.manager.emit('authenticate');
-            //assert.ok(called);
+          client.manager.activate = function() {
+            called = true;
+          };
+
+          client.manager.emit('authenticate');
+          assert.ok(called);
         }
-      }
-    },
-
-    '._batchSend': {
-      'should asynchronously _write() each of the passed messages individually': function(done) {
-        var written = 0,
-            messages = [
-              { test: 1 },
-              { test: 2 },
-              { test: 3 }
-            ];
-
-        client._write = function(message) {
-          assert.deepEqual(message, messages[written]);
-          written += 1;
-
-          if (written == messages.length) {
-            done();
-          }
-        };
-
-        client._batchSend(messages);
       }
     },
 

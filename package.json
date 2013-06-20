@@ -1,7 +1,7 @@
 {
   "name": "radar_client",
   "description": "Realtime apps with a high level API based on engine.io",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "Mikito Takada <mikito.takada@gmail.com>",
   "main": "lib/index.js",
   "keywords": ["realtime", "socket.io", "engine.io", "comet", "ajax"],
@@ -10,7 +10,7 @@
       "url": "https://github.com/zendesk/engine.io.git"
   },
   "dependencies": {
-    "microee": "git://github.com/mixu/microee.git#master",
+    "microee": "0.0.2",
     "minilog": "0.0.4",
     "engine.io-client": "0.2.x",
     "sfsm": "0.0.4"

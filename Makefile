@@ -9,9 +9,9 @@ REPORTER = spec
 
 build:
 	@echo 'Building dist/radar_client'
-	@./node_modules/gluejs/bin/gluejs \
+	./node_modules/gluejs/bin/gluejs \
 	--include ./lib \
-	--npm microee \
+	--npm microee,sfsm \
 	--replace engine.io-client=window.eio,minilog=window.Minilog \
 	--global RadarClient \
 	--main lib/index.js \
