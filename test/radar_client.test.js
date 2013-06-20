@@ -185,7 +185,9 @@ exports['given a new presence'] = {
 
   'if a authentication token is set, it gets sent on each operation': function(done) {
     client.configure({ userId: 123, accountName: 'dev', auth: 'AUTH'});
-    client.message('user/123').publish('hello world', function() {
+    client.message('user/123').publish('hello world');
+
+    setTimeout(function() {
       assert.ok(
         MockEngine.current._written.some(function(message) {
           return (message.op == 'publish' &&
@@ -196,7 +198,7 @@ exports['given a new presence'] = {
         })
       );
       done();
-    });
+    }, 10);
   },
 
   'synchronization batch filters out duplicate messages to the same channel by time': function(done) {

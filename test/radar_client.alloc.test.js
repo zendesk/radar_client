@@ -22,10 +22,12 @@ exports['given an instance of Radar client'] = {
 
   'as long as the client is configured, any operation that requires a send will automatically connect': function(done) {
     client.configure({ userId: 123, accountName: 'dev' });
-    client.status('test/foo').set('bar', function() {
+    client.status('test/foo').set('bar');
+
+    setTimeout(function() {
       assert.equal(MockEngine.current._written.length, 1);
       done();
-    });
+    }, 10);
   },
 
   'alloc calls perform a connect if not connected': function(done) {
