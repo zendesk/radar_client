@@ -42,7 +42,6 @@ module.exports = instance;
 
 function Client(backend) {
   var self = this;
-  this.connections = 0;
   this._ackCounter = 1;
   this._channelSyncTimes = {};
   this._users = {};
@@ -526,8 +525,7 @@ M.mixin = function(dest) {
 };
 module.exports = M;
 }};
-require.m[2] = {
-"/state-machine.js": function(module, exports, require){/*
+require.m[2] = { "/state-machine.js": function(module, exports, require){/*
 
   Javascript State Machine Library - https://github.com/jakesgordon/javascript-state-machine
 
