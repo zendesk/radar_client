@@ -70,19 +70,6 @@ exports.RadarClient = {
     'should store the passed hash as a configuration property': function() {
       client.configure({ accountName: 'test', userId: 123, userType: 2 });
       assert.deepEqual(client._configuration, { accountName: 'test', userId: 123, userType: 2 });
-    },
-
-    'should call configure() on the manager': function() {
-      var configuration = { accountName: 'test', userId: 456, userType: 2 }, called = false;
-
-      client.manager.configure = function() {
-        called = true;
-      };
-
-      client.configure(configuration);
-      assert.deepEqual(client._configuration, configuration);
-      assert.deepEqual(client._me, configuration);
-      assert.ok(called);
     }
   },
 
@@ -628,7 +615,7 @@ exports.RadarClient = {
           passed = false;
         };
 
-        assert.ok(!client.manager.hasBeen('configured'));
+        assert.ok(!client._isConfigured);
         client._sendMessage(message);
         assert.ok(passed);
       }

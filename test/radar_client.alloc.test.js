@@ -25,6 +25,7 @@ exports['given an instance of Radar client'] = {
     client.status('test/foo').set('bar');
 
     setTimeout(function() {
+      console.log(MockEngine.current._written);
       assert.equal(MockEngine.current._written.length, 1);
       done();
     }, 10);

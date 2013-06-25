@@ -18,7 +18,6 @@ exports['given a state machine'] = {
         connecting = true;
       }
     });
-    machine.configure();
     machine.start();
     machine.start();
     assert.ok(connecting);
