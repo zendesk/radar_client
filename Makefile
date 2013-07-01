@@ -14,7 +14,6 @@ build:
 	./node_modules/gluejs/bin/gluejs \
 	--include ./lib \
 	--npm microee,sfsm \
-	--exclude demo \
 	--replace engine.io-client=window.eio,minilog=window.Minilog \
 	--global RadarClient \
 	--main lib/index.js \
