@@ -8,6 +8,8 @@ TESTS += test/state.test.js
 REPORTER = spec
 
 build:
+	# the demo folder causes global pollution
+	rm -rf ./node_modules/sfsm/demo
 	@echo 'Building dist/radar_client'
 	./node_modules/gluejs/bin/gluejs \
 	--include ./lib \
