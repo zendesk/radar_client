@@ -8,10 +8,13 @@ TESTS += test/state.test.js
 REPORTER = spec
 
 build:
+	# the demo folder causes global pollution
+	rm -rf ./node_modules/sfsm/demo
 	@echo 'Building dist/radar_client'
 	./node_modules/gluejs/bin/gluejs \
 	--include ./lib \
 	--npm microee,sfsm \
+	--exclude demo \
 	--replace engine.io-client=window.eio,minilog=window.Minilog \
 	--global RadarClient \
 	--main lib/index.js \
