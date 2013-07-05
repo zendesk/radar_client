@@ -410,6 +410,54 @@ exports.RadarClient = {
         done();
       }
     },
+    '_restore' : {
+      'if nothing to restore, callback immediately' : function(done) {
+        assert.equal(0, Object.keys(client.presences).length);
+        assert.equal(0, Object.keys(client.subscriptions).length);
+        client._restore(function() {
+          assert.equal(MockEngine.current._written.length, 0);
+          done();
+        });
+      },
+      'restore presences' : function(done){
+        MockEngine.current._written = [];
+        client._memorize({ op: 'set', to: 'presence:/foo/bar', value: 'online' });
+        client._memorize({ op: 'set', to: 'presence:/foo/bar2', value: 'offline' });
+        client.configure({ accountName: 'foo', userId: 123, userType: 2 });
+        client.alloc('test', function() {
+          assert.equal(MockEngine.current._written.length, 2);
+          assert.ok(MockEngine.current._written.some(function(message) {
+            return (message.op == 'set' &&
+              message.to == 'presence:/foo/bar' &&
+              message.value == 'online');
+          }));
+          assert.ok(MockEngine.current._written.some(function(message) {
+            return (message.op == 'set' &&
+              message.to == 'presence:/foo/bar2' &&
+              message.value == 'offline');
+          }));
+          done();
+        });
+      },
+      'restore subscriptions' : function(done){
+        MockEngine.current._written = [];
+        client._memorize({ op: 'subscribe', to: 'status:/foo/bar' });
+        client._memorize({ op: 'subscribe', to: 'message:/foo/bar2' });
+        client.configure({ accountName: 'foo', userId: 123, userType: 2 });
+        client.alloc('test', function() {
+          assert.equal(MockEngine.current._written.length, 2);
+          assert.ok(MockEngine.current._written.some(function(message) {
+            return (message.op == 'subscribe' &&
+              message.to == 'status:/foo/bar');
+          }));
+          assert.ok(MockEngine.current._written.some(function(message) {
+            return (message.op == 'subscribe' &&
+              message.to == 'message:/foo/bar2');
+          }));
+          done();
+        });
+      },
+    },
     '._write': {
       'should emit an authenticateMessage event': function() {
         var called = false,
