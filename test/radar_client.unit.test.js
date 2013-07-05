@@ -328,7 +328,88 @@ exports.RadarClient = {
     }
   },
 
+
   'internal methods': {
+    '_memorize' : {
+      'memorizing a sync/subscribe should work': function(done) {
+        assert.equal(0, Object.keys(client.subscriptions).length);
+        client._memorize({ op: 'subscribe', to: 'foo'});
+        assert.equal(1, Object.keys(client.subscriptions).length);
+
+        client._memorize({ op: 'sync', to: 'bar'});
+        assert.equal(2, Object.keys(client.subscriptions).length);
+
+        client._memorize({ op: 'get', to: 'bar' });
+        // should be a no-op
+        assert.equal(2, Object.keys(client.subscriptions).length);
+
+        done();
+      },
+
+      'memorizing a set(online) and unmemorizing a set(offline) should work': function(done) {
+        assert.equal(0, Object.keys(client.presences).length);
+        client._memorize({ op: 'set', to: 'presence:/foo/bar', value: 'online' });
+        assert.equal('online', client.presences['presence:/foo/bar']);
+        assert.equal(1, Object.keys(client.presences).length);
+        // duplicate should be ignored
+        client._memorize({ op: 'set', to: 'presence:/foo/bar', value: 'online' });
+        assert.equal(1, Object.keys(client.presences).length);
+
+        client._memorize({ op: 'set', to: 'presence:/foo/bar', value: 'offline' });
+        assert.equal(1, Object.keys(client.presences).length);
+        assert.equal('offline', client.presences['presence:/foo/bar']);
+        done();
+      },
+
+      'memorizing a unsubscribe should remove any sync/subscribe': function(done) {
+        // set up
+        client._memorize({ op: 'subscribe', to: 'foo'});
+        client._memorize({ op: 'sync', to: 'bar'});
+        assert.equal(2, Object.keys(client.subscriptions).length);
+        // unsubscribe
+        client._memorize({ op: 'unsubscribe', to: 'foo'});
+        assert.equal(1, Object.keys(client.subscriptions).length);
+        client._memorize({ op: 'unsubscribe', to: 'bar'});
+        assert.equal(0, Object.keys(client.subscriptions).length);
+        done();
+      },
+
+      'duplicated subscribes and syncs should only be stored once and sync is more important than subscribe': function(done) {
+        // simple duplicates
+        client._memorize({ op: 'subscribe', to: 'foo'});
+        assert.equal(1, Object.keys(client.subscriptions).length);
+        client._memorize({ op: 'subscribe', to: 'foo'});
+        assert.equal(1, Object.keys(client.subscriptions).length);
+
+
+        client.subscriptions = {};
+        // simple duplicates
+        client._memorize({ op: 'sync', to: 'abc'});
+        assert.equal(1, Object.keys(client.subscriptions).length);
+        client._memorize({ op: 'sync', to: 'abc'});
+        assert.equal(1, Object.keys(client.subscriptions).length);
+
+        client.subscriptions = {};
+        // sync after subscribe
+        client._memorize({ op: 'sync', to: 'bar'});
+        assert.equal(1, Object.keys(client.subscriptions).length);
+        client._memorize({ op: 'sync', to: 'bar'});
+        assert.equal(1, Object.keys(client.subscriptions).length);
+        assert.equal('sync', client.subscriptions['bar']);
+
+        client.subscriptions = {};
+        // subscribe after sync
+        client._memorize({ op: 'sync', to: 'baz'});
+        assert.equal(1, Object.keys(client.subscriptions).length);
+        assert.equal('sync', client.subscriptions['baz']);
+        // if we sync and subscribe, it means just sync
+        client._memorize({ op: 'subscribe', to: 'baz'});
+        assert.equal(1, Object.keys(client.subscriptions).length);
+        assert.equal('sync', client.subscriptions['baz']);
+
+        done();
+      }
+    },
     '._write': {
       'should emit an authenticateMessage event': function() {
         var called = false,
