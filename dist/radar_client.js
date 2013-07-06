@@ -275,6 +275,11 @@ Client.prototype._createManager = function() {
     // can be overridden in order to establish an authentication protocol
     manager.activate();
   });
+
+  manager.on('disconnect', function(){
+    client.restoring = false;
+    client.waitCounter = 0;
+  });
 };
 
 //Memorize subscriptions and presence states
