@@ -45,6 +45,10 @@ function Client(backend) {
   this._ackCounter = 1;
   this._channelSyncTimes = {};
   this._users = {};
+  this.presences = {};
+  this.subscriptions= {};
+  this.waitCounter = 0;
+  this.restoring = false;
 
   // allow backend substitution for tests
   this.backend = backend || eio;
@@ -246,14 +250,24 @@ Client.prototype._createManager = function() {
   });
 
   manager.on('activate', function() {
-    client.emit('ready');
-    if (client._queuedMessages && client._queuedMessages.length) {
-      eachSlice(client._queuedMessages, 1, function(messages) {
-        setTimeout(function() {
-          client._write(messages[0]);
-        }, 1);
+    if(client.restoring == false) {//Restore only if not already restoring
+      client.restoring = true;
+      client._restore(function restore_done() {
+        function sendQueuedMessage(msg) {
+            setTimeout(function(){
+              client._write(msg);
+            },1);
+        }
+        //Presences and subscriptions are restored, now send queued messages
+        if (client._queuedMessages && client._queuedMessages.length) {
+          for(var i=0; i<client._queuedMessages.length; i++) {
+            sendQueuedMessage(client._queuedMessages[i]);
+          }
+          client._queuedMessages = [];
+        }
+        client.restoring = false;
+        client.emit('ready');
       });
-      client._queuedMessages = [];
     }
   });
 
@@ -263,7 +277,75 @@ Client.prototype._createManager = function() {
   });
 };
 
+//Memorize subscriptions and presence states
+Client.prototype._memorize = function(message) {
+  switch(message.op) {
+    case 'unsubscribe':
+      // remove from queue
+      if(this.subscriptions[message.to]) {
+        delete this.subscriptions[message.to];
+      }
+      break;
+    case 'sync':
+    case 'subscribe':
+      if(this.subscriptions[message.to] != 'sync') {
+        this.subscriptions[message.to] = message.op;
+      }
+      break;
+    case 'set':
+      if (message.to.substr(0, 'presence:/'.length) == 'presence:/') {
+        this.presences[message.to] = message.value;
+      }
+      break;
+  }
+};
+
+Client.prototype._restore = function(done) {
+  var client = this, total = 0, to, message;
+
+  function ack() {
+    client.waitCounter--;
+    if(client.waitCounter === 0) {
+      done();
+    }
+  }
+
+  function restoreSubscription(to){
+    var item = client.subscriptions[to];
+    client.waitCounter++;
+    total++;
+    setTimeout(function() {
+      client[item](to, ack);
+    }, 1);
+  }
+
+  function restorePresence(to){
+    client.waitCounter++;
+    total++;
+    setTimeout(function() {
+      client.set(to, client.presences[to], ack);
+    }, 1);
+  }
+
+
+  log.info('restore-subscriptions');
+  for (to in client.subscriptions) {
+    if (!client.subscriptions.hasOwnProperty(to)) { continue; }
+    restoreSubscription(to);
+  }
+
+  for (to in client.presences) {
+    if (!client.presences.hasOwnProperty(to)) { continue; }
+    restorePresence(to);
+  }
+  // if we didn't do anything, just trigger done()
+  if(total === 0) {
+    done();
+  }
+};
+
 Client.prototype._sendMessage = function(message) {
+  this._memorize(message);
   if (this._socket && this.manager.is('activated')) {
     this._socket.sendPacket('message', JSON.stringify(message));
   } else if (this._isConfigured) {
@@ -296,19 +378,6 @@ Client.prototype._messageReceived = function (msg) {
 };
 
 Client.setBackend = function(lib) { eio = lib; };
-
-function eachSlice(array, size, callback) {
-  var slice, begin = 0, end = size, length = array.length;
-
-   while (begin < length) {
-    slice = array.slice(begin, end);
-    if (false === callback.call(array, slice, begin, end)) {
-      return;
-    }
-    begin = end;
-    end += size;
-  }
-}
 
 module.exports = Client;
 },
