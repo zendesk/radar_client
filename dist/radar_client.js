@@ -45,10 +45,10 @@ function Client(backend) {
   this._ackCounter = 1;
   this._channelSyncTimes = {};
   this._users = {};
-  this.presences = {};
-  this.subscriptions= {};
-  this.waitCounter = 0;
-  this.restoring = false;
+  this._presences = {};
+  this._subscriptions= {};
+  this._waitCounter = 0;
+  this._restoring = false;
 
   // allow backend substitution for tests
   this.backend = backend || eio;
@@ -250,22 +250,11 @@ Client.prototype._createManager = function() {
   });
 
   manager.on('activate', function() {
-    if(client.restoring == false) {//Restore only if not already restoring
-      client.restoring = true;
+    if(client._restoring == false) {//Restore only if not already restoring
+      client._restoring = true;
       client._restore(function restore_done() {
-        function sendQueuedMessage(msg) {
-            setTimeout(function(){
-              client._write(msg);
-            },1);
-        }
-        //Presences and subscriptions are restored, now send queued messages
-        if (client._queuedMessages && client._queuedMessages.length) {
-          for(var i=0; i<client._queuedMessages.length; i++) {
-            sendQueuedMessage(client._queuedMessages[i]);
-          }
-          client._queuedMessages = [];
-        }
-        client.restoring = false;
+        client._sendQueuedMessages();
+        client._restoring = false;
         client.emit('ready');
       });
     }
@@ -277,9 +266,25 @@ Client.prototype._createManager = function() {
   });
 
   manager.on('disconnect', function(){
-    client.restoring = false;
-    client.waitCounter = 0;
+    client._restoring = false;
+    client._waitCounter = 0;
   });
+};
+
+Client.prototype._sendQueuedMessages = function(){
+  var client = this;
+  function setupDelivery(msg) {
+    setTimeout(function(){
+      client._write(msg);
+    },1);
+  }
+  //Presences and subscriptions are restored, now send queued messages
+  if (client._queuedMessages && client._queuedMessages.length) {
+    for(var i=0; i<client._queuedMessages.length; i++) {
+      setupDelivery(client._queuedMessages[i]);
+    }
+    client._queuedMessages = [];
+  }
 };
 
 //Memorize subscriptions and presence states
@@ -287,19 +292,19 @@ Client.prototype._memorize = function(message) {
   switch(message.op) {
     case 'unsubscribe':
       // remove from queue
-      if(this.subscriptions[message.to]) {
-        delete this.subscriptions[message.to];
+      if(this._subscriptions[message.to]) {
+        delete this._subscriptions[message.to];
       }
       break;
     case 'sync':
     case 'subscribe':
-      if(this.subscriptions[message.to] != 'sync') {
-        this.subscriptions[message.to] = message.op;
+      if(this._subscriptions[message.to] != 'sync') {
+        this._subscriptions[message.to] = message.op;
       }
       break;
     case 'set':
       if (message.to.substr(0, 'presence:/'.length) == 'presence:/') {
-        this.presences[message.to] = message.value;
+        this._presences[message.to] = message.value;
       }
       break;
   }
@@ -309,15 +314,15 @@ Client.prototype._restore = function(done) {
   var client = this, total = 0, to, message;
 
   function ack() {
-    client.waitCounter--;
-    if(client.waitCounter === 0) {
+    client._waitCounter--;
+    if(client._waitCounter === 0) {
       done();
     }
   }
 
   function restoreSubscription(to){
-    var item = client.subscriptions[to];
-    client.waitCounter++;
+    var item = client._subscriptions[to];
+    client._waitCounter++;
     total++;
     setTimeout(function() {
       client[item](to, ack);
@@ -325,22 +330,22 @@ Client.prototype._restore = function(done) {
   }
 
   function restorePresence(to){
-    client.waitCounter++;
+    client._waitCounter++;
     total++;
     setTimeout(function() {
-      client.set(to, client.presences[to], ack);
+      client.set(to, client._presences[to], ack);
     }, 1);
   }
 
 
   log.info('restore-subscriptions');
-  for (to in client.subscriptions) {
-    if (!client.subscriptions.hasOwnProperty(to)) { continue; }
+  for (to in client._subscriptions) {
+    if (!client._subscriptions.hasOwnProperty(to)) { continue; }
     restoreSubscription(to);
   }
 
-  for (to in client.presences) {
-    if (!client.presences.hasOwnProperty(to)) { continue; }
+  for (to in client._presences) {
+    if (!client._presences.hasOwnProperty(to)) { continue; }
     restorePresence(to);
   }
   // if we didn't do anything, just trigger done()
