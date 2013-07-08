@@ -45,6 +45,10 @@ function Client(backend) {
   this._ackCounter = 1;
   this._channelSyncTimes = {};
   this._users = {};
+  this._presences = {};
+  this._subscriptions= {};
+  this._waitCounter = 0;
+  this._restoring = false;
 
   // allow backend substitution for tests
   this.backend = backend || eio;
@@ -246,14 +250,13 @@ Client.prototype._createManager = function() {
   });
 
   manager.on('activate', function() {
-    client.emit('ready');
-    if (client._queuedMessages && client._queuedMessages.length) {
-      eachSlice(client._queuedMessages, 1, function(messages) {
-        setTimeout(function() {
-          client._write(messages[0]);
-        }, 1);
+    if(client._restoring == false) {//Restore only if not already restoring
+      client._restoring = true;
+      client._restore(function restore_done() {
+        client._sendQueuedMessages();
+        client._restoring = false;
+        client.emit('ready');
       });
-      client._queuedMessages = [];
     }
   });
 
@@ -261,9 +264,98 @@ Client.prototype._createManager = function() {
     // can be overridden in order to establish an authentication protocol
     manager.activate();
   });
+
+  manager.on('disconnect', function(){
+    client._restoring = false;
+    client._waitCounter = 0;
+  });
+};
+
+Client.prototype._sendQueuedMessages = function(){
+  var client = this;
+  function setupDelivery(msg) {
+    setTimeout(function(){
+      client._write(msg);
+    },1);
+  }
+  //Presences and subscriptions are restored, now send queued messages
+  if (client._queuedMessages && client._queuedMessages.length) {
+    for(var i=0; i<client._queuedMessages.length; i++) {
+      setupDelivery(client._queuedMessages[i]);
+    }
+    client._queuedMessages = [];
+  }
+};
+
+//Memorize subscriptions and presence states
+Client.prototype._memorize = function(message) {
+  switch(message.op) {
+    case 'unsubscribe':
+      // remove from queue
+      if(this._subscriptions[message.to]) {
+        delete this._subscriptions[message.to];
+      }
+      break;
+    case 'sync':
+    case 'subscribe':
+      if(this._subscriptions[message.to] != 'sync') {
+        this._subscriptions[message.to] = message.op;
+      }
+      break;
+    case 'set':
+      if (message.to.substr(0, 'presence:/'.length) == 'presence:/') {
+        this._presences[message.to] = message.value;
+      }
+      break;
+  }
+};
+
+Client.prototype._restore = function(done) {
+  var client = this, total = 0, to, message;
+
+  function ack() {
+    client._waitCounter--;
+    if(client._waitCounter === 0) {
+      done();
+    }
+  }
+
+  function restoreSubscription(to){
+    var item = client._subscriptions[to];
+    client._waitCounter++;
+    total++;
+    setTimeout(function() {
+      client[item](to, ack);
+    }, 1);
+  }
+
+  function restorePresence(to){
+    client._waitCounter++;
+    total++;
+    setTimeout(function() {
+      client.set(to, client._presences[to], ack);
+    }, 1);
+  }
+
+
+  log.info('restore-subscriptions');
+  for (to in client._subscriptions) {
+    if (!client._subscriptions.hasOwnProperty(to)) { continue; }
+    restoreSubscription(to);
+  }
+
+  for (to in client._presences) {
+    if (!client._presences.hasOwnProperty(to)) { continue; }
+    restorePresence(to);
+  }
+  // if we didn't do anything, just trigger done()
+  if(total === 0) {
+    done();
+  }
 };
 
 Client.prototype._sendMessage = function(message) {
+  this._memorize(message);
   if (this._socket && this.manager.is('activated')) {
     this._socket.sendPacket('message', JSON.stringify(message));
   } else if (this._isConfigured) {
@@ -296,19 +388,6 @@ Client.prototype._messageReceived = function (msg) {
 };
 
 Client.setBackend = function(lib) { eio = lib; };
-
-function eachSlice(array, size, callback) {
-  var slice, begin = 0, end = size, length = array.length;
-
-   while (begin < length) {
-    slice = array.slice(begin, end);
-    if (false === callback.call(array, slice, begin, end)) {
-      return;
-    }
-    begin = end;
-    end += size;
-  }
-}
 
 module.exports = Client;
 },
