@@ -452,14 +452,14 @@ function create() {
         this.emit(event, arguments);
       },
 
-      onstate: function(state, from, to) {
-        log.debug('state-' + state + ', from: ' + from + ', to: ' + to, Array.prototype.slice.call(arguments));
+      onstate: function(event, from, to) {
+        log.debug('event-state-' + event + ', from: ' + from + ', to: ' + to, Array.prototype.slice.call(arguments));
 
-        this.emit('enterState', state);
-        this.emit(state, arguments);
+        this.emit('enterState', to);
+        this.emit(to, arguments);
       },
 
-      onconnect: function() {
+      onconnecting: function() {
         this.startGuard();
       },
 
@@ -469,10 +469,18 @@ function create() {
         this.authenticate();
       },
 
-      ondisconnect: function(event, from, to) {
+      ondisconnected: function(event, from, to) {
         backoff.increment();
-        setTimeout(function() {
-          machine.connect();
+
+        if (this._timer) {
+          clearTimeout(this._timer);
+        }
+
+        this._timer = setTimeout(function() {
+          this._timer = 0;
+          if (machine.is('disconnected')) {
+            machine.connect();
+          }
         }, backoff.get());
 
         if (backoff.isUnavailable()) {
@@ -504,7 +512,7 @@ function create() {
 
   machine.startGuard = function() {
     machine._guard = setTimeout(function() {
-      machine.disconnect(false);
+      machine.disconnect();
     }, machine.guardDelay());
   };
 
@@ -520,7 +528,7 @@ function create() {
   };
 
   machine.connectWhenAble = function() {
-    if (!this.is('connected')) {
+    if (!this.is('connected') && !this.is('activated')) {
       if (this.can('connect')) {
         this.connect();
       } else {
