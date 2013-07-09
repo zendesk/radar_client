@@ -625,7 +625,7 @@ exports.RadarClient = {
 
             client._createManager();
 
-            client.manager.close = function() {
+            client.manager.disconnect = function() {
               called = true;
             };
 

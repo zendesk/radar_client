@@ -23,15 +23,36 @@ exports['given a state machine'] = {
     assert.ok(connecting);
   },
 
-  'if the user calls disconnect, emit disconnected and do not reconnect': function() {
-    machine.disconnect(true);
-    assert.ok(machine.is('disconnected'));
+  'if the user calls disconnect the machine will reconnect after a delay': function(done) {
+    this.timeout(4000);
+    machine.open();
+    machine.connect();
+    assert.ok(machine.is('connecting'));
+    machine.once('connect', function() {
+      machine.close();
+      done();
+    });
+    machine.disconnect();
   },
 
-  'the first connection should emit connected, after disconnected it should automatically reconnect and emit reconnected': function() {
+  'the first connection should begin connecting, after disconnected it should automatically reconnect': function(done) {
+    this.timeout(4000);
+    machine.open();
     machine.connect();
-    machine.disconnect();
     assert.ok(machine.is('connecting'));
+
+    var disconnected = false;
+
+    machine.once('disconnected', function() {
+      disconnected = true;
+    });
+
+    machine.once('connect', function() {
+      assert.ok(disconnected);
+      done();
+    });
+
+    machine.disconnect();
   },
 
   'connections that hang should be detected after 7 seconds': function(done) {
@@ -46,19 +67,25 @@ exports['given a state machine'] = {
   },
 
   'connections that fail should cause exponential backoff, finally emit unavailable': function(done) {
+    this.timeout(100000);
+
     var available = true, tries = 10;
+
+    machine.open();
 
     machine.on('unavailable', function() {
       available = false;
       done();
     });
 
+    machine.on('connecting', function() {
+      if (available && --tries) {
+        machine.disconnect();
+      }
+    });
+
     machine.connect();
 
-    while (available && --tries) {
-      machine.disconnect();
-      assert.ok(machine.is('connecting'));
-    }
   }
 };
 

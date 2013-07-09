@@ -241,16 +241,23 @@ Client.prototype._createManager = function() {
     });
 
     socket.once('close', function() {
-      manager.close();
+      if (!manager.is('closed')) {
+        manager.disconnect();
+      }
     });
 
     socket.on('message', function(message) {
       client._messageReceived(message);
     });
+
+    manager.removeAllListeners('close');
+    manager.once('close', function() {
+      socket.close();
+    });
   });
 
   manager.on('activate', function() {
-    if(client._restoring == false) {//Restore only if not already restoring
+    if(!client._restoring) {//Restore only if not already restoring
       client._restoring = true;
       client._restore(function restore_done() {
         client._sendQueuedMessages();
@@ -265,13 +272,13 @@ Client.prototype._createManager = function() {
     manager.activate();
   });
 
-  manager.on('disconnect', function(){
+  manager.on('disconnect', function() {
     client._restoring = false;
     client._waitCounter = 0;
   });
 };
 
-Client.prototype._sendQueuedMessages = function(){
+Client.prototype._sendQueuedMessages = function() {
   var client = this;
   function setupDelivery(msg) {
     setTimeout(function(){
@@ -462,19 +469,15 @@ function create() {
         this.authenticate();
       },
 
-      ondisconnect: function(event, from, to, permanent) {
-        if (!permanent) {
-          backoff.increment();
-          this.connect();
-        }
+      ondisconnect: function(event, from, to) {
+        backoff.increment();
+        setTimeout(function() {
+          machine.connect();
+        }, backoff.get());
 
         if (backoff.isUnavailable()) {
           this.emit('unavailable');
         }
-      },
-
-      onclose: function(event, from, to, socketClosed) {
-        this.emit('close');
       }
     }
   });

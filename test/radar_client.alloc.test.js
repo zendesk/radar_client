@@ -56,7 +56,7 @@ exports['given an instance of Radar client'] = {
     client.alloc('foo', onAlloc);
     setTimeout(function() {
       assert.ok(client.manager.is('activated')); // = Ready state
-      assert.equal(readyCount, 3);
+      assert.equal(readyCount, 1);
       assert.equal(allocDoneCount, 1);
       // if the connect code would trigger, then these would
       // not run the on('ready') action immediately.
@@ -66,7 +66,7 @@ exports['given an instance of Radar client'] = {
       client.alloc('foo');
       client.alloc('foo', onAlloc);
       client.alloc('foo');
-      assert.equal(readyCount, 6);
+      assert.equal(readyCount, 4);
       assert.equal(allocDoneCount, 2);
       done();
     }, 10);
