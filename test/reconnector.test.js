@@ -25,7 +25,7 @@ exports['given a reconnector'] = {
   'memorizing a set(online) and unmemorizing a set(offline) should work': function(done) {
     assert.equal(0, Object.keys(this.reconnector.presences).length);
     this.reconnector.memorize({ op: 'set', to: 'presence:/foo/bar', value: 'online' });
-    assert.equal('online', this.reconnector.presences['presence:/foo/bar']);
+    assert.equal('online', this.reconnector.presences['presence:/foo/bar'].value);
     assert.equal(1, Object.keys(this.reconnector.presences).length);
     // duplicate should be ignored
     this.reconnector.memorize({ op: 'set', to: 'presence:/foo/bar', value: 'online' });
@@ -33,7 +33,7 @@ exports['given a reconnector'] = {
 
     this.reconnector.memorize({ op: 'set', to: 'presence:/foo/bar', value: 'offline' });
     assert.equal(1, Object.keys(this.reconnector.presences).length);
-    assert.equal('offline', this.reconnector.presences['presence:/foo/bar']);
+    assert.equal('offline', this.reconnector.presences['presence:/foo/bar'].value);
     done();
   },
 
@@ -84,9 +84,47 @@ exports['given a reconnector'] = {
     assert.equal('sync', this.reconnector.subscriptions['baz']);
 
     done();
-  }
+  },
 
   // restore tests are best written as full client tests since there is a lot going on (server side, client side...)
+  'restore must discard old presence offline sets': function(done){
+    this.reconnector.client = {};
+    var total = 0;
+    this.reconnector.client.set = function(to, value, ack){
+      total++;
+      if(to == 'presence:/foo/bar1'){
+        assert.equal(value, 'online');
+      }else if(to =='presence:/foo/bar2'){
+        assert.equal(value, 'offline');
+      }else if(to =='presence:/foo/bar3') {
+        assert.ok(false);
+      }
+    };
+
+    this.reconnector.memorize({ op: 'set', to: 'presence:/foo/bar1', value: 'online' });
+    this.reconnector.memorize({ op: 'set', to: 'presence:/foo/bar3', value: 'offline' });
+    this.reconnector.presences['presence:/foo/bar3'].time = new Date().getTime()/1000 - 200;
+    this.reconnector.memorize({ op: 'set', to: 'presence:/foo/bar2', value: 'offline' });
+
+
+    this.reconnector.restore();
+    setTimeout(function() {
+      assert.equal(total, 2);
+      done();
+    }, 10);
+  },
+
+  'queue must not queue memorized messages': function(done){
+    this.reconnector.queue({ op: 'set', to: 'presence:/foo/bar1', value: 'online' });
+    this.reconnector.queue({ op: 'sync', to: 'abc' });
+    this.reconnector.queue({ op: 'subscribe', to: 'def'});
+    this.reconnector.queue({ op: 'unsubscribe', to: 'ghi'});
+    this.reconnector.queue({ op: 'get', to: 'status:/foo/bar1'});
+
+    assert.equal(this.reconnector.mqueue.length, 1);
+    assert.equal(this.reconnector.mqueue[0].op, 'get');
+    done();
+  }
 
 };
 
