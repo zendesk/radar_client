@@ -58,8 +58,7 @@ exports['given a state machine'] = {
   'connections that hang should be detected after 7 seconds': function(done) {
     this.timeout(10000);
 
-    machine.disconnect = function(permanent) {
-      assert.equal(permanent, false);
+    machine.disconnect = function() {
       done();
     };
 
