@@ -474,10 +474,11 @@ function create() {
 
         if (this._timer) {
           clearTimeout(this._timer);
+          this._timer = null;
         }
 
         this._timer = setTimeout(function() {
-          this._timer = 0;
+          this._timer = null;
           if (machine.is('disconnected')) {
             machine.connect();
           }
@@ -528,7 +529,7 @@ function create() {
   };
 
   machine.connectWhenAble = function() {
-    if (!this.is('connected') && !this.is('activated')) {
+    if (!(this.is('connected') || this.is('activated'))) {
       if (this.can('connect')) {
         this.connect();
       } else {
