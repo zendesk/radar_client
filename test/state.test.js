@@ -8,19 +8,23 @@ exports['given a state machine'] = {
     machine = StateMachine.create();
   },
 
-  'calling start twice should not cause two connections': function() {
+  'calling start twice should not cause two connections': function(done) {
     var connecting = false;
 
     machine.on('connect', function() {
-      if (connecting) {
-        assert.ok(false);
-      } else {
-        connecting = true;
-      }
+      assert.ok(!connecting);
+      connecting = true;
     });
     machine.start();
-    machine.start();
-    assert.ok(connecting);
+    assert.ok(machine.is('connecting'));
+    machine.on('established', function() {
+      assert.ok(machine.is('authenticating'));
+      machine.activate();
+      machine.start();
+      assert.ok(machine.is('activated'));
+      done();
+    });
+    machine.established();
   },
 
   'if the user calls disconnect the machine will reconnect after a delay': function(done) {

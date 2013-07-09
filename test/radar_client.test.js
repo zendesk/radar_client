@@ -47,6 +47,118 @@ exports['before connecting'] = {
 
 };
 
+exports['after reconnecting'] = {
+  before: function() {
+    RadarClient.setBackend(MockEngine);
+  },
+
+  after: function() {
+    RadarClient.setBackend({});
+  },
+
+  beforeEach: function(done) {
+    client = new RadarClient();
+    client.configure({ accountName: 'test', userId: 123, userType: 2 });
+    client.alloc('channel', done);
+  },
+
+  afterEach: function() {
+    MockEngine.current._written = [];
+  },
+
+  'should send queued messages': function(done) {
+    var connected = false;
+
+    client.once('connect', function() {
+      connected = true;
+      assert.equal(MockEngine.current._written.length, 0);
+      assert.equal(client._queuedMessages.length, 1);
+      assert.deepEqual(client._queuedMessages[0], {
+        op: 'set',
+        to: 'presence:/test/tickets/21',
+        value: 'online',
+        key: 123,
+        type: 2
+      });
+    });
+
+    client.once('ready', function() {
+      assert.ok(connected);
+      assert.equal(client._queuedMessages.length, 0);
+      assert.ok(
+        MockEngine.current._written.some(function(message) {
+          return message.op == 'set' &&
+            message.to == 'presence:/test/tickets/21' &&
+            message.value == 'online';
+        })
+      );
+      done();
+    });
+
+    client.manager.disconnect();
+    assert.equal(client.currentState(), 'disconnected');
+    client.presence('tickets/21').set('online');
+    assert.equal(client.currentState(), 'connecting');
+  },
+
+  'should resend queued presences': function(done) {
+    this.timeout(4000);
+    var connected = false;
+
+    client.presence('tickets/21').set('online');
+
+    client.once('connect', function() {
+      connected = true;
+      assert.equal(Object.keys(client._presences).length, 1);
+      assert.equal(client._presences['presence:/test/tickets/21'], 'online');
+    });
+
+    client.once('ready', function() {
+      assert.ok(connected);
+      assert.equal(Object.keys(client._presences).length, 1);
+      assert.ok(
+        MockEngine.current._written.some(function(message) {
+          return message.op == 'set' &&
+            message.to == 'presence:/test/tickets/21' &&
+            message.value == 'online';
+        })
+      );
+      done();
+    });
+
+    client.manager.disconnect();
+    assert.equal(client.currentState(), 'disconnected');
+  },
+
+  'should resend queued subscriptions': function(done) {
+    this.timeout(4000);
+    var connected = false;
+
+    client.presence('tickets/21').subscribe();
+
+    client.once('connect', function() {
+      connected = true;
+      assert.equal(Object.keys(client._subscriptions).length, 1);
+      assert.equal(client._subscriptions['presence:/test/tickets/21'], 'subscribe');
+    });
+
+    client.once('ready', function() {
+      assert.ok(connected);
+      assert.equal(Object.keys(client._subscriptions).length, 1);
+      assert.ok(
+        MockEngine.current._written.some(function(message) {
+          return message.op == 'subscribe' &&
+            message.to == 'presence:/test/tickets/21';
+        })
+      );
+      done();
+    });
+
+    client.manager.disconnect();
+    assert.equal(client.currentState(), 'disconnected');
+  }
+};
+
 exports['given a new presence'] = {
   beforeEach: function(done) {
     client = new RadarClient(MockEngine).configure({ userId: 123, accountName: 'dev' })
