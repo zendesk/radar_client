@@ -24,10 +24,10 @@ exports['given an instance of Radar client'] = {
     client.configure({ userId: 123, accountName: 'dev' });
     client.status('test/foo').set('bar');
 
-    setTimeout(function() {
+    client.on('ready', function() {
       assert.equal(MockEngine.current._written.length, 1);
       done();
-    }, 10);
+    });
   },
 
   'alloc calls perform a connect if not connected': function(done) {

@@ -32,8 +32,10 @@ var current = new Socket();
 
 function wrap() {
   current.removeAllListeners();
+  current._opened = false;
   setTimeout(function() {
     current.emit('open');
+    current._opened = true;
   }, 5);
   return current;
 }

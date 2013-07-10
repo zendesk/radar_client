@@ -395,34 +395,27 @@ exports.RadarClient = {
         assert.equal(1, Object.keys(client._subscriptions).length);
         client._memorize({ op: 'sync', to: 'bar'});
         assert.equal(1, Object.keys(client._subscriptions).length);
-        assert.equal('sync', client._subscriptions['bar']);
+        assert.equal('sync', client._subscriptions.bar);
 
         client._subscriptions = {};
         // subscribe after sync
         client._memorize({ op: 'sync', to: 'baz'});
         assert.equal(1, Object.keys(client._subscriptions).length);
-        assert.equal('sync', client._subscriptions['baz']);
+        assert.equal('sync', client._subscriptions.baz);
         // if we sync and subscribe, it means just sync
         client._memorize({ op: 'subscribe', to: 'baz'});
         assert.equal(1, Object.keys(client._subscriptions).length);
-        assert.equal('sync', client._subscriptions['baz']);
+        assert.equal('sync', client._subscriptions.baz);
 
         done();
       }
     },
     '_restore' : {
-      'if nothing to restore, callback immediately' : function(done) {
-        assert.equal(0, Object.keys(client._presences).length);
-        assert.equal(0, Object.keys(client._subscriptions).length);
-        client._restore(function() {
-          assert.equal(MockEngine.current._written.length, 0);
-          done();
-        });
-      },
       'restore presences' : function(done){
         MockEngine.current._written = [];
         client._memorize({ op: 'set', to: 'presence:/foo/bar', value: 'online' });
         client._memorize({ op: 'set', to: 'presence:/foo/bar2', value: 'offline' });
+        client._restoreRequired = true;
         client.configure({ accountName: 'foo', userId: 123, userType: 2 });
         client.alloc('test', function() {
           assert.equal(MockEngine.current._written.length, 2);
@@ -443,6 +436,7 @@ exports.RadarClient = {
         MockEngine.current._written = [];
         client._memorize({ op: 'subscribe', to: 'status:/foo/bar' });
         client._memorize({ op: 'subscribe', to: 'message:/foo/bar2' });
+        client._restoreRequired = true;
         client.configure({ accountName: 'foo', userId: 123, userType: 2 });
         client.alloc('test', function() {
           assert.equal(MockEngine.current._written.length, 2);
@@ -672,8 +666,10 @@ exports.RadarClient = {
                 called = 0;
 
             while (count < 10) {
-              client._queue({ test: count++ });
+              client._queuedMessages.push({ test: count++ });
             }
+
+            client._restoreRequired = true;
 
             client._write = function(message) {
               called += 1;
@@ -722,45 +718,19 @@ exports.RadarClient = {
       },
 
       'should queue the message if the client has been configured, but is not activated': function() {
-        var called = false,
-            message = { test: 1 };
+        var message = { test: 1 };
 
         client.configure({});
-
-        client._queue = function(msg) {
-          called = true;
-          assert.deepEqual(msg, message);
-        };
-
         client._sendMessage(message);
-        assert.ok(called);
+        assert.deepEqual(message, client._queuedMessages[0]);
       },
 
       'should ignore the message if the client has not been configured': function() {
-        var passed = true,
-            message = { test: 1 };
-
-        client._queue = function(msg) {
-          passed = false;
-        };
+        var message = { test: 1 };
 
         assert.ok(!client._isConfigured);
         client._sendMessage(message);
-        assert.ok(passed);
-      }
-    },
-
-    '._queue': {
-      'should push messages onto the front of a queue': function() {
-        var message1 = { test: 1 }, message2 = { test: 2 };
-
-        assert.equal(client._queuedMessages, undefined);
-
-        client._queue(message1);
-        client._queue(message2);
-
-        assert.deepEqual(client._queuedMessages[0], message2);
-        assert.deepEqual(client._queuedMessages[1], message1);
+        assert.equal(client._queuedMessages.length, 0);
       }
     },
 
