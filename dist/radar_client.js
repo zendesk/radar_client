@@ -328,7 +328,7 @@ Client.prototype._sendMessage = function(message) {
     this._socket.sendPacket('message', JSON.stringify(message));
   } else if (this._isConfigured) {
     this._restoreRequired = true;
-    this._queuedMessages.unshift(message);
+    this._queuedMessages.push(message);
     this.manager.connectWhenAble();
   }
 };
@@ -435,11 +435,11 @@ function create() {
 
         if (this._timer) {
           clearTimeout(this._timer);
-          this._timer = null;
+          delete this._timer;
         }
 
         this._timer = setTimeout(function() {
-          this._timer = null;
+          delete machine._timer;
           if (machine.is('disconnected')) {
             machine.connect();
           }
@@ -475,7 +475,7 @@ function create() {
   machine.startGuard = function() {
     machine._guard = setTimeout(function() {
       machine.disconnect();
-    }, machine.guardDelay());
+    }, 10000);
   };
 
   machine.cancelGuard = function() {
@@ -483,10 +483,6 @@ function create() {
       clearTimeout(machine._guard);
       delete machine._guard;
     }
-  };
-
-  machine.guardDelay = function() {
-    return backoff.get() + 6000;
   };
 
   machine.connectWhenAble = function() {

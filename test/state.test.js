@@ -59,8 +59,8 @@ exports['given a state machine'] = {
     machine.disconnect();
   },
 
-  'connections that hang should be detected after 7 seconds': function(done) {
-    this.timeout(10000);
+  'connections that hang should be detected after 10 seconds': function(done) {
+    this.timeout(14000);
 
     machine.disconnect = function() {
       done();
@@ -70,7 +70,7 @@ exports['given a state machine'] = {
   },
 
   'connections that fail should cause exponential backoff, finally emit unavailable': function(done) {
-    this.timeout(100000);
+    this.timeout(65000);
 
     var available = true, tries = 10;
 
