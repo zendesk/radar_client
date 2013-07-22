@@ -24,11 +24,10 @@ exports['given an instance of Radar client'] = {
     client.configure({ userId: 123, accountName: 'dev' });
     client.status('test/foo').set('bar');
 
-    setTimeout(function() {
-      console.log(MockEngine.current._written);
+    client.on('ready', function() {
       assert.equal(MockEngine.current._written.length, 1);
       done();
-    }, 10);
+    });
   },
 
   'alloc calls perform a connect if not connected': function(done) {
@@ -56,7 +55,7 @@ exports['given an instance of Radar client'] = {
     client.alloc('foo', onAlloc);
     setTimeout(function() {
       assert.ok(client.manager.is('activated')); // = Ready state
-      assert.equal(readyCount, 3);
+      assert.equal(readyCount, 1);
       assert.equal(allocDoneCount, 1);
       // if the connect code would trigger, then these would
       // not run the on('ready') action immediately.
@@ -66,7 +65,7 @@ exports['given an instance of Radar client'] = {
       client.alloc('foo');
       client.alloc('foo', onAlloc);
       client.alloc('foo');
-      assert.equal(readyCount, 6);
+      assert.equal(readyCount, 4);
       assert.equal(allocDoneCount, 2);
       done();
     }, 10);

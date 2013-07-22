@@ -46,9 +46,10 @@ function Client(backend) {
   this._channelSyncTimes = {};
   this._users = {};
   this._presences = {};
-  this._subscriptions= {};
-  this._waitCounter = 0;
-  this._restoring = false;
+  this._subscriptions = {};
+  this._restoreRequired = false;
+  this._queuedMessages = [];
+  this._isConfigured = false;
 
   // allow backend substitution for tests
   this.backend = backend || eio;
@@ -109,7 +110,7 @@ Client.prototype.configure = function(hash) {
   var configuration = hash || this._configuration || { accountName: '', userId: 0, userType: 0 };
   configuration.userType = configuration.userType || 0;
   this._configuration = this._me = configuration;
-  this._isConfigured = !!hash;
+  this._isConfigured = this._isConfigured || !!hash;
   return this;
 };
 
@@ -241,23 +242,24 @@ Client.prototype._createManager = function() {
     });
 
     socket.once('close', function() {
-      manager.close();
+      if (!manager.is('closed')) {
+        manager.disconnect();
+      }
     });
 
     socket.on('message', function(message) {
       client._messageReceived(message);
     });
+
+    manager.removeAllListeners('close');
+    manager.once('close', function() {
+      socket.close();
+    });
   });
 
   manager.on('activate', function() {
-    if(client._restoring == false) {//Restore only if not already restoring
-      client._restoring = true;
-      client._restore(function restore_done() {
-        client._sendQueuedMessages();
-        client._restoring = false;
-        client.emit('ready');
-      });
-    }
+    client._restore();
+    client.emit('ready');
   });
 
   manager.on('authenticate', function() {
@@ -265,26 +267,9 @@ Client.prototype._createManager = function() {
     manager.activate();
   });
 
-  manager.on('disconnect', function(){
-    client._restoring = false;
-    client._waitCounter = 0;
+  manager.on('disconnect', function() {
+    client._restoreRequired = true;
   });
-};
-
-Client.prototype._sendQueuedMessages = function(){
-  var client = this;
-  function setupDelivery(msg) {
-    setTimeout(function(){
-      client._write(msg);
-    },1);
-  }
-  //Presences and subscriptions are restored, now send queued messages
-  if (client._queuedMessages && client._queuedMessages.length) {
-    for(var i=0; i<client._queuedMessages.length; i++) {
-      setupDelivery(client._queuedMessages[i]);
-    }
-    client._queuedMessages = [];
-  }
 };
 
 //Memorize subscriptions and presence states
@@ -310,63 +295,42 @@ Client.prototype._memorize = function(message) {
   }
 };
 
-Client.prototype._restore = function(done) {
-  var client = this, total = 0, to, message;
+Client.prototype._restore = function() {
+  var item, i, to, message;
+  if (this._restoreRequired) {
+    this._restoreRequired = false;
 
-  function ack() {
-    client._waitCounter--;
-    if(client._waitCounter === 0) {
-      done();
+    log.info('restore-subscriptions');
+
+    for (to in this._subscriptions) {
+      if (this._subscriptions.hasOwnProperty(to)) {
+        item = this._subscriptions[to];
+        this[item](to);
+      }
     }
-  }
 
-  function restoreSubscription(to){
-    var item = client._subscriptions[to];
-    client._waitCounter++;
-    total++;
-    setTimeout(function() {
-      client[item](to, ack);
-    }, 1);
-  }
+    for (to in this._presences) {
+      if (this._presences.hasOwnProperty(to)) {
+        this.set(to, this._presences[to]);
+      }
+    }
 
-  function restorePresence(to){
-    client._waitCounter++;
-    total++;
-    setTimeout(function() {
-      client.set(to, client._presences[to], ack);
-    }, 1);
-  }
-
-
-  log.info('restore-subscriptions');
-  for (to in client._subscriptions) {
-    if (!client._subscriptions.hasOwnProperty(to)) { continue; }
-    restoreSubscription(to);
-  }
-
-  for (to in client._presences) {
-    if (!client._presences.hasOwnProperty(to)) { continue; }
-    restorePresence(to);
-  }
-  // if we didn't do anything, just trigger done()
-  if(total === 0) {
-    done();
+    while (this._queuedMessages.length) {
+      this._write(this._queuedMessages.shift());
+    }
   }
 };
 
 Client.prototype._sendMessage = function(message) {
   this._memorize(message);
+
   if (this._socket && this.manager.is('activated')) {
     this._socket.sendPacket('message', JSON.stringify(message));
   } else if (this._isConfigured) {
-    this._queue(message);
+    this._restoreRequired = true;
+    this._queuedMessages.push(message);
     this.manager.connectWhenAble();
   }
-};
-
-Client.prototype._queue = function(message) {
-  this._queuedMessages = this._queuedMessages || [];
-  this._queuedMessages.unshift(message);
 };
 
 Client.prototype._messageReceived = function (msg) {
@@ -425,6 +389,10 @@ function create() {
 
     error: function(name, from ,to, args, type, message, err) {
       log.warn('state-machine-error', arguments);
+
+      if (err) {
+        throw err;
+      }
     },
 
     events: [
@@ -445,14 +413,14 @@ function create() {
         this.emit(event, arguments);
       },
 
-      onstate: function(state, from, to) {
-        log.debug('state-' + state + ', from: ' + from + ', to: ' + to, Array.prototype.slice.call(arguments));
+      onstate: function(event, from, to) {
+        log.debug('event-state-' + event + ', from: ' + from + ', to: ' + to, Array.prototype.slice.call(arguments));
 
-        this.emit('enterState', state);
-        this.emit(state, arguments);
+        this.emit('enterState', to);
+        this.emit(to, arguments);
       },
 
-      onconnect: function() {
+      onconnecting: function() {
         this.startGuard();
       },
 
@@ -462,19 +430,24 @@ function create() {
         this.authenticate();
       },
 
-      ondisconnect: function(event, from, to, permanent) {
-        if (!permanent) {
-          backoff.increment();
-          this.connect();
+      ondisconnected: function(event, from, to) {
+        backoff.increment();
+
+        if (this._timer) {
+          clearTimeout(this._timer);
+          delete this._timer;
         }
+
+        this._timer = setTimeout(function() {
+          delete machine._timer;
+          if (machine.is('disconnected')) {
+            machine.connect();
+          }
+        }, backoff.get());
 
         if (backoff.isUnavailable()) {
           this.emit('unavailable');
         }
-      },
-
-      onclose: function(event, from, to, socketClosed) {
-        this.emit('close');
       }
     }
   });
@@ -501,8 +474,8 @@ function create() {
 
   machine.startGuard = function() {
     machine._guard = setTimeout(function() {
-      machine.disconnect(false);
-    }, machine.guardDelay());
+      machine.disconnect();
+    }, 10000);
   };
 
   machine.cancelGuard = function() {
@@ -512,12 +485,8 @@ function create() {
     }
   };
 
-  machine.guardDelay = function() {
-    return backoff.get() + 6000;
-  };
-
   machine.connectWhenAble = function() {
-    if (!this.is('connected')) {
+    if (!(this.is('connected') || this.is('activated'))) {
       if (this.can('connect')) {
         this.connect();
       } else {
