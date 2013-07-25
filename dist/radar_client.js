@@ -83,7 +83,12 @@ Client.prototype.alloc = function(name, callback) {
     self._users.hasOwnProperty(name) && callback();
   });
 
-  this.manager.start();
+  if (this._isConfigured) {
+    this.manager.start();
+  } else {
+    this._waitingForConfigure = true;
+  }
+
   return this;
 };
 
@@ -111,6 +116,12 @@ Client.prototype.configure = function(hash) {
   configuration.userType = configuration.userType || 0;
   this._configuration = this._me = configuration;
   this._isConfigured = this._isConfigured || !!hash;
+
+  if (this._isConfigured && this._waitingForConfigure) {
+    this._waitingForConfigure = false;
+    this.manager.start();
+  }
+
   return this;
 };
 
