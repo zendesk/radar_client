@@ -30,6 +30,17 @@ exports['given an instance of Radar client'] = {
     });
   },
 
+  'alloc calls do not perform a connect if not connected and not configured': function(done) {
+    client.alloc('foo');
+    setTimeout(function() {
+      // we use a setTimeout, because connecting with the fake backend
+      // is also async, it just takes 5 ms rather than a real connect duration
+      assert.ok(client.manager.is('opened'));
+      assert.ok(client._waitingForConfigure);
+      done();
+    }, 6);
+  },
+
   'alloc calls perform a connect if not connected': function(done) {
     client.configure({ userId: 123, accountName: 'dev' });
     client.alloc('foo');
@@ -38,7 +49,22 @@ exports['given an instance of Radar client'] = {
       // is also async, it just takes 5 ms rather than a real connect duration
       assert.ok(client.manager.is('activated'));
       done();
-    }, 10);
+    }, 6);
+  },
+
+  'configure calls perform a connect if waiting for configured': function(done) {
+    client.alloc('foo');
+    setTimeout(function() {
+      // we use a setTimeout, because connecting with the fake backend
+      // is also async, it just takes 5 ms rather than a real connect duration
+      assert.ok(client.manager.is('opened'));
+      assert.ok(client._waitingForConfigure);
+      client.configure({ userId: 123, accountName: 'dev' });
+      setTimeout(function() {
+        assert.ok(client.manager.is('activated'));
+        done();
+      }, 6);
+    }, 6);
   },
 
   'multiple alloc calls just trigger the callback': function(done) {

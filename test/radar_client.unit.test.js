@@ -17,6 +17,7 @@ exports.RadarClient = {
     'should start the manager': function() {
       var called = false;
       client.manager.start = function() { called = true; };
+      client.configure({ userId: 123, accountName: 'dev' });
       client.alloc('foo');
       assert.ok(called);
     },
