@@ -75,7 +75,7 @@ exports['after reconnecting'] = {
       assert.equal(client._queuedMessages.length, 1);
       assert.deepEqual(client._queuedMessages[0], {
         op: 'set',
-        to: 'presence:/test/tickets/21',
+        to: 'status:/test/tickets/21',
         value: 'online',
         key: 123,
         type: 2
@@ -88,7 +88,7 @@ exports['after reconnecting'] = {
       assert.ok(
         MockEngine.current._written.some(function(message) {
           return message.op == 'set' &&
-            message.to == 'presence:/test/tickets/21' &&
+            message.to == 'status:/test/tickets/21' &&
             message.value == 'online';
         })
       );
@@ -97,7 +97,7 @@ exports['after reconnecting'] = {
 
     client.manager.disconnect();
     assert.equal(client.currentState(), 'disconnected');
-    client.presence('tickets/21').set('online');
+    client.status('tickets/21').set('online');
     assert.equal(client.currentState(), 'connecting');
   },
 
