@@ -49,7 +49,7 @@ exports['given an instance of Radar client'] = {
       // is also async, it just takes 5 ms rather than a real connect duration
       assert.ok(client.manager.is('activated'));
       done();
-    }, 6);
+    }, 9);
   },
 
   'configure calls perform a connect if waiting for configured': function(done) {
