@@ -283,7 +283,9 @@ Client.prototype._createManager = function() {
   });
 };
 
-//Memorize subscriptions and presence states
+// Memorize subscriptions and presence states
+// returns true for a message that adds to the
+//   memorized subscriptions or presences
 Client.prototype._memorize = function(message) {
   switch(message.op) {
     case 'unsubscribe':
@@ -291,19 +293,20 @@ Client.prototype._memorize = function(message) {
       if(this._subscriptions[message.to]) {
         delete this._subscriptions[message.to];
       }
-      break;
+      return true;
     case 'sync':
     case 'subscribe':
       if(this._subscriptions[message.to] != 'sync') {
         this._subscriptions[message.to] = message.op;
       }
-      break;
+      return true;
     case 'set':
       if (message.to.substr(0, 'presence:/'.length) == 'presence:/') {
         this._presences[message.to] = message.value;
+        return true;
       }
-      break;
   }
+  return false;
 };
 
 Client.prototype._restore = function() {
@@ -333,13 +336,15 @@ Client.prototype._restore = function() {
 };
 
 Client.prototype._sendMessage = function(message) {
-  this._memorize(message);
+  var memorized = this._memorize(message);
 
   if (this._socket && this.manager.is('activated')) {
     this._socket.sendPacket('message', JSON.stringify(message));
   } else if (this._isConfigured) {
     this._restoreRequired = true;
-    this._queuedMessages.push(message);
+    if (!memorized) {
+      this._queuedMessages.push(message);
+    }
     this.manager.connectWhenAble();
   }
 };
