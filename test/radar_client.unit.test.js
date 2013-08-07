@@ -105,13 +105,35 @@ exports.RadarClient = {
           to: 'status:/test/account/1',
           value: 'whatever',
           key: 123,
-          type: 0
+          type: 0,
+          userData: null
         });
         assert.equal(fn, callback);
       };
 
       client.configure({ accountName: 'test', userId: 123, userType: 0 });
       client.set('status:/test/account/1', 'whatever', callback);
+      assert.ok(called);
+    },
+
+    'should accept data and apply that to the hash passed to _write()': function() {
+      var called = false, callback = function(){};
+
+      client._write = function(hash, fn) {
+        called = true;
+        assert.deepEqual(hash, {
+          op: 'set',
+          to: 'status:/test/account/1',
+          value: 'whatever',
+          key: 123,
+          type: 0,
+          userData: { test: 1 }
+        });
+        assert.equal(fn, callback);
+      };
+
+      client.configure({ accountName: 'test', userId: 123, userType: 0 });
+      client.set('status:/test/account/1', 'whatever', { test: 1 }, callback);
       assert.ok(called);
     }
   },

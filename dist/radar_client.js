@@ -139,13 +139,20 @@ Client.prototype.status = function(scope) {
   return new Scope('status:/'+this._configuration.accountName+'/'+scope, this);
 };
 
-Client.prototype.set = function(scope, value, callback) {
+Client.prototype.set = function(scope, value, data, callback) {
+  if (Object.prototype.toString.call(data) == '[object Function]') {
+    callback = data;
+    data = null;
+  } else if (!data && data !== 0 && data !== false) {
+    data = null;
+  }
   return this._write({
     op: 'set',
     to: scope,
     value: value,
     key: this._configuration.userId,
-    type: this._configuration.userType
+    type: this._configuration.userType,
+    userData: data
   }, callback);
 };
 

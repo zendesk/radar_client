@@ -78,7 +78,8 @@ exports['after reconnecting'] = {
         to: 'presence:/test/tickets/21',
         value: 'online',
         key: 123,
-        type: 2
+        type: 2,
+        userData: null
       });
     });
 
