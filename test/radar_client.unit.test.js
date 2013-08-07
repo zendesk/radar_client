@@ -211,20 +211,6 @@ exports.RadarClient = {
       assert.ok(!client.manager.is('activated'));
       assert.equal(client._queuedMessages.length, 0);
       assert.deepEqual(client._subscriptions, {});
-    },
-
-    'should queue a message if the subscription was in memory, but require restore': function() {
-      client.configure({ accountName: 'test', userId: 123, userType: 0 });
-      assert.ok(!client.manager.is('activated'));
-      client.subscribe('presence:/test/account/1', function(){});
-      assert.ok(client._restoreRequired);
-      assert.ok(!client.manager.is('activated'));
-      assert.deepEqual(client._subscriptions, { 'presence:/test/account/1': 'subscribe' });
-      client.unsubscribe('presence:/test/account/1', function(){});
-      assert.ok(client._restoreRequired);
-      assert.ok(!client.manager.is('activated'));
-      assert.equal(client._queuedMessages.length, 1);
-      assert.deepEqual(client._subscriptions, { });
     }
   },
 
