@@ -13,6 +13,32 @@ exports.RadarClient = {
     MockEngine.current._written = [];
   },
 
+  '.configuration': {
+    'should return a deep copy of the configuration value for the key provided': function() {
+      var configuration = { userId: 123, userData: { test: 1 }, accountName: 'dev' };
+      client.configure(configuration);
+      assert.notStrictEqual(configuration.userData, client.configuration('userData'));
+    },
+
+    'should never allow the configuration to be altered by reference': function() {
+      var configuration = { userId: 123, userData: { test: 1 }, accountName: 'dev' };
+      client.configure(configuration);
+      client.configuration('userData').test = 2;
+      assert.equal(configuration.userData.test, 1);
+      assert.equal(client.configuration('userData').test, 1);
+    }
+  },
+
+  '.currentClientId': {
+    'should return the current socket id if a socket id is available': function(done) {
+      client.configure({ userId: 123, accountName: 'dev' });
+      client.alloc('test', function() {
+        assert.equal(client.currentClientId(), client._socket.id);
+        done();
+      });
+    }
+  },
+
   '.alloc': {
     'should start the manager': function() {
       var called = false;

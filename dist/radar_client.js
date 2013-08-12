@@ -80,7 +80,9 @@ Client.prototype.alloc = function(name, callback) {
   var self = this;
   this._users[name] = true;
   callback && this.once('ready', function() {
-    self._users.hasOwnProperty(name) && callback();
+    if(self._users.hasOwnProperty(name)) {
+      callback();
+    }
   });
 
   if (this._isConfigured) {
@@ -96,13 +98,13 @@ Client.prototype.dealloc = function(name) {
   log.info({ op: 'dealloc', name: name });
   delete this._users[name];
   var stillAllocated = false, key;
-  for(key in this._users) {
-    if(this._users.hasOwnProperty(key)) {
+  for (key in this._users) {
+    if (this._users.hasOwnProperty(key)) {
       stillAllocated = true;
       break;
     }
   }
-  if(!stillAllocated) {
+  if (!stillAllocated) {
     this.manager.close();
   }
 };
@@ -123,6 +125,14 @@ Client.prototype.configure = function(hash) {
   }
 
   return this;
+};
+
+Client.prototype.configuration = function(name) {
+  return name in this._configuration ? JSON.parse(JSON.stringify(this._configuration[name])) : null;
+};
+
+Client.prototype.currentClientId = function() {
+  return this._socket && this._socket.id;
 };
 
 Client.prototype.message = function(scope) {
@@ -170,19 +180,23 @@ var init = function(name) {
   Client.prototype[name] = function(scope, options, callback) {
     var message = { op: name, to: scope };
     // options is a optional argument
-    if(typeof options == 'function') {
+    if (typeof options == 'function') {
       callback = options;
     } else {
       message.options = options;
     }
     // sync v1 for presence scopes acts inconsistently. The result should be a "get" message,
     // but it is actually a "online" message.
-    if(name == 'sync' && !message.options && scope.match(/^presence.+/)) {
+    if (name == 'sync' && !message.options && scope.match(/^presence.+/)) {
       this.once(scope, callback);
     } else {
       this.when('get', function(message) {
-        if(!message || !message.to || message.to != scope) { return false; }
-        callback && callback(message);
+        if (!message || !message.to || message.to != scope) {
+          return false;
+        }
+        if (callback) {
+          callback(message);
+        }
         return true;
       });
     }
@@ -201,7 +215,9 @@ Client.prototype._write = function(message, callback) {
     message.ack = this._ackCounter++;
     // wait ack
     this.when('ack', function(m) {
-      if(!m || !m.value || m.value != message.ack) { return false; }
+      if(!m || !m.value || m.value != message.ack) {
+        return false;
+      }
       callback(message);
       return true;
     });
@@ -211,21 +227,23 @@ Client.prototype._write = function(message, callback) {
 };
 
 Client.prototype._batch = function(message) {
-  if(!(message.to && message.value && message.time)) { return false; }
+  if (!(message.to && message.value && message.time)) {
+    return false;
+  }
 
   var index = 0, data, time,
       length = message.value.length,
       newest = message.time,
       current = this._channelSyncTimes[message.to] || 0;
 
-  for(; index < length; index = index + 2) {
+  for (; index < length; index = index + 2) {
     data = JSON.parse(message.value[index]);
     time = message.value[index + 1];
 
-    if(time > current) {
+    if (time > current) {
       this.emit(message.to, data);
     }
-    if(time > newest) {
+    if (time > newest) {
       newest = time;
     }
   }
@@ -290,13 +308,13 @@ Client.prototype._memorize = function(message) {
   switch(message.op) {
     case 'unsubscribe':
       // remove from queue
-      if(this._subscriptions[message.to]) {
+      if (this._subscriptions[message.to]) {
         delete this._subscriptions[message.to];
       }
       return true;
     case 'sync':
     case 'subscribe':
-      if(this._subscriptions[message.to] != 'sync') {
+      if (this._subscriptions[message.to] != 'sync') {
         this._subscriptions[message.to] = message.op;
       }
       return true;
@@ -353,7 +371,7 @@ Client.prototype._messageReceived = function (msg) {
   var message = JSON.parse(msg);
   message.direction = 'in';
   log.info(message);
-  switch(message.op) {
+  switch (message.op) {
     case 'err':
     case 'ack':
     case 'get':
