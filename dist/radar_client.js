@@ -265,9 +265,7 @@ Client.prototype._createManager = function() {
     var socket = client._socket = new client.backend.Socket(client._configuration);
 
     socket.once('open', function() {
-      if (manager.can('established')) {
-        manager.established();
-      }
+      manager.established();
     });
 
     socket.once('close', function() {
@@ -275,6 +273,7 @@ Client.prototype._createManager = function() {
         manager.disconnect();
       }
       socket.removeAllListeners('message');
+      client._socket = null;
     });
 
     socket.on('message', function(message) {
