@@ -256,6 +256,10 @@ Client.prototype._createManager = function() {
         manager.disconnect();
       }
       socket.removeAllListeners('message');
+      socket.once('open', function() {
+        log.warn("socket reopened after close; closing it");
+        socket.close(); //close if reopened
+      });
       client._socket = null;
     });
 
