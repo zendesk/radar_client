@@ -264,16 +264,17 @@ Client.prototype._createManager = function() {
   manager.on('connect', function(data) {
     var socket = client._socket = new client.backend.Socket(client._configuration);
 
-    socket.on('open', function() {
-      if (manager.can('established')) {
-        manager.established();
-      }
+    socket.once('open', function() {
+      manager.established();
     });
 
-    socket.once('close', function() {
+    socket.once('close', function(reason, description) {
+      log.info({ reason: reason, description: description });
       if (!manager.is('closed')) {
         manager.disconnect();
       }
+      socket.removeAllListeners('message');
+      client._socket = null;
     });
 
     socket.on('message', function(message) {
