@@ -604,7 +604,7 @@ exports.RadarClient = {
 
         client._socket.emit('close');
 
-        client._socket.emit('message', '{"close":1}');
+        assert(!client._socket);
 
         assert(called);
       },
