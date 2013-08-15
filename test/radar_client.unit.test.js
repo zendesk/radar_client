@@ -609,6 +609,30 @@ exports.RadarClient = {
         assert(called);
       },
 
+      'should guard against reopened sockets and close them': function() {
+        var called = false;
+        var socket;
+
+        client._createManager();
+
+        client.manager.emit('connect');
+
+        client._socket.emit('open');
+        socket = client._socket;
+
+        socket.close = function() {
+          called = true;
+        };
+
+        client._socket.emit('close');
+
+        socket.emit('open'); //reopen
+
+        assert(!client._socket);
+
+        assert(called);
+      },
+
       'should create a manager that listens for the appropriate events': {
         'enterState': function() {
           var state = 'test',
