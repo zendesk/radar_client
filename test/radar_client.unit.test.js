@@ -566,6 +566,73 @@ exports.RadarClient = {
     },
 
     '._createManager': {
+      'should create a manager that cannot open the same socket twice': function() {
+        var never_called_before = true, called = false;
+
+        client._createManager();
+
+        client.manager.established = function() {
+          called = true;
+          assert(never_called_before);
+          never_called_before = false;
+        };
+
+        client.manager.emit('connect');
+
+        client._socket.emit('open');
+        client._socket.emit('open');
+
+        assert(called);
+      },
+
+      'should create a manager that stops listening to messages from a socket when the socket emits the close event': function() {
+        var called = false;
+
+        client._createManager();
+
+        client.manager.emit('connect');
+
+        client._socket.emit('open');
+
+        client._socket.on('message', function(data) {
+          var json = JSON.parse(data);
+          called = json.open;
+          assert(json.open);
+        });
+
+        client._socket.emit('message', '{"open":1}');
+
+        client._socket.emit('close');
+
+        assert(!client._socket);
+
+        assert(called);
+      },
+
+      'should guard against reopened sockets and close them': function() {
+        var called = false;
+        var socket;
+
+        client._createManager();
+
+        client.manager.emit('connect');
+
+        client._socket.emit('open');
+        socket = client._socket;
+
+        socket.close = function() {
+          called = true;
+        };
+
+        client._socket.emit('close');
+
+        socket.emit('open'); //reopen
+
+        assert(!client._socket);
+
+        assert(called);
+      },
+
       'should create a manager that listens for the appropriate events': {
         'enterState': function() {
           var state = 'test',
@@ -627,6 +694,7 @@ exports.RadarClient = {
             client.manager.emit('connect');
 
             client._socket.emit('close');
+
             assert.ok(called);
           },
 
@@ -644,6 +712,7 @@ exports.RadarClient = {
             client.manager.emit('connect');
 
             client._socket.emit('message', message);
+
             assert.ok(called);
           }
         },
