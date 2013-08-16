@@ -13,7 +13,7 @@ module.exports = {
   beforeEach: function() {
     this.manager = Manager.create();
   },
-  'while connecting after failure': {
+  'while connecting': {
     'should timeout connect after a while': function(done) {
       this.manager.on('unavailable', done);
       this.manager._backoff.failures = 100;
