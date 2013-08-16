@@ -498,6 +498,9 @@ function create() {
     }
   });
 
+  machine._backoff = backoff; // for testing
+  machine._connectTimeout = 10000;
+
   for (var property in MicroEE.prototype) {
     if (MicroEE.prototype.hasOwnProperty(property)) {
       machine[property] = MicroEE.prototype[property];
@@ -523,7 +526,7 @@ function create() {
     machine._guard = setTimeout(function() {
       log.info("startGuard: disconnect from timeout");
       machine.disconnect();
-    }, 10000);
+    }, machine._connectTimeout);
   };
 
   machine.cancelGuard = function() {
