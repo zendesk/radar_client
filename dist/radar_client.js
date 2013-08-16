@@ -265,16 +265,27 @@ Client.prototype._createManager = function() {
     var socket = client._socket = new client.backend.Socket(client._configuration);
 
     socket.once('open', function() {
+      log.info("socket open", socket.id);
       manager.established();
     });
 
     socket.once('close', function(reason, description) {
-      log.info({ reason: reason, description: description });
+      log.info('socket closed', socket.id, reason, description);
+      socket.removeAllListeners('message');
+      client._socket = null;
+
+      // Patch for polling-xhr continuing to poll after socket close.
+      // socket.transport is in error but not closed, so if a subsequent poll succeeds,
+      // the transport remains open and polling until server closes the socket.
+      // Don't want to do a transport.close, in case it really is closed (then it throws an error).
+      // Also want to avoid emition of socket's close event.
+      if(socket.transport) {
+        socket.transport.readyState = 'closed';
+      }
+
       if (!manager.is('closed')) {
         manager.disconnect();
       }
-      socket.removeAllListeners('message');
-      client._socket = null;
     });
 
     socket.on('message', function(message) {
@@ -487,6 +498,9 @@ function create() {
     }
   });
 
+  machine._backoff = backoff; // for testing
+  machine._connectTimeout = 10000;
+
   for (var property in MicroEE.prototype) {
     if (MicroEE.prototype.hasOwnProperty(property)) {
       machine[property] = MicroEE.prototype[property];
@@ -508,9 +522,11 @@ function create() {
   };
 
   machine.startGuard = function() {
+    machine.cancelGuard();
     machine._guard = setTimeout(function() {
+      log.info("startGuard: disconnect from timeout");
       machine.disconnect();
-    }, 10000);
+    }, machine._connectTimeout);
   };
 
   machine.cancelGuard = function() {

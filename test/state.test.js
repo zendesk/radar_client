@@ -2,7 +2,15 @@ var assert = require('assert'),
     log = require('minilog')('state.test'),
     StateMachine = require('../lib/state.js'),
     machine;
+/*
+    Minilog = require('minilog'),
+    stdoutPipe = Minilog.pipe(Minilog.backends.nodeConsole);
 
+// configure log output
+stdoutPipe
+  .filter(Minilog.backends.nodeConsole.filterEnv("*"))
+  .format(Minilog.backends.nodeConsole.formatWithStack);
+  */
 exports['given a state machine'] = {
   beforeEach: function() {
     machine = StateMachine.create();
@@ -66,7 +74,32 @@ exports['given a state machine'] = {
       done();
     };
 
-    machine.startGuard();
+    machine.connect();
+  },
+
+  'should not get caught by timeout if connect fails for different reasons' : function(done) {
+    var once = true;
+    this.timeout(20000);
+    var disconnects = 0;
+
+    machine.on('disconnect', function() {
+      disconnects++;
+    });
+
+    setTimeout(function() {
+      assert.equal(disconnects, 1); // only 1 disconnect due to manager.disconnect()
+      done();
+    }, 15000);
+
+    machine.on('connect', function() {
+      if(once) {
+        machine.disconnect();
+        once = false;
+      }else {
+        machine.established();
+      }
+    });
+    machine.connect();
   },
 
   'connections that fail should cause exponential backoff, finally emit unavailable': function(done) {
