@@ -144,10 +144,20 @@ exports.RadarClient = {
     'should not queue a presence set, but require restore': function() {
       client.configure({ accountName: 'test', userId: 123, userType: 0 });
       assert.ok(!client.manager.is('activated'));
-      client.set('presence:/test/account/1', 'online', function(){});
+      client.set('presence:/test/account/1', 'online');
       assert.ok(client._restoreRequired);
       assert.ok(!client.manager.is('activated'));
       assert.equal(client._queuedMessages.length, 0);
+      assert.deepEqual(client._presences, { 'presence:/test/account/1': 'online' });
+    },
+
+    'should queue a presence set and require restore if there is a callback': function() {
+      client.configure({ accountName: 'test', userId: 123, userType: 0 });
+      assert.ok(!client.manager.is('activated'));
+      client.set('presence:/test/account/1', 'online', function(){});
+      assert.ok(client._restoreRequired);
+      assert.ok(!client.manager.is('activated'));
+      assert.equal(client._queuedMessages.length, 1);
       assert.deepEqual(client._presences, { 'presence:/test/account/1': 'online' });
     }
   },
@@ -193,17 +203,27 @@ exports.RadarClient = {
     'should not queue a subscribe operation if disconnected, but require restore': function() {
       client.configure({ accountName: 'test', userId: 123, userType: 0 });
       assert.ok(!client.manager.is('activated'));
-      client.subscribe('status:/test/account/1', function(){});
+      client.subscribe('status:/test/account/1');
       assert.ok(client._restoreRequired);
       assert.ok(!client.manager.is('activated'));
       assert.equal(client._queuedMessages.length, 0);
       assert.deepEqual(client._subscriptions, { 'status:/test/account/1': 'subscribe' });
     },
 
+    'should queue a subscribe operation if disconnected and require restore if there is a callback': function() {
+      client.configure({ accountName: 'test', userId: 123, userType: 0 });
+      assert.ok(!client.manager.is('activated'));
+      client.subscribe('status:/test/account/1', function(){});
+      assert.ok(client._restoreRequired);
+      assert.ok(!client.manager.is('activated'));
+      assert.equal(client._queuedMessages.length, 1);
+      assert.deepEqual(client._subscriptions, { 'status:/test/account/1': 'subscribe' });
+    },
+
     'should not queue a sync operation if disconnected, but require restore': function() {
       client.configure({ accountName: 'test', userId: 123, userType: 0 });
       assert.ok(!client.manager.is('activated'));
-      client.sync('presence:/test/account/1', function(){});
+      client.sync('presence:/test/account/1');
       assert.ok(client._restoreRequired);
       assert.ok(!client.manager.is('activated'));
       assert.equal(client._queuedMessages.length, 0);
@@ -232,10 +252,20 @@ exports.RadarClient = {
     'should not queue a message if the subscription was not in memory, but require restore': function() {
       client.configure({ accountName: 'test', userId: 123, userType: 0 });
       assert.ok(!client.manager.is('activated'));
-      client.unsubscribe('presence:/test/account/1', function(){});
+      client.unsubscribe('presence:/test/account/1');
       assert.ok(client._restoreRequired);
       assert.ok(!client.manager.is('activated'));
       assert.equal(client._queuedMessages.length, 0);
+      assert.deepEqual(client._subscriptions, {});
+    },
+
+    'should queue a message if the subscription was not in memory and require restore if there is a callback': function() {
+      client.configure({ accountName: 'test', userId: 123, userType: 0 });
+      assert.ok(!client.manager.is('activated'));
+      client.unsubscribe('presence:/test/account/1', function(){});
+      assert.ok(client._restoreRequired);
+      assert.ok(!client.manager.is('activated'));
+      assert.equal(client._queuedMessages.length, 1);
       assert.deepEqual(client._subscriptions, {});
     }
   },

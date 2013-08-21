@@ -63,6 +63,7 @@ function Client(backend) {
       message.userId = this._configuration.userId;
       message.userType = this._configuration.userType;
       message.accountName = this._configuration.accountName;
+      message.userData = this._configuration.userData;
     }
     this.emit('messageAuthenticated', message);
   });
@@ -361,7 +362,7 @@ Client.prototype._sendMessage = function(message) {
     this._socket.sendPacket('message', JSON.stringify(message));
   } else if (this._isConfigured) {
     this._restoreRequired = true;
-    if (!memorized) {
+    if (!memorized || message.ack) {
       this._queuedMessages.push(message);
     }
     this.manager.connectWhenAble();
