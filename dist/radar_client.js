@@ -6,9 +6,10 @@ require.m[0] = { "engine.io-client": { exports: window.eio },
 }
 
 Backoff.durations = [1000, 2000, 4000, 8000, 16000, 32000]; // seconds (ticks)
+Backoff.fallback = 60000;
 
 Backoff.prototype.get = function() {
-  return Backoff.durations[this.failures] || 60000;
+  return Backoff.durations[this.failures] || Backoff.fallback;
 };
 
 Backoff.prototype.increment = function() {
@@ -26,7 +27,8 @@ Backoff.prototype.isUnavailable = function() {
 module.exports = Backoff;
 },
 "lib/index.js": function(module, exports, require){var Client = require('./radar_client'),
-    instance = new Client();
+    instance = new Client(),
+    instance.Backoff = require('./backoff');
 
 instance._log = require('minilog');
 
