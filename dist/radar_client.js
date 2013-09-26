@@ -235,14 +235,14 @@ Client.prototype._batch = function(message) {
     return false;
   }
 
-  var index = 0, data, time,
+  var data, time,
       length = message.value.length,
       newest = message.time,
       current = this._channelSyncTimes[message.to] || 0;
 
-  for (; index < length; index = index + 2) {
-    data = JSON.parse(message.value[index]);
-    time = message.value[index + 1];
+  for (var index = 0; index < length; index++) {
+    data = message.value[index].value;
+    time = message.value[index].score;
 
     if (time > current) {
       this.emit(message.to, data);
