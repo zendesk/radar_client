@@ -61,12 +61,14 @@ function Client(backend) {
   this.configure(false);
 
   this.on('authenticateMessage', function(message) {
-    if(this._configuration && this._configuration.auth) {
-      message.auth = this._configuration.auth;
-      message.userId = this._configuration.userId;
-      message.userType = this._configuration.userType;
-      message.accountName = this._configuration.accountName;
+    if(this._configuration) {
       message.userData = this._configuration.userData;
+      if (this._configuration.auth) {
+        message.auth = this._configuration.auth;
+        message.userId = this._configuration.userId;
+        message.userType = this._configuration.userType;
+        message.accountName = this._configuration.accountName;
+      }
     }
     this.emit('messageAuthenticated', message);
   });
@@ -277,15 +279,6 @@ Client.prototype._createManager = function() {
       log.info('socket closed', socket.id, reason, description);
       socket.removeAllListeners('message');
       client._socket = null;
-
-      // Patch for polling-xhr continuing to poll after socket close.
-      // socket.transport is in error but not closed, so if a subsequent poll succeeds,
-      // the transport remains open and polling until server closes the socket.
-      // Don't want to do a transport.close, in case it really is closed (then it throws an error).
-      // Also want to avoid emition of socket's close event.
-      if(socket.transport) {
-        socket.transport.readyState = 'closed';
-      }
 
       if (!manager.is('closed')) {
         manager.disconnect();
