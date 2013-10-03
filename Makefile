@@ -17,7 +17,9 @@ build:
 	--replace engine.io-client=window.eio,minilog=window.Minilog \
 	--global RadarClient \
 	--main lib/index.js \
-	--out dist/radar_client.js
+	--out dist/radar_client.temp.js
+	cat ./node_modules/engine.io-client/dist/engine.io.js dist/radar_client.temp.js > dist/radar_client.js
+	@rm dist/radar_client.temp.js
 
 test:
 	./node_modules/.bin/mocha \
