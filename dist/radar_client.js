@@ -61,12 +61,14 @@ function Client(backend) {
   this.configure(false);
 
   this.on('authenticateMessage', function(message) {
-    if(this._configuration && this._configuration.auth) {
-      message.auth = this._configuration.auth;
-      message.userId = this._configuration.userId;
-      message.userType = this._configuration.userType;
-      message.accountName = this._configuration.accountName;
+    if(this._configuration) {
       message.userData = this._configuration.userData;
+      if (this._configuration.auth) {
+        message.auth = this._configuration.auth;
+        message.userId = this._configuration.userId;
+        message.userType = this._configuration.userType;
+        message.accountName = this._configuration.accountName;
+      }
     }
     this.emit('messageAuthenticated', message);
   });
@@ -284,8 +286,10 @@ Client.prototype._createManager = function() {
       // Don't want to do a transport.close, in case it really is closed (then it throws an error).
       // Also want to avoid emition of socket's close event.
       if(socket.transport) {
-        socket.transport.readyState = 'closed';
+        socket.transport.close();
       }
+
+
 
       if (!manager.is('closed')) {
         manager.disconnect();
