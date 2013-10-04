@@ -280,6 +280,17 @@ Client.prototype._createManager = function() {
       socket.removeAllListeners('message');
       client._socket = null;
 
+      // Patch for polling-xhr continuing to poll after socket close.
+      // socket.transport is in error but not closed, so if a subsequent poll succeeds,
+      // the transport remains open and polling until server closes the socket.
+      // Don't want to do a transport.close, in case it really is closed (then it throws an error).
+      // Also want to avoid emition of socket's close event.
+      if(socket.transport) {
+        socket.transport.close();
+      }
+
+
+
       if (!manager.is('closed')) {
         manager.disconnect();
       }
