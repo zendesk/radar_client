@@ -480,6 +480,10 @@ function create() {
         this.authenticate();
       },
 
+      onclose: function() {
+        this.cancelGuard();
+      },
+
       ondisconnected: function(event, from, to) {
         backoff.increment();
 
