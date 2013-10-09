@@ -122,6 +122,15 @@ exports['given a state machine'] = {
 
     machine.connect();
 
+  },
+
+  'closing will cancel the guard timer': function() {
+    machine.open();
+    assert(!machine._guard);
+    machine.connect();
+    assert(machine._guard);
+    machine.close();
+    assert(!machine._guard);
   }
 };
 
