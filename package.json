@@ -7,7 +7,7 @@
   "keywords": ["realtime", "socket.io", "engine.io", "comet", "ajax"],
   "repository":{
       "type": "git",
-      "url": "https://github.com/zendesk/engine.io.git"
+      "url": "https://github.com/zendesk/radar_client.git"
   },
   "dependencies": {
     "microee": "0.0.2",
