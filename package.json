@@ -21,6 +21,7 @@
   },
   "scripts": {
     "test": "npm run build && make test",
-    "build": "make build"
+    "check-modules": "[ ./package.json -nt ./node_modules ] && $(rm -rf node_modules && npm install) || echo 'Modules are up to date'",
+    "build": "npm run check-modules; make build"
   }
 }
