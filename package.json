@@ -20,7 +20,13 @@
     "mocha": "*"
   },
   "scripts": {
-    "test": "npm run build && make test",
-    "build": "make build"
+    "pretest": "npm run build",
+    "test": "ls ./tests/*.test.js | xargs -n 1 -t -I {} sh -c 'TEST=\"{}\" npm run test-one'",
+
+    "pretest-one": "[ -z \"$radar_log\" ] && export radar_log=-*",
+    "test-one": "./node_modules/.bin/mocha --ui exports --reporter spec --slow 2000ms --bail \"$TEST\"",
+
+    "prebuild": "rm -rf ./node_modules/sfsm/demo",
+    "build": "./node_modules/gluejs/bin/gluejs --include ./lib --npm microee,sfsm --replace engine.io-client=window.eio,minilog=window.Minilog --global RadarClient --main lib/index.js --out dist/radar_client.js"
   }
 }
