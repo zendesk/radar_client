@@ -34,7 +34,15 @@
     "mocha": "*"
   },
   "scripts": {
-    "test": "npm run build && make test",
-    "build": "make build"
+    "check-modules": "if [ -z \"$SKIP_PACAKGE_CHECK\" ] && [ ./package.json -nt ./node_modules ]; then echo 'Your node_modules are out of date. Please run \"npm update\".' && exit 1; else rm -rf ./node_modules/sfsm/demo; fi",
+
+    "pretest": "npm run build",
+    "test": "ls ./tests/*.test.js | xargs -n 1 -t -I {} sh -c 'TEST=\"{}\" npm run test-one'",
+
+    "pretest-one": "[ -z \"$radar_log\" ] && export radar_log=-*",
+    "test-one": "./node_modules/.bin/mocha --ui exports --reporter spec --slow 2000ms --bail \"$TEST\"",
+
+    "prebuild": "npm run check-modules",
+    "build": "./node_modules/gluejs/bin/gluejs --include ./lib --npm microee,sfsm --replace engine.io-client=window.eio,minilog=window.Minilog --global RadarClient --main lib/index.js --out dist/radar_client.js"
   }
 }
