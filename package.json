@@ -3,6 +3,20 @@
   "description": "Realtime apps with a high level API based on engine.io",
   "version": "0.2.18",
   "author": "Mikito Takada <mikito.takada@gmail.com>",
+  "contributors": [
+    {
+      "name": "Sam Shull",
+      "url": "http://github.com/samshull"
+    },
+    {
+      "name": "Vanchi Koduvayur",
+      "url": "https://github.com/vanchi-zendesk"
+    },
+    {
+      "name": "Nicolas Herment",
+      "url": "https://github.com/nherment"
+    }
+  ],
   "main": "lib/index.js",
   "keywords": ["realtime", "socket.io", "engine.io", "comet", "ajax"],
   "repository":{
@@ -11,7 +25,7 @@
   },
   "dependencies": {
     "microee": "0.0.2",
-    "minilog": "0.0.4",
+    "minilog": "0.1.0",
     "engine.io-client": "0.2.x",
     "sfsm": "0.0.4"
   },
