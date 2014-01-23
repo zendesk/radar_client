@@ -31,6 +31,7 @@ module.exports = Backoff;
     Backoff = require('./backoff.js');
 
 instance._log = require('minilog');
+instance._logger = instance._log('radar_client');
 instance.Backoff = Backoff;
 
 // This module makes radar_client a singleton to prevent multiple connections etc.
@@ -80,9 +81,13 @@ function Client(backend) {
 
 MicroEE.mixin(Client);
 
+Client.prototype.logger = function() {
+  return this._logger || log;
+};
+
 // alloc() and dealloc() rather than connect() and disconnect() - see readme.md
 Client.prototype.alloc = function(name, callback) {
-  log.info({ op: 'alloc', name: name });
+  this.logger().info({ op: 'alloc', name: name });
   var self = this;
   this._users[name] = true;
   callback && this.once('ready', function() {
@@ -101,9 +106,12 @@ Client.prototype.alloc = function(name, callback) {
 };
 
 Client.prototype.dealloc = function(name) {
-  log.info({ op: 'dealloc', name: name });
+  this.logger().info({ op: 'dealloc', name: name });
+
   delete this._users[name];
+
   var stillAllocated = false, key;
+
   for (key in this._users) {
     if (this._users.hasOwnProperty(key)) {
       stillAllocated = true;
@@ -271,12 +279,12 @@ Client.prototype._createManager = function() {
     var socket = client._socket = new client.backend.Socket(client._configuration);
 
     socket.once('open', function() {
-      log.info("socket open", socket.id);
+      client.logger().info("socket open", socket.id);
       manager.established();
     });
 
     socket.once('close', function(reason, description) {
-      log.info('socket closed', socket.id, reason, description);
+      client.logger().info('socket closed', socket.id, reason, description);
       socket.removeAllListeners('message');
       client._socket = null;
 
@@ -348,7 +356,7 @@ Client.prototype._restore = function() {
   if (this._restoreRequired) {
     this._restoreRequired = false;
 
-    log.info('restore-subscriptions');
+    this.logger().info('restore-subscriptions');
 
     for (to in this._subscriptions) {
       if (this._subscriptions.hasOwnProperty(to)) {
@@ -386,7 +394,7 @@ Client.prototype._sendMessage = function(message) {
 Client.prototype._messageReceived = function (msg) {
   var message = JSON.parse(msg);
   message.direction = 'in';
-  log.info(message);
+  this.logger().info(message);
   switch (message.op) {
     case 'err':
     case 'ack':
