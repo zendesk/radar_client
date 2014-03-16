@@ -25,8 +25,8 @@
   },
   "dependencies": {
     "microee": "0.0.2",
-    "minilog": "0.1.0",
-    "engine.io-client": "0.2.x",
+    "minilog": "2.0.4",
+    "engine.io-client": "0.7.9",
     "sfsm": "0.0.4"
   },
   "devDependencies":{
@@ -34,7 +34,7 @@
     "mocha": "*"
   },
   "scripts": {
-    "check-modules": "if [ -z \"$SKIP_PACAKGE_CHECK\" ] && [ ./package.json -nt ./node_modules ]; then echo 'Your node_modules are out of date. Please run \"npm update\".' && exit 1; else rm -rf ./node_modules/sfsm/demo; fi",
+    "check-modules": "if [ -z \"$SKIP_PACKAGE_CHECK\" ] && [ ./package.json -nt ./node_modules ]; then echo 'Your node_modules are out of date. Please run \"npm update\".' && exit 1; else rm -rf ./node_modules/sfsm/demo; fi",
 
     "pretest": "npm run build",
     "test": "ls ./tests/*.test.js | xargs -n 1 -t -I {} sh -c 'TEST=\"{}\" npm run test-one'",

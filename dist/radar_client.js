@@ -92,6 +92,7 @@ Client.prototype.alloc = function(name, callback) {
   this._users[name] = true;
   callback && this.once('ready', function() {
     if(self._users.hasOwnProperty(name)) {
+      self.logger().info("alloc ready", name);
       callback();
     }
   });
@@ -225,10 +226,14 @@ for(var i = 0; i < props.length; i++){
 }
 
 Client.prototype._write = function(message, callback) {
+  var client = this;
+  this.logger().debug("_write: ", message);
+
   if(callback) {
     message.ack = this._ackCounter++;
     // wait ack
     this.when('ack', function(m) {
+      client.logger().debug('ack', m);
       if(!m || !m.value || m.value != message.ack) {
         return false;
       }
@@ -279,12 +284,12 @@ Client.prototype._createManager = function() {
     var socket = client._socket = new client.backend.Socket(client._configuration);
 
     socket.once('open', function() {
-      client.logger().info("socket open", socket.id);
+      client.logger().debug("socket open", socket.id);
       manager.established();
     });
 
     socket.once('close', function(reason, description) {
-      client.logger().info('socket closed', socket.id, reason, description);
+      client.logger().debug('socket closed', socket.id, reason, description);
       socket.removeAllListeners('message');
       client._socket = null;
 
@@ -356,7 +361,7 @@ Client.prototype._restore = function() {
   if (this._restoreRequired) {
     this._restoreRequired = false;
 
-    this.logger().info('restore-subscriptions');
+    this.logger().debug('restore-subscriptions');
 
     for (to in this._subscriptions) {
       if (this._subscriptions.hasOwnProperty(to)) {
@@ -394,7 +399,7 @@ Client.prototype._sendMessage = function(message) {
 Client.prototype._messageReceived = function (msg) {
   var message = JSON.parse(msg);
   message.direction = 'in';
-  this.logger().info(message);
+  this.logger().debug(message);
   switch (message.op) {
     case 'err':
     case 'ack':
