@@ -91,6 +91,7 @@ Client.prototype.alloc = function(name, callback) {
   var self = this;
   this._users[name] = true;
   callback && this.once('ready', function() {
+    this.logger().info('ready', name);
     if(self._users.hasOwnProperty(name)) {
       callback();
     }
@@ -119,6 +120,7 @@ Client.prototype.dealloc = function(name) {
     }
   }
   if (!stillAllocated) {
+    this.logger().info("closing the connection");
     this.manager.close();
   }
 };
@@ -225,10 +227,15 @@ for(var i = 0; i < props.length; i++){
 }
 
 Client.prototype._write = function(message, callback) {
+  var client = this;
+
+  client.logger().debug(message, 'direction:out');
+
   if(callback) {
     message.ack = this._ackCounter++;
     // wait ack
     this.when('ack', function(m) {
+      client.logger().debug('ack', m);
       if(!m || !m.value || m.value != message.ack) {
         return false;
       }
@@ -279,12 +286,12 @@ Client.prototype._createManager = function() {
     var socket = client._socket = new client.backend.Socket(client._configuration);
 
     socket.once('open', function() {
-      client.logger().info("socket open", socket.id);
+      client.logger().debug("socket open", socket.id);
       manager.established();
     });
 
     socket.once('close', function(reason, description) {
-      client.logger().info('socket closed', socket.id, reason, description);
+      client.logger().debug('socket closed', socket.id, reason, description);
       socket.removeAllListeners('message');
       client._socket = null;
 
@@ -356,7 +363,7 @@ Client.prototype._restore = function() {
   if (this._restoreRequired) {
     this._restoreRequired = false;
 
-    this.logger().info('restore-subscriptions');
+    this.logger().debug('restore-subscriptions');
 
     for (to in this._subscriptions) {
       if (this._subscriptions.hasOwnProperty(to)) {
@@ -379,6 +386,7 @@ Client.prototype._restore = function() {
 
 Client.prototype._sendMessage = function(message) {
   var memorized = this._memorize(message);
+  this.emit('message:out', message);
 
   if (this._socket && this.manager.is('activated')) {
     this._socket.sendPacket('message', JSON.stringify(message));
@@ -393,8 +401,8 @@ Client.prototype._sendMessage = function(message) {
 
 Client.prototype._messageReceived = function (msg) {
   var message = JSON.parse(msg);
-  message.direction = 'in';
-  this.logger().info(message);
+  this.emit('message:in', message);
+  this.logger().debug(message, 'direction:in');
   switch (message.op) {
     case 'err':
     case 'ack':
@@ -500,14 +508,17 @@ function create() {
           delete this._timer;
         }
 
+        var time = backoff.get();
+        log.info("reconnecting in " + time + "msec");
         this._timer = setTimeout(function() {
           delete machine._timer;
           if (machine.is('disconnected')) {
             machine.connect();
           }
-        }, backoff.get());
+        }, time);
 
         if (backoff.isUnavailable()) {
+          log.info("unavailable");
           this.emit('unavailable');
         }
       }
