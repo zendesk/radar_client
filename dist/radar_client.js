@@ -357,28 +357,32 @@ Client.prototype._memorize = function(message) {
 };
 
 Client.prototype._restore = function() {
-  var item, i, to, message;
+  var item, i, to, message, counts = { subscriptions: 0, presences: 0, messages: 0 };
   if (this._restoreRequired) {
     this._restoreRequired = false;
 
-    this.logger().debug('restore-subscriptions');
 
     for (to in this._subscriptions) {
       if (this._subscriptions.hasOwnProperty(to)) {
         item = this._subscriptions[to];
         this[item](to);
+        counts.subscriptions += 1;
       }
     }
 
     for (to in this._presences) {
       if (this._presences.hasOwnProperty(to)) {
         this.set(to, this._presences[to]);
+        counts.presences += 1;
       }
     }
 
     while (this._queuedMessages.length) {
       this._write(this._queuedMessages.shift());
+      counts.messages += 1;
     }
+
+    this.logger().debug('restore-subscriptions', counts);
   }
 };
 
@@ -506,7 +510,7 @@ function create() {
         }
 
         var time = backoff.get();
-        log.info("reconnecting in " + time + "msec");
+        log.debug("reconnecting in " + time + "msec");
         this._timer = setTimeout(function() {
           delete machine._timer;
           if (machine.is('disconnected')) {

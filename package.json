@@ -26,7 +26,7 @@
   "dependencies": {
     "microee": "0.0.2",
     "minilog": "2.0.5",
-    "engine.io-client": "0.2.x",
+    "engine.io-client": "0.7.9",
     "sfsm": "0.0.4"
   },
   "devDependencies":{
