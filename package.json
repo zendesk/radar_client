@@ -1,7 +1,7 @@
 {
   "name": "radar_client",
   "description": "Realtime apps with a high level API based on engine.io",
-  "version": "0.3.1",
+  "version": "0.6.0",
   "author": "Mikito Takada <mikito.takada@gmail.com>",
   "contributors": [
     {
@@ -18,10 +18,16 @@
     }
   ],
   "main": "lib/index.js",
-  "keywords": ["realtime", "socket.io", "engine.io", "comet", "ajax"],
-  "repository":{
-      "type": "git",
-      "url": "https://github.com/zendesk/radar_client.git"
+  "keywords": [
+    "realtime",
+    "socket.io",
+    "engine.io",
+    "comet",
+    "ajax"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zendesk/radar_client.git"
   },
   "dependencies": {
     "microee": "0.0.2",
@@ -29,19 +35,16 @@
     "engine.io-client": "0.7.9",
     "sfsm": "0.0.4"
   },
-  "devDependencies":{
+  "devDependencies": {
     "gluejs": "0.2.0",
     "mocha": "*"
   },
   "scripts": {
     "check-modules": "if [ -z \"$SKIP_PACAKGE_CHECK\" ] && [ ./package.json -nt ./node_modules ]; then echo 'Your node_modules are out of date. Please run \"npm update\".' && exit 1; else rm -rf ./node_modules/sfsm/demo; fi",
-
     "pretest": "npm run build",
     "test": "ls ./tests/*.test.js | xargs -n 1 -t -I {} sh -c 'TEST=\"{}\" npm run test-one'",
-
     "pretest-one": "[ -z \"$radar_log\" ] && export radar_log=-*",
     "test-one": "./node_modules/.bin/mocha --ui exports --reporter spec --slow 2000ms --bail \"$TEST\"",
-
     "prebuild": "npm run check-modules",
     "build": "./node_modules/gluejs/bin/gluejs --include ./lib --npm microee,sfsm --replace engine.io-client=window.eio,minilog=window.Minilog --global RadarClient --main lib/index.js --out dist/radar_client.js"
   }
