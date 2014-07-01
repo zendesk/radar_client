@@ -6,7 +6,6 @@ The radar server code is here: https://github.com/zendesk/radar
 
 [![Build Status](https://secure.travis-ci.org/zendesk/radar_client.png?branch=master)](https://travis-ci.org/zendesk/radar_client)
 
-Stable version: v0.1.0
 
 ## Documentation
 
