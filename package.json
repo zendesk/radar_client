@@ -1,7 +1,7 @@
 {
   "name": "radar_client",
   "description": "Realtime apps with a high level API based on engine.io",
-  "version": "0.6.0",
+  "version": "0.7.3",
   "author": "Mikito Takada <mikito.takada@gmail.com>",
   "contributors": [
     {
@@ -30,8 +30,8 @@
     "url": "https://github.com/zendesk/radar_client.git"
   },
   "dependencies": {
-    "microee": "0.0.2",
-    "minilog": "2.0.5",
+    "microee": "*",
+    "minilog": "*",
     "engine.io-client": "0.7.9",
     "sfsm": "0.0.4"
   },
