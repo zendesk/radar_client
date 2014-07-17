@@ -230,6 +230,7 @@ var init = function(name) {
         if(callback) {
           callback(message);
         }
+        return true;
       });
     } else {
       this.when('get', function(message) {
