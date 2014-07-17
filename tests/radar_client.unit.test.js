@@ -408,19 +408,31 @@ exports.RadarClient = {
     },
 
     'without options on a presence': {
-      'should listen for messages on the given scope': function() {
-        var called = false,
-            scope = 'presence:/test/account/1',
-            callback = function() {};
+      'should force v2, translate result from v2 to v1': function(done) {
+        var scope = 'presence:/test/account/1';
 
-        client.once = function(operation, fn) {
-          called = true;
-          assert.equal(scope, operation);
-          assert.equal(fn, callback);
-        };
+        client.sync(scope, function(m) {
+          assert.deepEqual({
+            op: 'online',
+            to: scope,
+            value: {
+              100: 2,
+              200: 0
+            }
+          }, m);
+          done();
+        });
 
-        client.sync(scope, callback);
-        assert.ok(called);
+        //previous online emits should not affect the callback
+        client.emit(scope, { op: 'online', to: scope, value: { 100: 2 } });
+
+        client.emit('get', {
+          op: 'get', to: scope,
+          value: {
+            100: { userType: 2, clients: {} },
+            200: { userType: 0, clients: {} }
+          }
+        });
       }
     }
   },
