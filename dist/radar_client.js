@@ -207,8 +207,26 @@ var init = function(name) {
     }
     // sync v1 for presence scopes acts inconsistently. The result should be a "get" message,
     // but it is actually a "online" message.
+    // So force v2 and translate the result to v1 format.
     if (name == 'sync' && !message.options && scope.match(/^presence.+/)) {
-      this.once(scope, callback);
+      message.options = { version: 2 };
+      this.when('get', function(message) {
+        var value = {}, userId;
+        if (!message || !message.to || message.to != scope) {
+          return false;
+        }
+
+        for (userId in message.value) {
+          if (message.value.hasOwnProperty(userId)) {
+            value[userId] = message.value[userId].userType;
+          }
+        }
+        message.value = value;
+        message.op = 'online';
+        if(callback) {
+          callback(message);
+        }
+      });
     } else {
       this.when('get', function(message) {
         if (!message || !message.to || message.to != scope) {
