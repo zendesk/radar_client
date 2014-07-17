@@ -1,3 +1,8 @@
+### 0.8.1
+ - when using presence v1 (without message options)
+    - internally use presence v2 for v1
+    - translate v2 results to v1 format
+
 ### 0.8.0
  - radar bump to v0.8.0
 
