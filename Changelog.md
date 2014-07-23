@@ -1,6 +1,9 @@
+### 0.9.1
+* server version bump
+
 ### 0.9.0
 * engine.io-client upgrade to v1.3.1
- 
+
 ### 0.8.1
  - when using presence v1 (without message options)
     - internally use presence v2 for v1
