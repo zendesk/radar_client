@@ -1,6 +1,6 @@
 # Radar Client
 
-High level API and backend for writing web apps that use push messaging.
+High level API and backend for writing web apps that use real-time information.
 
 The radar server code is here: https://github.com/zendesk/radar
 
@@ -10,6 +10,11 @@ The radar server code is here: https://github.com/zendesk/radar
 ## Documentation
 
 See http://radar.zendesk.com/ for detailed documentation.
+
+## How to contribute
+
+- Fork http://github.com/zendesk/radar_client, clone, make changes (including a Changelog update), commit, push, PR
+- Then fork http://github.com/zendesk/radar, clone, update and test with radar_client changes (including a Changelog update), commit, push, PR
 
 ## Copyright and License
 
