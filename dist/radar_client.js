@@ -38,11 +38,13 @@ instance.Backoff = Backoff;
 
 module.exports = instance;
 },
-"lib/radar_client.js": function(module, exports, require){var log = require('minilog')('radar_client'),
+"lib/radar_client.js": function(module, exports, require){/* globals setImmediate */
+var log = require('minilog')('radar_client'),
     MicroEE = require('microee'),
     eio = require('engine.io-client'),
     Scope = require('./scope.js'),
-    StateMachine = require('./state.js');
+    StateMachine = require('./state.js'),
+    immediate = typeof setImmediate != 'undefined' ? setImmediate : function(fn) { setTimeout(fn, 1); };
 
 function Client(backend) {
   var self = this;
@@ -287,7 +289,7 @@ Client.prototype._batch = function(message) {
     time = message.value[index + 1];
 
     if (time > current) {
-      this.emit(message.to, data);
+      this.emitNext(message.to, data);
     }
     if (time > newest) {
       newest = time;
@@ -435,14 +437,19 @@ Client.prototype._messageReceived = function (msg) {
     case 'err':
     case 'ack':
     case 'get':
-      this.emit(message.op, message);
+      this.emitNext(message.op, message);
       break;
     case 'sync':
       this._batch(message);
       break;
     default:
-      this.emit(message.to, message);
+      this.emitNext(message.to, message);
   }
+};
+
+Client.prototype.emitNext = function() {
+  var args = Array.prototype.slice.call(arguments), client = this;
+  immediate(function(){ client.emit.apply(client, args); });
 };
 
 Client.setBackend = function(lib) { eio = lib; };

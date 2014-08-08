@@ -661,7 +661,7 @@ exports.RadarClient = {
 
         client._channelSyncTimes.you = now - HOUR;
 
-        client.emit = function(name, data) {
+        client.emitNext = function(name, data) {
           called = true;
           assert.equal(name, message.to);
           assert.deepEqual(data, JSON.parse(message.value[0]));
@@ -897,7 +897,7 @@ exports.RadarClient = {
               },
               json = JSON.stringify(message);
 
-          client.emit = function(name, data) {
+          client.emitNext = function(name, data) {
             if(name === 'message:in') return;
             called = true;
             assert.equal(name, message.op);
@@ -915,7 +915,7 @@ exports.RadarClient = {
               },
               json = JSON.stringify(message);
 
-          client.emit = function(name, data) {
+          client.emitNext = function(name, data) {
             if(name === 'message:in') return;
             called = true;
             assert.equal(name, message.op);
@@ -933,7 +933,7 @@ exports.RadarClient = {
               },
               json = JSON.stringify(message);
 
-          client.emit = function(name, data) {
+          client.emitNext = function(name, data) {
             if(name === 'message:in') return;
             called = true;
             assert.equal(name, message.op);
@@ -968,7 +968,7 @@ exports.RadarClient = {
               },
               json = JSON.stringify(message);
 
-          client.emit = function(name, data) {
+          client.emitNext = function(name, data) {
             if(name === 'message:in') return;
 
             called = true;
