@@ -1,3 +1,6 @@
+### next
+* emit message events in a new context to avoid errors
+
 ### 0.9.3
 * Perform a prepublish check for outdated dependencies and dirty working tree
 

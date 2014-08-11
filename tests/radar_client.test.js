@@ -331,7 +331,6 @@ exports['given a new presence'] = {
       ],
       time: 1
     });
-    assert.equal(3, received.length);
     client._batch({
       to: 'foo',
       value: [
@@ -344,9 +343,10 @@ exports['given a new presence'] = {
       ],
       time: 2
     });
-    assert.equal(4, received.length);
-
-    done();
+    setTimeout(function() {
+      assert.equal(4, received.length);
+      done();
+    }, 10);
   }
 };
 
