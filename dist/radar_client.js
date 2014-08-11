@@ -1,6 +1,6 @@
 (function(){function require(e,t){for(var n=[],r=e.split("/"),i,s,o=0;s=r[o++];)".."==s?n.pop():"."!=s&&n.push(s);n=n.join("/"),o=require,s=o.m[t||0],i=s[n+".js"]||s[n+"/index.js"]||s[n];if(s=i.c)i=o.m[t=s][e=i.m];return i.exports||i(i,i.exports={},function(n){return o("."!=n.charAt(0)?n:e+"/../"+n,t)}),i.exports};
 require.m = [];
-require.m[0] = { "engine.io-client": { exports: window.eio },
+require.m[0] = { "engine.io-client": { exports: eio },
 "lib/backoff.js": function(module, exports, require){function Backoff() {
   this.failures = 0;
 }
@@ -610,7 +610,7 @@ module.exports = { create: create };
 
 },
 "microee": {"c":1,"m":"/index.js"},
-"minilog": { exports: window.Minilog },
+"minilog": { exports: Minilog },
 "sfsm": {"c":2,"m":"/state-machine.js"}};
 require.m[1] = { "/index.js": function(module, exports, require){function M() { this._events = {}; }
 M.prototype = {
