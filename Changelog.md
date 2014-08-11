@@ -1,3 +1,6 @@
+### next
+* Perform a prepublish check for outdated dependencies and dirty working tree
+
 ### 0.9.1
 * server version bump
 
