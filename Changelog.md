@@ -1,4 +1,4 @@
-### next
+### 0.10.0
 * emit message events in a new context to avoid errors
 
 ### 0.9.3
