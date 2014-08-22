@@ -175,6 +175,10 @@ Client.prototype.status = function(scope) {
   return new Scope('status:/'+this._configuration.accountName+'/'+scope, this);
 };
 
+Client.prototype.stream = function(scope) {
+  return new Scope('stream:/'+this._configuration.accountName+'/'+scope, this);
+};
+
 Client.prototype.set = function(scope, value, callback) {
   return this._write({
     op: 'set',
