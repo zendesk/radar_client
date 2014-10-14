@@ -1,3 +1,6 @@
+### 0.11.0
+* Stream resource API added
+
 ### 0.10.0
 * emit message events in a new context to avoid errors
 
