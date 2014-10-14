@@ -175,6 +175,20 @@ Client.prototype.status = function(scope) {
   return new Scope('status:/'+this._configuration.accountName+'/'+scope, this);
 };
 
+Client.prototype.stream = function(scope) {
+  return new Scope('stream:/'+this._configuration.accountName+'/'+scope, this);
+};
+
+Client.prototype.push = function(scope, resource, action, value, callback) {
+  return this._write({
+    op: 'push',
+    to: scope,
+    resource: resource,
+    action: action,
+    value: value
+  }, callback);
+};
+
 Client.prototype.set = function(scope, value, callback) {
   return this._write({
     op: 'set',
@@ -193,8 +207,14 @@ Client.prototype.publish = function(scope, value, callback) {
   }, callback);
 };
 
-Client.prototype.subscribe = function(scope, callback) {
-  return this._write({ op: 'subscribe', to: scope }, callback);
+Client.prototype.subscribe = function(scope, options, callback) {
+  var message = { op: 'subscribe', to: scope };
+  if (typeof options == 'function') {
+    callback = options;
+  } else {
+    message.options = options;
+  }
+  return this._write(message, callback);
 };
 
 Client.prototype.unsubscribe = function(scope, callback) {
@@ -461,7 +481,7 @@ module.exports = Client;
   this.client = client;
 }
 
-var props = [ 'set', 'get', 'subscribe', 'unsubscribe', 'publish', 'sync',
+var props = [ 'set', 'get', 'subscribe', 'unsubscribe', 'publish', 'push', 'sync',
   'on', 'once', 'when', 'removeListener', 'removeAllListeners'];
 
 var init = function(name) {
