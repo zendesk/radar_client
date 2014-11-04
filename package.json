@@ -32,7 +32,7 @@
   "dependencies": {
     "microee": "*",
     "minilog": "*",
-    "engine.io-client": "1.3.1",
+    "engine.io-client": "1.4.2",
     "sfsm": "0.0.4"
   },
   "devDependencies": {
@@ -48,7 +48,6 @@
     "test": "ls ./tests/*.test.js | xargs -n 1 -t -I {} sh -c 'TEST=\"{}\" npm run test-one'",
     "test-one": "./node_modules/.bin/mocha --ui exports --reporter spec --slow 2000ms --bail \"$TEST\"",
     "prebuild": "npm run check-modules",
-    "build": "./node_modules/gluejs/bin/gluejs --include ./lib --npm microee,sfsm --replace engine.io-client=eio,minilog=Minilog --global RadarClient --main lib/index.js --out dist/radar_client.js",
-    "prepublish": "npm run build && npm run check-clean || echo 'You cannot publish with outdated dependecies or uncommitted build changes.'"
+    "build": "./node_modules/gluejs/bin/gluejs --include ./lib --npm microee,sfsm --replace engine.io-client=eio,minilog=Minilog --global RadarClient --main lib/index.js --out dist/radar_client.js"
   }
 }
