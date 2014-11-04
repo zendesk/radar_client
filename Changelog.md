@@ -1,3 +1,6 @@
+### 0.12.0
+* engine.io-client updated to v1.4.2
+
 ### 0.11.0
 * Stream resource API added
 
