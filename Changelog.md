@@ -1,3 +1,6 @@
+### 0.12.1
+* fix for bug created by using Work Offline mode in FF
+
 ### 0.12.0
 * engine.io-client updated to v1.4.2
 
