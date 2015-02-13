@@ -1,3 +1,6 @@
+### 0.13.0
+* server version bump
+
 ### 0.12.1
 * fix for bug created by using Work Offline mode in FF
 
