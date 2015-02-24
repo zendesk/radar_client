@@ -13,11 +13,11 @@ Socket.prototype.sendPacket = function(nop, data) {
   var message = JSON.parse(data);
   current._written.push(message);
   log(message);
-  if(message.op == 'get' || message.op == 'sync') {
+  if (message.op == 'get' || message.op == 'sync') {
     current.emit('message', data);
   }
   // ACKs should be returned immediately
-  if(message.ack) {
+  if (message.ack) {
     current.emit('message', JSON.stringify({"op":"ack","value": message.ack}));
   }
 };

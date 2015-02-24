@@ -2,15 +2,7 @@ var assert = require('assert'),
     log = require('minilog')('state.test'),
     StateMachine = require('../lib/state.js'),
     machine;
-/*
-    Minilog = require('minilog'),
-    stdoutPipe = Minilog.pipe(Minilog.backends.nodeConsole);
 
-// configure log output
-stdoutPipe
-  .filter(Minilog.backends.nodeConsole.filterEnv("*"))
-  .format(Minilog.backends.nodeConsole.formatWithStack);
-  */
 exports['given a state machine'] = {
   beforeEach: function() {
     machine = StateMachine.create();
@@ -87,12 +79,13 @@ exports['given a state machine'] = {
     });
 
     setTimeout(function() {
-      assert.equal(disconnects, 1); // only 1 disconnect due to manager.disconnect()
+      // Only 1 disconnect due to manager.disconnect()
+      assert.equal(disconnects, 1);
       done();
     }, 15000);
 
     machine.on('connect', function() {
-      if(once) {
+      if (once) {
         machine.disconnect();
         once = false;
       }else {
@@ -134,7 +127,7 @@ exports['given a state machine'] = {
   }
 };
 
-// if this module is the script being run, then run the tests:
+// When this module is the script being run, run the tests:
 if (module == require.main) {
   var mocha = require('child_process').spawn('mocha', [ '--colors', '--ui', 'exports', '--reporter', 'spec', __filename ]);
   mocha.stdout.pipe(process.stdout);

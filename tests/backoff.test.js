@@ -52,7 +52,7 @@ Some properties of a nice backoff system:
 
 };
 
-// if this module is the script being run, then run the tests:
+// When this module is the script being run, run the tests:
 if (module == require.main) {
   var mocha = require('child_process').spawn('mocha', [ '--colors', '--ui', 'exports', '--reporter', 'spec', __filename ]);
   mocha.stdout.pipe(process.stdout);

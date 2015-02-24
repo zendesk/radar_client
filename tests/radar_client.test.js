@@ -36,7 +36,7 @@ exports['before connecting'] = {
   'calling alloc or dealloc before configure call should not cause errors': function(done) {
     client.dealloc('test');
     client.alloc('test', function() {
-      // this should never be called because of the dealloc
+      // This should never be called because of the dealloc
       assert.ok(false);
     });
     client.dealloc('test');
@@ -350,7 +350,7 @@ exports['given a new presence'] = {
   }
 };
 
-// if this module is the script being run, then run the tests:
+// When this module is the script being run, run the tests:
 if (module == require.main) {
   var mocha = require('child_process').spawn('mocha', [ '--colors', '--ui', 'exports', '--reporter', 'spec', __filename ]);
   mocha.stdout.pipe(process.stdout);

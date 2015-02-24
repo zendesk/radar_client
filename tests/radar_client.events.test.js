@@ -10,24 +10,21 @@ exports['given a new presence'] = {
   'can set a event handler and receive messages': function(done){
     var client = this.client;
     client.once('presence:tickets:21', function(changes) {
-//      test.equal('presence:tickets:21', scope);
       assert.deepEqual([1], changes.online);
       assert.deepEqual([], changes.offline);
     });
 
-    // send an online message
+    // Send an online message
     client.emit('presence:tickets:21', { online: [1], offline: []});
 
 
     client.once('presence:tickets:21', function(changes) {
-//      test.equal('presence:tickets:21', scope);
       assert.deepEqual([], changes.online);
       assert.deepEqual([1], changes.offline);
       done();
     });
 
     client.emit('presence:tickets:21', { online: [], offline: [1]});
-
   },
 
   'can remove a single callback': function(done) {
@@ -59,7 +56,7 @@ exports['given a new presence'] = {
 
 };
 
-// if this module is the script being run, then run the tests:
+// When this module is the script being run, run the tests:
 if (module == require.main) {
   var mocha = require('child_process').spawn('mocha', [ '--colors', '--ui', 'exports', '--reporter', 'spec', __filename ]);
   mocha.stdout.pipe(process.stdout);

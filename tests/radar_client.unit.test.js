@@ -423,7 +423,7 @@ exports.RadarClient = {
           done();
         });
 
-        //previous online emits should not affect the callback
+        // Previous online emits should not affect the callback
         client.emit(scope, { op: 'online', to: scope, value: { 100: 2 } });
 
         client.emit('get', {
@@ -449,7 +449,7 @@ exports.RadarClient = {
         assert.equal(2, Object.keys(client._subscriptions).length);
 
         client._memorize({ op: 'get', to: 'bar' });
-        // should be a no-op
+        // Should be a no-op
         assert.equal(2, Object.keys(client._subscriptions).length);
 
         done();
@@ -460,7 +460,7 @@ exports.RadarClient = {
         client._memorize({ op: 'set', to: 'presence:/foo/bar', value: 'online' });
         assert.equal('online', client._presences['presence:/foo/bar']);
         assert.equal(1, Object.keys(client._presences).length);
-        // duplicate should be ignored
+        // Duplicate should be ignored
         client._memorize({ op: 'set', to: 'presence:/foo/bar', value: 'online' });
         assert.equal(1, Object.keys(client._presences).length);
 
@@ -471,11 +471,11 @@ exports.RadarClient = {
       },
 
       'memorizing a unsubscribe should remove any sync/subscribe': function(done) {
-        // set up
+        // Set up
         client._memorize({ op: 'subscribe', to: 'foo'});
         client._memorize({ op: 'sync', to: 'bar'});
         assert.equal(2, Object.keys(client._subscriptions).length);
-        // unsubscribe
+        // Unsubscribe
         client._memorize({ op: 'unsubscribe', to: 'foo'});
         assert.equal(1, Object.keys(client._subscriptions).length);
         client._memorize({ op: 'unsubscribe', to: 'bar'});
@@ -484,7 +484,7 @@ exports.RadarClient = {
       },
 
       'duplicated subscribes and syncs should only be stored once and sync is more important than subscribe': function(done) {
-        // simple duplicates
+        // Simple duplicates
         client._memorize({ op: 'subscribe', to: 'foo'});
         assert.equal(1, Object.keys(client._subscriptions).length);
         client._memorize({ op: 'subscribe', to: 'foo'});
@@ -492,14 +492,14 @@ exports.RadarClient = {
 
 
         client._subscriptions = {};
-        // simple duplicates
+        // Simple duplicates
         client._memorize({ op: 'sync', to: 'abc'});
         assert.equal(1, Object.keys(client._subscriptions).length);
         client._memorize({ op: 'sync', to: 'abc'});
         assert.equal(1, Object.keys(client._subscriptions).length);
 
         client._subscriptions = {};
-        // sync after subscribe
+        // Sync after subscribe
         client._memorize({ op: 'sync', to: 'bar'});
         assert.equal(1, Object.keys(client._subscriptions).length);
         client._memorize({ op: 'sync', to: 'bar'});
@@ -507,11 +507,11 @@ exports.RadarClient = {
         assert.equal('sync', client._subscriptions.bar);
 
         client._subscriptions = {};
-        // subscribe after sync
+        // Subscribe after sync
         client._memorize({ op: 'sync', to: 'baz'});
         assert.equal(1, Object.keys(client._subscriptions).length);
         assert.equal('sync', client._subscriptions.baz);
-        // if we sync and subscribe, it means just sync
+        // When we sync and subscribe, it means just sync
         client._memorize({ op: 'subscribe', to: 'baz'});
         assert.equal(1, Object.keys(client._subscriptions).length);
         assert.equal('sync', client._subscriptions.baz);
@@ -898,7 +898,7 @@ exports.RadarClient = {
               json = JSON.stringify(message);
 
           client.emitNext = function(name, data) {
-            if(name === 'message:in') return;
+            if (name === 'message:in') return;
             called = true;
             assert.equal(name, message.op);
             assert.deepEqual(data, message);
@@ -916,7 +916,7 @@ exports.RadarClient = {
               json = JSON.stringify(message);
 
           client.emitNext = function(name, data) {
-            if(name === 'message:in') return;
+            if (name === 'message:in') return;
             called = true;
             assert.equal(name, message.op);
             assert.deepEqual(data, message);
@@ -934,7 +934,7 @@ exports.RadarClient = {
               json = JSON.stringify(message);
 
           client.emitNext = function(name, data) {
-            if(name === 'message:in') return;
+            if (name === 'message:in') return;
             called = true;
             assert.equal(name, message.op);
             assert.deepEqual(data, message);
@@ -969,7 +969,7 @@ exports.RadarClient = {
               json = JSON.stringify(message);
 
           client.emitNext = function(name, data) {
-            if(name === 'message:in') return;
+            if (name === 'message:in') return;
 
             called = true;
             assert.equal(name, message.to);
