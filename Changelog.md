@@ -1,3 +1,8 @@
+### 0.13.1
+* Code cleanup
+  - comment capitalization, comment line length, code line length
+  - minor code standardization
+
 ### 0.13.0
 * server version bump
 
