@@ -33,7 +33,7 @@ exports['given an instance of Radar client'] = {
   'alloc calls do not perform a connect if not connected and not configured': function(done) {
     client.alloc('foo');
     setTimeout(function() {
-      // we use a setTimeout, because connecting with the fake backend
+      // We use a setTimeout, because connecting with the fake backend
       // is also async, it just takes 5 ms rather than a real connect duration
       assert.ok(client.manager.is('opened'));
       assert.ok(client._waitingForConfigure);
@@ -45,7 +45,7 @@ exports['given an instance of Radar client'] = {
     client.configure({ userId: 123, accountName: 'dev' });
     client.alloc('foo');
     setTimeout(function() {
-      // we use a setTimeout, because connecting with the fake backend
+      // We use a setTimeout, because connecting with the fake backend
       // is also async, it just takes 5 ms rather than a real connect duration
       assert.ok(client.manager.is('activated'));
       done();
@@ -55,7 +55,7 @@ exports['given an instance of Radar client'] = {
   'configure calls perform a connect if waiting for configured': function(done) {
     client.alloc('foo');
     setTimeout(function() {
-      // we use a setTimeout, because connecting with the fake backend
+      // We use a setTimeout, because connecting with the fake backend
       // is also async, it just takes 5 ms rather than a real connect duration
       assert.ok(client.manager.is('opened'));
       assert.ok(client._waitingForConfigure);
@@ -74,19 +74,19 @@ exports['given an instance of Radar client'] = {
       readyCount++;
     });
     client.configure({ userId: 123, accountName: 'dev' });
-    // also test that the callback param works
+    // Test that the callback param works
     function onAlloc() {
       allocDoneCount++;
     }
     client.alloc('foo', onAlloc);
     setTimeout(function() {
-      assert.ok(client.manager.is('activated')); // = Ready state
+      // Ready state == 'activated'
+      assert.ok(client.manager.is('activated'));
       assert.equal(readyCount, 1);
       assert.equal(allocDoneCount, 1);
-      // if the connect code would trigger, then these would
-      // not run the on('ready') action immediately.
-      // If the action is run immediately, we know that the
-      // connection code was skipped.
+      // If the connect code would trigger, then these would not run the
+      // on('ready') action immediately.  If the action is run immediately, we
+      // know that the connection code was skipped.
       // Might rewrite this to be more explicit later.
       client.alloc('foo');
       client.alloc('foo', onAlloc);
@@ -120,7 +120,7 @@ exports['given an instance of Radar client'] = {
 
 };
 
-// if this module is the script being run, then run the tests:
+// When this module is the script being run, run the tests:
 if (module == require.main) {
   var mocha = require('child_process').spawn('mocha', [ '--colors', '--ui', 'exports', '--reporter', 'spec', __filename ]);
   mocha.stdout.pipe(process.stdout);

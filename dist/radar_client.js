@@ -44,7 +44,8 @@ var log = require('minilog')('radar_client'),
     eio = require('engine.io-client'),
     Scope = require('./scope.js'),
     StateMachine = require('./state.js'),
-    immediate = typeof setImmediate != 'undefined' ? setImmediate : function(fn) { setTimeout(fn, 1); };
+    immediate = typeof setImmediate != 'undefined' ? setImmediate :
+                                    function(fn) { setTimeout(fn, 1); };
 
 function Client(backend) {
   var self = this;
@@ -57,7 +58,7 @@ function Client(backend) {
   this._queuedMessages = [];
   this._isConfigured = false;
 
-  // allow backend substitution for tests
+  // Allow backend substitution for tests
   this.backend = backend || eio;
 
   this._createManager();
@@ -225,14 +226,14 @@ Client.prototype.unsubscribe = function(scope, callback) {
 var init = function(name) {
   Client.prototype[name] = function(scope, options, callback) {
     var message = { op: name, to: scope };
-    // options is a optional argument
+    // options is an optional argument
     if (typeof options == 'function') {
       callback = options;
     } else {
       message.options = options;
     }
-    // sync v1 for presence scopes acts inconsistently. The result should be a "get" message,
-    // but it is actually a "online" message.
+    // Sync v1 for presence scopes acts inconsistently. The result should be a
+    // "get" message, but it is actually a "online" message.
     // So force v2 and translate the result to v1 format.
     if (name == 'sync' && !message.options && scope.match(/^presence.+/)) {
       message.options = { version: 2 };
@@ -244,6 +245,8 @@ var init = function(name) {
 
         for (userId in message.value) {
           if (message.value.hasOwnProperty(userId)) {
+            // Skip when not defined; causes exception in FF for 'Work Offline'
+            if (!message.value[userId]) { continue; }
             value[userId] = message.value[userId].userType;
           }
         }
@@ -265,7 +268,8 @@ var init = function(name) {
         return true;
       });
     }
-    // sync/get never register or retuin acks (since they always send back a data message)
+    // sync/get never register or return acks (since they always send back a
+    // data message)
     return this._write(message);
   };
 };
@@ -280,7 +284,7 @@ Client.prototype._write = function(message, callback) {
 
   if(callback) {
     message.ack = this._ackCounter++;
-    // wait ack
+    // Wait ack
     this.when('ack', function(m) {
       client.logger().debug('ack', m);
       if(!m || !m.value || m.value != message.ack) {
@@ -342,9 +346,10 @@ Client.prototype._createManager = function() {
       socket.removeAllListeners('message');
       client._socket = null;
 
-      // Patch for polling-xhr continuing to poll after socket close (HTTP:POST failure).
-      // socket.transport is in error but not closed, so if a subsequent poll succeeds,
-      // the transport remains open and polling until server closes the socket.
+      // Patch for polling-xhr continuing to poll after socket close (HTTP:POST
+      // failure).  socket.transport is in error but not closed, so if a subsequent
+      // poll succeeds, the transport remains open and polling until server closes
+      // the socket.
       if(socket.transport) {
         socket.transport.close();
       }
@@ -370,7 +375,7 @@ Client.prototype._createManager = function() {
   });
 
   manager.on('authenticate', function() {
-    // can be overridden in order to establish an authentication protocol
+    // Can be overridden in order to establish an authentication protocol
     manager.activate();
   });
 
@@ -379,13 +384,12 @@ Client.prototype._createManager = function() {
   });
 };
 
-// Memorize subscriptions and presence states
-// returns true for a message that adds to the
-//   memorized subscriptions or presences
+// Memorize subscriptions and presence states; return "true" for a message that
+// adds to the memorized subscriptions or presences
 Client.prototype._memorize = function(message) {
   switch(message.op) {
     case 'unsubscribe':
-      // remove from queue
+      // Remove from queue
       if (this._subscriptions[message.to]) {
         delete this._subscriptions[message.to];
       }
@@ -528,14 +532,16 @@ function create() {
 
     callbacks: {
       onevent: function(event, from, to) {
-        log.debug('before-' + event + ', from: ' + from + ', to: ' + to, Array.prototype.slice.call(arguments));
+        log.debug('before-' + event + ', from: ' + from + ', to: ' + to,
+                                    Array.prototype.slice.call(arguments));
 
         this.emit('event', event);
         this.emit(event, arguments);
       },
 
       onstate: function(event, from, to) {
-        log.debug('event-state-' + event + ', from: ' + from + ', to: ' + to, Array.prototype.slice.call(arguments));
+        log.debug('event-state-' + event + ', from: ' + from + ', to: ' + to,
+                                    Array.prototype.slice.call(arguments));
 
         this.emit('enterState', to);
         this.emit(to, arguments);
@@ -580,7 +586,8 @@ function create() {
     }
   });
 
-  machine._backoff = backoff; // for testing
+  // For testing
+  machine._backoff = backoff;
   machine._connectTimeout = 10000;
 
   for (var property in MicroEE.prototype) {
