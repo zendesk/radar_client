@@ -65,7 +65,7 @@ function Client(backend) {
   this.configure(false);
 
   this.on('authenticateMessage', function(message) {
-    if(this._configuration) {
+    if (this._configuration) {
       message.userData = this._configuration.userData;
       if (this._configuration.auth) {
         message.auth = this._configuration.auth;
@@ -91,7 +91,7 @@ Client.prototype.logger = function() {
 // alloc() and dealloc() rather than connect() and disconnect() - see readme.md
 Client.prototype.alloc = function(name, callback) {
   var self = this;
-  if(!this._users[name]) {
+  if (!this._users[name]) {
     this.logger().info('alloc: ', name);
     this.once('ready', function() {
       self.logger().info('ready: ', name);
@@ -99,7 +99,7 @@ Client.prototype.alloc = function(name, callback) {
   }
   this._users[name] = true;
   callback && this.once('ready', function() {
-    if(self._users.hasOwnProperty(name)) {
+    if (self._users.hasOwnProperty(name)) {
       callback();
     }
   });
@@ -252,7 +252,7 @@ var init = function(name) {
         }
         message.value = value;
         message.op = 'online';
-        if(callback) {
+        if (callback) {
           callback(message);
         }
         return true;
@@ -282,12 +282,12 @@ for(var i = 0; i < props.length; i++){
 Client.prototype._write = function(message, callback) {
   var client = this;
 
-  if(callback) {
+  if (callback) {
     message.ack = this._ackCounter++;
     // Wait ack
     this.when('ack', function(m) {
       client.logger().debug('ack', m);
-      if(!m || !m.value || m.value != message.ack) {
+      if (!m || !m.value || m.value != message.ack) {
         return false;
       }
       callback(message);
@@ -350,7 +350,7 @@ Client.prototype._createManager = function() {
       // failure).  socket.transport is in error but not closed, so if a subsequent
       // poll succeeds, the transport remains open and polling until server closes
       // the socket.
-      if(socket.transport) {
+      if (socket.transport) {
         socket.transport.close();
       }
 

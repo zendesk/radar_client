@@ -85,7 +85,7 @@ exports['given a state machine'] = {
     }, 15000);
 
     machine.on('connect', function() {
-      if(once) {
+      if (once) {
         machine.disconnect();
         once = false;
       }else {

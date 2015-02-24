@@ -898,7 +898,7 @@ exports.RadarClient = {
               json = JSON.stringify(message);
 
           client.emitNext = function(name, data) {
-            if(name === 'message:in') return;
+            if (name === 'message:in') return;
             called = true;
             assert.equal(name, message.op);
             assert.deepEqual(data, message);
@@ -916,7 +916,7 @@ exports.RadarClient = {
               json = JSON.stringify(message);
 
           client.emitNext = function(name, data) {
-            if(name === 'message:in') return;
+            if (name === 'message:in') return;
             called = true;
             assert.equal(name, message.op);
             assert.deepEqual(data, message);
@@ -934,7 +934,7 @@ exports.RadarClient = {
               json = JSON.stringify(message);
 
           client.emitNext = function(name, data) {
-            if(name === 'message:in') return;
+            if (name === 'message:in') return;
             called = true;
             assert.equal(name, message.op);
             assert.deepEqual(data, message);
@@ -969,7 +969,7 @@ exports.RadarClient = {
               json = JSON.stringify(message);
 
           client.emitNext = function(name, data) {
-            if(name === 'message:in') return;
+            if (name === 'message:in') return;
 
             called = true;
             assert.equal(name, message.to);
