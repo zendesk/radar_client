@@ -31,7 +31,6 @@ module.exports = Backoff;
     Backoff = require('./backoff.js');
 
 instance._log = require('minilog');
-instance._logger = instance._log('radar_client');
 instance.Backoff = Backoff;
 
 // This module makes radar_client a singleton to prevent multiple connections etc.
@@ -39,67 +38,53 @@ instance.Backoff = Backoff;
 module.exports = instance;
 },
 "lib/radar_client.js": function(module, exports, require){/* globals setImmediate */
-var log = require('minilog')('radar_client'),
-    MicroEE = require('microee'),
+var MicroEE = require('microee'),
     eio = require('engine.io-client'),
     Scope = require('./scope.js'),
     StateMachine = require('./state.js'),
     immediate = typeof setImmediate != 'undefined' ? setImmediate :
                                     function(fn) { setTimeout(fn, 1); };
 
+MicroEE.mixin(Client);
+
 function Client(backend) {
   var self = this;
+  this.logger = require('minilog')('radar_client');
   this._ackCounter = 1;
   this._channelSyncTimes = {};
-  this._users = {};
+  this._uses = {};
   this._presences = {};
   this._subscriptions = {};
   this._restoreRequired = false;
   this._queuedMessages = [];
   this._isConfigured = false;
 
-  // Allow backend substitution for tests
-  this.backend = backend || eio;
-
   this._createManager();
   this.configure(false);
+  this._addListeners();
 
-  this.on('authenticateMessage', function(message) {
-    if (this._configuration) {
-      message.userData = this._configuration.userData;
-      if (this._configuration.auth) {
-        message.auth = this._configuration.auth;
-        message.userId = this._configuration.userId;
-        message.userType = this._configuration.userType;
-        message.accountName = this._configuration.accountName;
-      }
-    }
-    this.emit('messageAuthenticated', message);
-  });
-
-  this.on('messageAuthenticated', function(message) {
-    this._sendMessage(message);
-  });
+  // Allow backend substitution for tests
+  this.backend = backend || eio;
 }
 
-MicroEE.mixin(Client);
+// Public API
 
-Client.prototype.logger = function() {
-  return this._logger || log;
-};
-
-// alloc() and dealloc() rather than connect() and disconnect() - see readme.md
-Client.prototype.alloc = function(name, callback) {
+// Each use of the client is registered with "alloc", and a given use often
+// persists through many connects and disconnects.
+// The state machine - "manager" - handles connects and disconnects
+Client.prototype.alloc = function(useName, callback) {
   var self = this;
-  if (!this._users[name]) {
-    this.logger().info('alloc: ', name);
+  if (!this._uses[useName]) {
+    this.logger().info('alloc: ', useName);
     this.once('ready', function() {
-      self.logger().info('ready: ', name);
+      self.logger().info('ready: ', useName);
     });
+
+    this._uses[useName] = true;
   }
-  this._users[name] = true;
+
   callback && this.once('ready', function() {
-    if (self._users.hasOwnProperty(name)) {
+    if (self._uses.hasOwnProperty(useName)) {
       callback();
     }
   });
@@ -113,15 +98,17 @@ Client.prototype.alloc = function(name, callback) {
   return this;
 };
 
-Client.prototype.dealloc = function(name) {
-  this.logger().info({ op: 'dealloc', name: name });
+// When done with a given use of the client, unregister the use
+// Only when all uses are unregistered do we disconnect the client
+Client.prototype.dealloc = function(useName) {
+  this.logger().info({ op: 'dealloc', useName: useName });
 
-  delete this._users[name];
+  delete this._uses[useName];
 
   var stillAllocated = false, key;
 
-  for (key in this._users) {
-    if (this._users.hasOwnProperty(key)) {
+  for (key in this._uses) {
+    if (this._uses.hasOwnProperty(key)) {
       stillAllocated = true;
       break;
     }
@@ -150,8 +137,9 @@ Client.prototype.configure = function(hash) {
   return this;
 };
 
-Client.prototype.configuration = function(name) {
-  return name in this._configuration ? JSON.parse(JSON.stringify(this._configuration[name])) : null;
+Client.prototype.configuration = function(configKey) {
+  return configKey in this._configuration ?
+          JSON.parse(JSON.stringify(this._configuration[configKey])) : null;
 };
 
 Client.prototype.currentUserId = function() {
@@ -223,9 +211,9 @@ Client.prototype.unsubscribe = function(scope, callback) {
 };
 
 // Sync and get return the actual value of the operation
-var init = function(name) {
-  Client.prototype[name] = function(scope, options, callback) {
-    var message = { op: name, to: scope };
+var init = function(propertyName) {
+  Client.prototype[propertyName] = function(scope, options, callback) {
+    var message = { op: propertyName, to: scope };
     // options is an optional argument
     if (typeof options == 'function') {
       callback = options;
@@ -235,7 +223,7 @@ var init = function(name) {
     // Sync v1 for presence scopes acts inconsistently. The result should be a
     // "get" message, but it is actually a "online" message.
     // So force v2 and translate the result to v1 format.
-    if (name == 'sync' && !message.options && scope.match(/^presence.+/)) {
+    if (propertyName == 'sync' && !message.options && scope.match(/^presence.+/)) {
       message.options = { version: 2 };
       this.when('get', function(message) {
         var value = {}, userId;
@@ -278,6 +266,29 @@ var props = ['get', 'sync'];
 for(var i = 0; i < props.length; i++){
   init(props[i]);
 }
+
+// Private API
+
+Client.prototype._addListeners = function () {
+  // Add authentication data to a message; _write() emits authenticateMessage
+  this.on('authenticateMessage', function(message) {
+    if (this._configuration) {
+      message.userData = this._configuration.userData;
+      if (this._configuration.auth) {
+        message.auth = this._configuration.auth;
+        message.userId = this._configuration.userId;
+        message.userType = this._configuration.userType;
+        message.accountName = this._configuration.accountName;
+      }
+    }
+    this.emit('messageAuthenticated', message);
+  });
+
+  // Once the message is authenticated, send it to the server
+  this.on('messageAuthenticated', function(message) {
+    this._sendMessage(message);
+  });
+};
 
 Client.prototype._write = function(message, callback) {
   var client = this;

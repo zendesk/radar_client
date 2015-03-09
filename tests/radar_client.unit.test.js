@@ -49,9 +49,9 @@ exports.RadarClient = {
     },
 
     'should add the channel name to the hash of users': function() {
-      assert.equal(client._users.foo, undefined);
+      assert.equal(client._uses.foo, undefined);
       client.alloc('foo');
-      assert.equal(client._users.foo, true);
+      assert.equal(client._uses.foo, true);
     },
 
     'should add a callback for ready if a callback is passed': function() {
@@ -69,20 +69,20 @@ exports.RadarClient = {
   },
 
   '.dealloc': {
-    'should delete the _users property for a given channel name': function() {
+    'should delete the _uses property for a given channel name': function() {
       client.alloc('foo');
-      assert.equal(client._users.foo, true);
+      assert.equal(client._uses.foo, true);
       client.dealloc('foo');
-      assert.equal(client._users.foo, undefined);
+      assert.equal(client._uses.foo, undefined);
     },
 
     'should call close() on the manager if the are no open channels': function() {
       var called = true;
       client.manager.close = function() { called = true; };
       client.alloc('foo');
-      assert.equal(client._users.foo, true);
+      assert.equal(client._uses.foo, true);
       client.dealloc('foo');
-      assert.equal(client._users.foo, undefined);
+      assert.equal(client._uses.foo, undefined);
       assert.ok(called);
     }
   },
