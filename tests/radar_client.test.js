@@ -71,7 +71,7 @@ exports['after reconnecting'] = {
 
     client.once('connect', function() {
       connected = true;
-      assert.equal(MockEngine.current._written.length, 0);
+      assert.equal(MockEngine.current._written.length, 1);
       assert.equal(client._queuedMessages.length, 1);
       assert.deepEqual(client._queuedMessages[0], {
         op: 'set',
