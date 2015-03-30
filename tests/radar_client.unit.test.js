@@ -802,12 +802,21 @@ exports.RadarClient = {
         },
 
         'activate': {
-          'and emits "ready"': function() {
+          'and emits "authenticateMessage", "ready"': function() {
             var called = false;
+            var count = 0;
 
             client.emit = function(name) {
               called = true;
-              assert.equal(name, 'ready');
+
+              count++;
+              if (count == 1) {
+                assert.equal(name, 'authenticateMessage');
+              }
+
+              if (count == 2) {
+                assert.equal(name, 'ready');
+              }
             };
 
             client._createManager();
