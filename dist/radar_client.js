@@ -28,7 +28,7 @@ module.exports = Backoff;
 },
 "lib/client_version.js": function(module, exports, require){// Auto-generated file, overwritten by scripts/add_package_version.js
 
-function getClientVersion() { return '0.13.1'; };
+function getClientVersion() { return '0.13.1'; }
 
 module.exports = getClientVersion;},
 "lib/index.js": function(module, exports, require){var Client = require('./radar_client'),
@@ -504,7 +504,7 @@ Client.prototype._uuidV4Generate = function () {
     lut[d1&0xff]+lut[d1>>8&0xff]+'-'+lut[d1>>16&0x0f|0x40]+lut[d1>>24&0xff]+'-'+
     lut[d2&0x3f|0x80]+lut[d2>>8&0xff]+'-'+lut[d2>>16&0xff]+lut[d2>>24&0xff]+
     lut[d3&0xff]+lut[d3>>8&0xff]+lut[d3>>16&0xff]+lut[d3>>24&0xff];
-}
+};
 
 Client.prototype._identitySet = function () {
   var socket = this._socket;
@@ -518,7 +518,7 @@ Client.prototype._identitySet = function () {
   var message = { op : 'name_id_sync', to: 'server', value: association,
                                             client_version: clientVersion};
   this._write(message);
-}
+};
 
 Client.setBackend = function(lib) { eio = lib; };
 
@@ -707,6 +707,9 @@ M.prototype = {
   removeAllListeners: function(ev) {
     if(!ev) { this._events = {}; }
     else { this._events[ev] && (this._events[ev] = []); }
+  },
+  listeners: function(ev) {
+    return (this._events ? this._events[ev] || [] : []);
   },
   emit: function(ev) {
     this._events || (this._events = {});
