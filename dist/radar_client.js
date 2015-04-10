@@ -26,6 +26,11 @@ Backoff.prototype.isUnavailable = function() {
 
 module.exports = Backoff;
 },
+"lib/client_version.js": function(module, exports, require){// Auto-generated file, overwritten by scripts/add_package_version.js
+
+function getClientVersion() { return '0.13.1'; }
+
+module.exports = getClientVersion;},
 "lib/index.js": function(module, exports, require){var Client = require('./radar_client'),
     instance = new Client(),
     Backoff = require('./backoff.js');
@@ -43,9 +48,8 @@ var MicroEE = require('microee'),
     Scope = require('./scope.js'),
     StateMachine = require('./state.js'),
     immediate = typeof setImmediate != 'undefined' ? setImmediate :
-                                    function(fn) { setTimeout(fn, 1); };
-
-MicroEE.mixin(Client);
+                                    function(fn) { setTimeout(fn, 1); },
+    getClientVersion = require('./client_version.js');
 
 function Client(backend) {
   var self = this;
@@ -66,6 +70,8 @@ function Client(backend) {
   // Allow backend substitution for tests
   this.backend = backend || eio;
 }
+
+MicroEE.mixin(Client);
 
 // Public API
 
@@ -324,7 +330,7 @@ Client.prototype._batch = function(message) {
     time = message.value[index + 1];
 
     if (time > current) {
-      this.emitNext(message.to, data);
+      this._emitNext(message.to, data);
     }
     if (time > newest) {
       newest = time;
@@ -381,6 +387,7 @@ Client.prototype._createManager = function() {
   });
 
   manager.on('activate', function() {
+    client._identitySet();
     client._restore();
     client.emit('ready');
   });
@@ -425,7 +432,6 @@ Client.prototype._restore = function() {
   if (this._restoreRequired) {
     this._restoreRequired = false;
 
-
     for (to in this._subscriptions) {
       if (this._subscriptions.hasOwnProperty(to)) {
         item = this._subscriptions[to];
@@ -455,7 +461,7 @@ Client.prototype._sendMessage = function(message) {
   this.emit('message:out', message);
 
   if (this._socket && this.manager.is('activated')) {
-    this._socket.sendPacket('message', JSON.stringify(message));
+    this._socket.send(JSON.stringify(message));
   } else if (this._isConfigured) {
     this._restoreRequired = true;
     if (!memorized || message.ack) {
@@ -472,19 +478,46 @@ Client.prototype._messageReceived = function (msg) {
     case 'err':
     case 'ack':
     case 'get':
-      this.emitNext(message.op, message);
+      this._emitNext(message.op, message);
       break;
     case 'sync':
       this._batch(message);
       break;
     default:
-      this.emitNext(message.to, message);
+      this._emitNext(message.to, message);
   }
 };
 
-Client.prototype.emitNext = function() {
+Client.prototype._emitNext = function() {
   var args = Array.prototype.slice.call(arguments), client = this;
-  immediate(function(){ client.emit.apply(client, args); });
+  immediate(function() { client.emit.apply(client, args); });
+};
+
+// Variant (by Jeff Ward) of code behind node-uuid, but avoids need for module
+var lut = []; for (var i=0; i<256; i++) { lut[i] = (i<16?'0':'')+(i).toString(16); }
+Client.prototype._uuidV4Generate = function () {
+  var d0 = Math.random()*0xffffffff|0;
+  var d1 = Math.random()*0xffffffff|0;
+  var d2 = Math.random()*0xffffffff|0;
+  var d3 = Math.random()*0xffffffff|0;
+  return lut[d0&0xff]+lut[d0>>8&0xff]+lut[d0>>16&0xff]+lut[d0>>24&0xff]+'-'+
+    lut[d1&0xff]+lut[d1>>8&0xff]+'-'+lut[d1>>16&0x0f|0x40]+lut[d1>>24&0xff]+'-'+
+    lut[d2&0x3f|0x80]+lut[d2>>8&0xff]+'-'+lut[d2>>16&0xff]+lut[d2>>24&0xff]+
+    lut[d3&0xff]+lut[d3>>8&0xff]+lut[d3>>16&0xff]+lut[d3>>24&0xff];
+};
+
+Client.prototype._identitySet = function () {
+  var socket = this._socket;
+  if (!this.name) {
+    this.name = this._uuidV4Generate();
+  }
+
+  // Send msg that associates this.id with current name
+  var association = { id : socket.id, name: this.name };
+  var clientVersion = getClientVersion();
+  var message = { op : 'name_id_sync', to: 'control:client_name', value: association,
+                                            client_version: clientVersion};
+  this._write(message);
 };
 
 Client.setBackend = function(lib) { eio = lib; };
@@ -674,6 +707,9 @@ M.prototype = {
   removeAllListeners: function(ev) {
     if(!ev) { this._events = {}; }
     else { this._events[ev] && (this._events[ev] = []); }
+  },
+  listeners: function(ev) {
+    return (this._events ? this._events[ev] || [] : []);
   },
   emit: function(ev) {
     this._events || (this._events = {});
