@@ -32,7 +32,7 @@ exports['given an instance of Radar client'] = {
 
     client.on('ready', function() {
       assert.equal(MockEngine.current._written[0].op, 'name_id_sync');
-      assert.equal(MockEngine.current._written[0].to, 'server');
+      assert.equal(MockEngine.current._written[0].to, 'control:client_name');
       done();
     });
   },
