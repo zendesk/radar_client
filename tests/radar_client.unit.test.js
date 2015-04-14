@@ -527,7 +527,7 @@ exports.RadarClient = {
         client._restoreRequired = true;
         client.configure({ accountName: 'foo', userId: 123, userType: 2 });
         client.alloc('test', function() {
-          assert.equal(MockEngine.current._written.length, 2);
+          assert.equal(MockEngine.current._written.length, 3);
           assert.ok(MockEngine.current._written.some(function(message) {
             return (message.op == 'set' &&
               message.to == 'presence:/foo/bar' &&
@@ -548,7 +548,7 @@ exports.RadarClient = {
         client._restoreRequired = true;
         client.configure({ accountName: 'foo', userId: 123, userType: 2 });
         client.alloc('test', function() {
-          assert.equal(MockEngine.current._written.length, 2);
+          assert.equal(MockEngine.current._written.length, 3);
           assert.ok(MockEngine.current._written.some(function(message) {
             return (message.op == 'subscribe' &&
               message.to == 'status:/foo/bar');
@@ -802,15 +802,25 @@ exports.RadarClient = {
         },
 
         'activate': {
-          'and emits "ready"': function() {
+          'and emits "authenticateMessage", "ready"': function() {
             var called = false;
+            var count = 0;
 
             client.emit = function(name) {
               called = true;
-              assert.equal(name, 'ready');
+
+              count++;
+              if (1 == count) {
+                assert.equal(name, 'authenticateMessage');
+              }
+
+              if (2 == count) {
+                assert.equal(name, 'ready');
+              }
             };
 
             client._createManager();
+            client.manager.emit('connect');
             client.manager.emit('activate');
             assert.ok(called);
           },
@@ -833,6 +843,7 @@ exports.RadarClient = {
             };
 
             client._createManager();
+            client.manager.emit('connect');
             client.manager.emit('activate');
           }
         },
