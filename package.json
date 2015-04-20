@@ -47,7 +47,9 @@
     "pretest": "npm run build",
     "test": "ls ./tests/*.test.js | xargs -n 1 -t -I {} sh -c 'TEST=\"{}\" npm run test-one'",
     "test-one": "./node_modules/.bin/mocha --ui exports --reporter spec --slow 2000ms --bail \"$TEST\"",
+    "test-one-solo": "./node_modules/.bin/mocha --ui exports --reporter spec --slow 2000ms --bail",
     "prebuild": "npm run check-modules",
-    "build": "./node_modules/gluejs/bin/gluejs --include ./lib --npm microee,sfsm --replace engine.io-client=eio,minilog=Minilog --global RadarClient --main lib/index.js --out dist/radar_client.js"
+    "build": "npm run version-build; ./node_modules/gluejs/bin/gluejs --include ./lib --npm microee,sfsm --replace engine.io-client=eio,minilog=Minilog --global RadarClient --main lib/index.js --out dist/radar_client.js",
+    "version-build": "node scripts/add_client_version.js"
   }
 }
