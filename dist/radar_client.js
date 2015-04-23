@@ -26,6 +26,11 @@ Backoff.prototype.isUnavailable = function() {
 
 module.exports = Backoff;
 },
+"lib/client_version.js": function(module, exports, require){// Auto-generated file, overwritten by scripts/add_package_version.js
+
+function getClientVersion() { return '0.13.1'; };
+
+module.exports = getClientVersion;},
 "lib/index.js": function(module, exports, require){var Client = require('./radar_client'),
     instance = new Client(),
     Backoff = require('./backoff.js');
@@ -43,9 +48,8 @@ var MicroEE = require('microee'),
     Scope = require('./scope.js'),
     StateMachine = require('./state.js'),
     immediate = typeof setImmediate != 'undefined' ? setImmediate :
-                                    function(fn) { setTimeout(fn, 1); };
-
-MicroEE.mixin(Client);
+                                    function(fn) { setTimeout(fn, 1); },
+    getClientVersion = require('./client_version.js');
 
 function Client(backend) {
   var self = this;
@@ -66,6 +70,8 @@ function Client(backend) {
   // Allow backend substitution for tests
   this.backend = backend || eio;
 }
+
+MicroEE.mixin(Client);
 
 // Public API
 
@@ -166,6 +172,21 @@ Client.prototype.status = function(scope) {
 
 Client.prototype.stream = function(scope) {
   return new Scope('stream:/'+this._configuration.accountName+'/'+scope, this);
+};
+
+// Access the "control" chainable operations
+Client.prototype.control = function(scope) {
+  return new Scope('control:/'+this._configuration.accountName+'/'+scope, this);
+};
+
+Client.prototype.nameSync = function(scope, options, callback) {
+  var message = { op: 'nameSync', to: scope };
+  if (typeof options == 'function') {
+    callback = options;
+  } else {
+    message.options = options;
+  }
+  return this._write(message, callback);
 };
 
 Client.prototype.push = function(scope, resource, action, value, callback) {
@@ -381,6 +402,7 @@ Client.prototype._createManager = function() {
   });
 
   manager.on('activate', function() {
+    client._identitySet();
     client._restore();
     client.emit('ready');
   });
@@ -487,6 +509,32 @@ Client.prototype.emitNext = function() {
   immediate(function(){ client.emit.apply(client, args); });
 };
 
+Client.prototype._identitySet = function () {
+  if (!this.name) {
+    this.name = this._uuidV4Generate();
+  }
+
+  // Send msg that associates this.id with current name
+  var association = { id : this._socket.id, name: this.name };
+  var clientVersion = getClientVersion();
+  var options = { association: association, clientVersion: clientVersion };
+
+  this.control('clientName').nameSync(options);
+}; 
+
+// Variant (by Jeff Ward) of code behind node-uuid, but avoids need for module
+var lut = []; for (var i=0; i<256; i++) { lut[i] = (i<16?'0':'')+(i).toString(16); }
+Client.prototype._uuidV4Generate = function () {
+  var d0 = Math.random()*0xffffffff|0;
+  var d1 = Math.random()*0xffffffff|0;
+  var d2 = Math.random()*0xffffffff|0;
+  var d3 = Math.random()*0xffffffff|0;
+  return lut[d0&0xff]+lut[d0>>8&0xff]+lut[d0>>16&0xff]+lut[d0>>24&0xff]+'-'+
+    lut[d1&0xff]+lut[d1>>8&0xff]+'-'+lut[d1>>16&0x0f|0x40]+lut[d1>>24&0xff]+'-'+
+    lut[d2&0x3f|0x80]+lut[d2>>8&0xff]+'-'+lut[d2>>16&0xff]+lut[d2>>24&0xff]+
+    lut[d3&0xff]+lut[d3>>8&0xff]+lut[d3>>16&0xff]+lut[d3>>24&0xff];
+};
+
 Client.setBackend = function(lib) { eio = lib; };
 
 module.exports = Client;
@@ -497,7 +545,7 @@ module.exports = Client;
 }
 
 var props = [ 'set', 'get', 'subscribe', 'unsubscribe', 'publish', 'push', 'sync',
-  'on', 'once', 'when', 'removeListener', 'removeAllListeners'];
+  'on', 'once', 'when', 'removeListener', 'removeAllListeners', 'nameSync'];
 
 var init = function(name) {
   Scope.prototype[name] = function () {
@@ -674,6 +722,9 @@ M.prototype = {
   removeAllListeners: function(ev) {
     if(!ev) { this._events = {}; }
     else { this._events[ev] && (this._events[ev] = []); }
+  },
+  listeners: function(ev) {
+    return (this._events ? this._events[ev] || [] : []);
   },
   emit: function(ev) {
     this._events || (this._events = {});

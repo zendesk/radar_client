@@ -1,6 +1,7 @@
 var assert = require('assert'),
     MockEngine = require('./lib/engine.js'),
     RadarClient = require('../lib/radar_client.js'),
+    getClientVersion = require('../lib/client_version.js'),
     client;
 
 RadarClient.setBackend(MockEngine);
@@ -14,10 +15,36 @@ exports['given an instance of Radar client'] = {
     MockEngine.current._written = [];
   },
 
+  'client version is always available': function(done) {
+    assert.ok(getClientVersion());
+    done();
+  },
+
   'calls to operations do not cause errors before the client is configured, but dont write either': function(done) {
     client.status('test/foo').set('bar');
     assert.equal(MockEngine.current._written.length, 0);
     done();
+  },
+
+  'as long as the client is configured, nameSync is the first message sent': function(done) {
+    client.configure({ userId: 123, accountName: 'dev' });
+    client.status('test/foo').set('bar');
+
+    client.on('ready', function() {
+      assert.equal(MockEngine.current._written[0].op, 'nameSync');
+      assert.equal(MockEngine.current._written[0].to, 'control:/dev/clientName');
+      done();
+    });
+  },
+
+  'as long as the client is configured, client name is set': function(done) {
+    client.configure({ userId: 123, accountName: 'dev' });
+    client.status('test/foo').set('bar');
+
+    client.on('ready', function() {
+      assert.ok(client.name);
+      done();
+    });
   },
 
   'as long as the client is configured, any operation that requires a send will automatically connect': function(done) {
@@ -25,7 +52,7 @@ exports['given an instance of Radar client'] = {
     client.status('test/foo').set('bar');
 
     client.on('ready', function() {
-      assert.equal(MockEngine.current._written.length, 1);
+      assert.equal(MockEngine.current._written.length, 2);
       done();
     });
   },
