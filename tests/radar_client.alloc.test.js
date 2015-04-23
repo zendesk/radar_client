@@ -26,13 +26,13 @@ exports['given an instance of Radar client'] = {
     done();
   },
 
-  'as long as the client is configured, name_id_sync is the first message sent': function(done) {
+  'as long as the client is configured, nameSync is the first message sent': function(done) {
     client.configure({ userId: 123, accountName: 'dev' });
     client.status('test/foo').set('bar');
 
     client.on('ready', function() {
-      assert.equal(MockEngine.current._written[0].op, 'name_id_sync');
-      assert.equal(MockEngine.current._written[0].to, 'control:/client_name');
+      assert.equal(MockEngine.current._written[0].op, 'nameSync');
+      assert.equal(MockEngine.current._written[0].to, 'control:/dev/clientName');
       done();
     });
   },

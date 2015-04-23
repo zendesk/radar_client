@@ -1,3 +1,9 @@
+### 0.14.0
+* Code changes to support server side client state
+  - generate client UUID; send to server as client name
+  - auto-generate getClientVersion() and its source file
+  - add nameSync method and new *control* scope
+
 ### 0.13.1
 * Code cleanup
   - comment capitalization, comment line length, code line length
