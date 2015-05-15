@@ -28,7 +28,7 @@ module.exports = Backoff;
 },
 "lib/client_version.js": function(module, exports, require){// Auto-generated file, overwritten by scripts/add_package_version.js
 
-function getClientVersion() { return '0.14.1'; };
+function getClientVersion() { return '0.14.2'; };
 
 module.exports = getClientVersion;},
 "lib/index.js": function(module, exports, require){var Client = require('./radar_client'),
