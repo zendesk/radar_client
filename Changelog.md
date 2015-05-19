@@ -1,3 +1,12 @@
+### 0.14.4
+* One change to the modfified set of build steps
+  - use "npm version --no-git-tag-version patch" to bump the version locally
+    but not create a git commit and tag
+  - "npm run build" to update getClientVersion(), and update dist/
+  - commit changes to GH
+  - git tag version && git push --tags
+  - npm publish
+
 ### 0.14.3
 * No new code, but use a modified set of build steps
   - use "npm version --no-git-tag-version patch" to bump the version locally
