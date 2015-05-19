@@ -1,3 +1,19 @@
+### 0.14.3
+* No new code, but use a modified set of build steps
+  - use "npm version --no-git-tag-version patch" to bump the version locally
+    but not create a git commit and tag
+  - "npm run version-build" to update getClientVersion()
+  - commit changes to GH
+  - git tag && git push --tags
+  - npm publish
+
+### 0.14.2
+* Update package.json version to 0.14.2 and tag
+  - getClientVersion() still returns 0.14.1
+
+### 0.14.1
+* Update package.json version to 0.14.1 and tag
+
 ### 0.14.0
 * Code changes to support server side client state
   - generate client UUID; send to server as client name
