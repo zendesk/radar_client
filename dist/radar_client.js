@@ -199,7 +199,7 @@ Client.prototype.push = function(scope, resource, action, value, callback) {
   }, callback);
 };
 
-Client.prototype.set = function(scope, value, data, callback) {
+Client.prototype.set = function(scope, value, clientData, callback) {
   var message = {
     op: 'set',
     to: scope,
@@ -208,11 +208,11 @@ Client.prototype.set = function(scope, value, data, callback) {
     type: this._configuration.userType
   };
 
-  if (typeof(data) === 'function') {
-    callback = data;
+  if (typeof(clientData) === 'function') {
+    callback = clientData;
   } else {
-    message.data = data;  
-  };
+    message.clientData = clientData;
+  }
 
   return this._write(message, callback);
 };
