@@ -198,6 +198,14 @@ Client.prototype.publish = function(scope, value, callback) {
   }, callback);
 };
 
+Client.prototype.history = function(scope, value, callback) {
+  return this._write({
+    op: 'history',
+    to: scope,
+    value: value
+  }, callback);
+};
+
 Client.prototype.subscribe = function(scope, options, callback) {
   var message = { op: 'subscribe', to: scope };
   if (typeof options == 'function') {
@@ -498,7 +506,7 @@ module.exports = Client;
   this.client = client;
 }
 
-var props = [ 'set', 'get', 'subscribe', 'unsubscribe', 'publish', 'push', 'sync',
+var props = [ 'history' ,'set', 'get', 'subscribe', 'unsubscribe', 'publish', 'push', 'sync',
   'on', 'once', 'when', 'removeListener', 'removeAllListeners'];
 
 var init = function(name) {
