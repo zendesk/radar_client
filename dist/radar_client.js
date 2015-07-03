@@ -508,8 +508,8 @@ module.exports = Client;
   this.client = client;
 }
 
-var props = [ 'history' ,'set', 'get', 'subscribe', 'unsubscribe', 'publish', 'push', 'sync',
-  'on', 'once', 'when', 'removeListener', 'removeAllListeners'];
+var props = [ 'history' ,'set', 'get', 'subscribe', 'unsubscribe', 'publish', 
+  'push', 'sync', 'synced','on', 'once', 'when', 'removeListener', 'removeAllListeners'];
 
 var init = function(name) {
   Scope.prototype[name] = function () {
