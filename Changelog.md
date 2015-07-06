@@ -1,3 +1,7 @@
+### 0.14.5
+* Presence resource can set online and include client data (to be broadcasted
+  as part of the client_online and client_updated events). 
+
 ### 0.14.4
 * One change to the modfified set of build steps
   - use "npm version --no-git-tag-version patch" to bump the version locally
