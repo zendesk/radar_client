@@ -199,14 +199,22 @@ Client.prototype.push = function(scope, resource, action, value, callback) {
   }, callback);
 };
 
-Client.prototype.set = function(scope, value, callback) {
-  return this._write({
+Client.prototype.set = function(scope, value, clientData, callback) {
+  var message = {
     op: 'set',
     to: scope,
     value: value,
     key: this._configuration.userId,
     type: this._configuration.userType
-  }, callback);
+  };
+
+  if (typeof(clientData) === 'function') {
+    callback = clientData;
+  } else {
+    message.clientData = clientData;
+  }
+
+  return this._write(message, callback);
 };
 
 Client.prototype.publish = function(scope, value, callback) {
