@@ -548,7 +548,7 @@ var init = function(name) {
 
 for(var i = 0; i < props.length; i++){
   init(props[i]);
-})
+}
 
 module.exports = Scope;
 },
