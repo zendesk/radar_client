@@ -343,6 +343,30 @@ Client.prototype._batch = function(message) {
   this._channelSyncTimes[message.to] = newest;
 };
 
+Client.prototype._batched = function(message) {
+  if (!(message.to && message.value && message.time)) {
+    return false;
+  }
+
+  var index = 0, data, time,
+      length = message.value.length,
+      newest = message.time,
+      current = 0;
+
+  for (; index < length; index = index + 2) {
+    data = JSON.parse(message.value[index]);
+    time = message.value[index + 1];
+
+    if (time > current) {
+      this.emitNext(message.to, data);
+    }
+    if (time > newest) {
+      newest = time;
+    }
+  }
+  this._channelSyncTimes[message.to] = newest;
+};
+
 Client.prototype._createManager = function() {
   var client = this, manager = this.manager = StateMachine.create();
 
@@ -418,7 +442,7 @@ Client.prototype._memorize = function(message) {
     case 'sync':
     case 'synced':
     case 'subscribe':
-      if (this._subscriptions[message.to] != 'sync' || this._subscriptions[message.to] != 'synced') {
+      if (this._subscriptions[message.to] != 'sync' && this._subscriptions[message.to] != 'synced') {
         this._subscriptions[message.to] = message.op;
       }
       return true;
@@ -486,6 +510,8 @@ Client.prototype._messageReceived = function (msg) {
       this.emitNext(message.op, message);
       break;
     case 'synced':
+      this._batch(message);
+      break;    
     case 'sync':
       this._batch(message);
       break;
@@ -522,7 +548,7 @@ var init = function(name) {
 
 for(var i = 0; i < props.length; i++){
   init(props[i]);
-}
+})
 
 module.exports = Scope;
 },
@@ -686,6 +712,9 @@ M.prototype = {
   removeAllListeners: function(ev) {
     if(!ev) { this._events = {}; }
     else { this._events[ev] && (this._events[ev] = []); }
+  },
+  listeners: function(ev) {
+    return (this._events ? this._events[ev] || [] : []);
   },
   emit: function(ev) {
     this._events || (this._events = {});
