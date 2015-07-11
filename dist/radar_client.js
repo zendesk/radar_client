@@ -300,7 +300,7 @@ Client.prototype._addListeners = function () {
   });
 };
 
-Client.prototype._write = function(message, callback) {
+Client.prototype._write_orig = function(message, callback) {
   var client = this;
 
   if (callback) {
@@ -319,6 +319,27 @@ Client.prototype._write = function(message, callback) {
   return this;
 };
 
+Client.prototype._write = function(message, callback) {
+  var client;
+  message.token = this._configuration.token || null;
+  message.tokenId = this._configuration.tokenId || null;
+  client = this;
+  if (callback) {
+    message.ack = this._ackCounter++;
+    this.when('ack', function(m) {
+      client.logger().debug('ack', m);
+      if (!m || !m.value || m.value !== message.ack) {
+        return false;
+      }
+      callback(message);
+      return true;
+    });
+  }
+  this.emit('authenticateMessage', message);
+  return this;
+};
+
+
 Client.prototype._batch = function(message) {
   if (!(message.to && message.value && message.time)) {
     return false;
@@ -328,30 +349,6 @@ Client.prototype._batch = function(message) {
       length = message.value.length,
       newest = message.time,
       current = this._channelSyncTimes[message.to] || 0;
-
-  for (; index < length; index = index + 2) {
-    data = JSON.parse(message.value[index]);
-    time = message.value[index + 1];
-
-    if (time > current) {
-      this.emitNext(message.to, data);
-    }
-    if (time > newest) {
-      newest = time;
-    }
-  }
-  this._channelSyncTimes[message.to] = newest;
-};
-
-Client.prototype._batched = function(message) {
-  if (!(message.to && message.value && message.time)) {
-    return false;
-  }
-
-  var index = 0, data, time,
-      length = message.value.length,
-      newest = message.time,
-      current = 0;
 
   for (; index < length; index = index + 2) {
     data = JSON.parse(message.value[index]);
@@ -442,7 +439,7 @@ Client.prototype._memorize = function(message) {
     case 'sync':
     case 'synced':
     case 'subscribe':
-      if (this._subscriptions[message.to] != 'sync' && this._subscriptions[message.to] != 'synced') {
+      if (this._subscriptions[message.to] != 'sync' || this._subscriptions[message.to] != 'synced') {
         this._subscriptions[message.to] = message.op;
       }
       return true;
@@ -510,8 +507,6 @@ Client.prototype._messageReceived = function (msg) {
       this.emitNext(message.op, message);
       break;
     case 'synced':
-      this._batch(message);
-      break;    
     case 'sync':
       this._batch(message);
       break;
