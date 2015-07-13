@@ -278,8 +278,7 @@ exports.RadarClient = {
         called = true;
         assert.deepEqual(hash, {
           op: 'get',
-          to: 'status:/test/account/1',
-          options: undefined
+          to: 'status:/test/account/1'
         });
       };
 
@@ -346,8 +345,7 @@ exports.RadarClient = {
         called = true;
         assert.deepEqual(hash, {
           op: 'sync',
-          to: 'status:/test/account/1',
-          options: undefined
+          to: 'status:/test/account/1'
         });
       };
 
