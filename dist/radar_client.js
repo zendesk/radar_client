@@ -380,7 +380,7 @@ Client.prototype._batched = function(message) {
       newest = message.time,
       current = this._channelSyncTimes[message.to] || 0;
 
-  console.log('BATCHED:',length);
+  console.log('_batched messages:',length/2);
 
   for (; index < length; index = index + 2) {
     data = JSON.parse(message.value[index]);
@@ -394,7 +394,7 @@ Client.prototype._batched = function(message) {
       newest = time;
     }
   }
-  this._channelSyncTimes[message.to] = newest;
+  // this._channelSyncTimes[message.to] = newest;
 };
 
 Client.prototype._createManager = function() {
