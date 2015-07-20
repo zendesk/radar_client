@@ -47,6 +47,11 @@ var MicroEE = require('microee'),
     immediate = typeof setImmediate != 'undefined' ? setImmediate :
                                     function(fn) { setTimeout(fn, 1); };
 
+var UTCnow = function () {
+  var now = new Date();
+  return now.getTime() + (now.getTimezoneOffset() * 6000);
+}
+
 MicroEE.mixin(Client);
 
 function Client(backend) {
@@ -323,6 +328,7 @@ Client.prototype._write = function(message, callback) {
   var client;
   message.token = this._configuration.token || null;
   message.tokenId = this._configuration.tokenId || null;
+  message.clientTimeID = UTCnow();
   client = this;
   if (callback) {
     message.ack = this._ackCounter++;
@@ -363,6 +369,7 @@ Client.prototype._batch = function(message) {
   }
   this._channelSyncTimes[message.to] = newest;
 };
+
 Client.prototype._batched = function(message) {
   if (!(message.to && message.value && message.time)) {
     return false;
@@ -371,12 +378,14 @@ Client.prototype._batched = function(message) {
   var index = 0, data, time,
       length = message.value.length,
       newest = message.time,
-      current = 0;
+      current = this._channelSyncTimes[message.to] || 0;
+
+  console.log('BATCHED:',length);
 
   for (; index < length; index = index + 2) {
     data = JSON.parse(message.value[index]);
     time = message.value[index + 1];
-
+    data.synced = true;
     if (time > current) {
       this.emitNext(message.to, data);
     }
@@ -462,7 +471,7 @@ Client.prototype._memorize = function(message) {
     case 'sync':
     case 'synced':
     case 'subscribe':
-      if (this._subscriptions[message.to] != 'sync' && this._subscriptions[message.to] != 'synced') {
+      if (this._subscriptions[message.to] != 'sync' || this._subscriptions[message.to] != 'synced') {
         this._subscriptions[message.to] = message.op;
       }
       return true;
@@ -531,7 +540,7 @@ Client.prototype._messageReceived = function (msg) {
       break;
     case 'synced':
       this._batched(message);
-      break;    
+      break;
     case 'sync':
       this._batch(message);
       break;
