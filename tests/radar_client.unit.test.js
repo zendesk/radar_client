@@ -1,6 +1,7 @@
 var assert = require('assert'),
     RadarClient = require('../lib/radar_client.js'),
     MockEngine = require('./lib/engine.js'),
+    Request = require('../lib/message_request.js'),
     HOUR = 1000 * 60 * 60,
     client;
 
@@ -170,14 +171,14 @@ exports.RadarClient = {
         called = true;
         assert.deepEqual(hash, {
           op: 'publish',
-          to: 'status:/test/account/1',
+          to: 'message:/test/account/1',
           value: 'whatever'
         });
         assert.equal(fn, callback);
       };
 
       client.configure({ accountName: 'test', userId: 123, userType: 0 });
-      client.publish('status:/test/account/1', 'whatever', callback);
+      client.publish('message:/test/account/1', 'whatever', callback);
       assert.ok(called);
     }
   },
@@ -278,8 +279,7 @@ exports.RadarClient = {
         called = true;
         assert.deepEqual(hash, {
           op: 'get',
-          to: 'status:/test/account/1',
-          options: undefined
+          to: 'status:/test/account/1'
         });
       };
 
@@ -303,7 +303,7 @@ exports.RadarClient = {
       var called = false,
           passed = false,
           scope = 'status:/test/account/1',
-          message = { to: scope },
+          message = { op: 'get', to: scope },
           callback = function(msg) {
             passed = true;
             assert.deepEqual(msg, message);
@@ -322,7 +322,7 @@ exports.RadarClient = {
     'should pass a function that will not call the callback function for a get response operation with a different scope': function() {
       var called = false,
           passed = true,
-          message = { to: 'status:/test/account/2' },
+          message = { op: 'get', to: 'status:/test/account/2' },
           callback = function(msg) {
             passed = false;
           };
@@ -332,7 +332,10 @@ exports.RadarClient = {
         fn(message);
       };
 
-      client.get('status:/test/account/1', callback);
+      assert.throws(function ()
+        { client.get('status:/test/account/1', callback); },
+        /Invalid response/
+      );
       assert.ok(called);
       assert.ok(passed);
     }
@@ -346,8 +349,7 @@ exports.RadarClient = {
         called = true;
         assert.deepEqual(hash, {
           op: 'sync',
-          to: 'status:/test/account/1',
-          options: undefined
+          to: 'status:/test/account/1'
         });
       };
 
@@ -372,7 +374,7 @@ exports.RadarClient = {
         var called = false,
             passed = false,
             scope = 'presence:/test/account/1',
-            message = { to: scope },
+            message = { op: 'sync', to: scope },
             callback = function(msg) {
               passed = true;
               assert.deepEqual(msg, message);
@@ -391,7 +393,7 @@ exports.RadarClient = {
       'should pass a function that will not call the callback function for a get response operation with a different scope': function() {
         var called = false,
             passed = true,
-            message = { to: 'presence:/test/account/2' },
+            message = { op: 'sync', to: 'presence:/test/account/2' },
             callback = function(msg) {
               passed = false;
             };
@@ -401,7 +403,10 @@ exports.RadarClient = {
           fn(message);
         };
 
-        client.sync('presence:/test/account/1', { version: 2 }, callback);
+        assert.throws(function ()
+          { client.sync('presence:/test/account/1', { version: 2 }, callback); },
+          /Invalid response/
+        );
         assert.ok(called);
         assert.ok(passed);
       }
@@ -436,7 +441,6 @@ exports.RadarClient = {
       }
     }
   },
-
 
   'internal methods': {
     '_memorize' : {
@@ -564,7 +568,8 @@ exports.RadarClient = {
     '._write': {
       'should emit an authenticateMessage event': function() {
         var called = false,
-            message = { op: 'something', to: 'wherever:/account/scope/1' };
+            message = { op: 'subscribe', to: 'status:/account/scope/1' },
+            request = Request.buildSubscribe(message.to);
 
         client.emit = function(name, data) {
           called = true;
@@ -572,14 +577,14 @@ exports.RadarClient = {
           assert.deepEqual(data, message);
         };
 
-        client._write(message);
+        client._write(request.getMessage());
         assert.ok(called);
       },
 
       'should register an ack event handler that calls the callback function once the appropriate ack message has been received': function() {
         var called = false,
             passed = false,
-            message = { op: 'something', to: 'wherever:/account/scope/1' },
+            message = { op: 'subscribe', to: 'status:/account/scope/1' },
             ackMessage = { value: -2 },
             callback = function(msg) {
               passed = true;
@@ -589,6 +594,7 @@ exports.RadarClient = {
         client.when = function(name, fn) {
           called = true;
           assert.equal(name, 'ack');
+          ackMessage.op = 'ack';
           ackMessage.value = message.ack;
           fn(ackMessage);
         };
@@ -601,17 +607,20 @@ exports.RadarClient = {
       'should register an ack event handler that does not call the callback function for ack messages with a different value': function() {
         var called = false,
             passed = true,
-            message = { op: 'something', to: 'wherever:/account/scope/1' },
-            ackMessage = { value: -2 },
+            message = { op: 'subscribe', to: 'status:/account/scope/1' },
+            ackMessage = { op: 'ack', value: -2 },
             callback = function(msg) { passed = false; };
 
         client.when = function(name, fn) {
           called = true;
           assert.equal(name, 'ack');
-          fn(message);
+          fn(ackMessage);
         };
 
-        client._write(message, callback);
+        assert.throws(function ()
+          { client._write(message, callback); },
+          /Invalid response/
+        );
         assert.ok(called);
         assert.ok(passed);
       }

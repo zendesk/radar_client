@@ -42,6 +42,233 @@ instance.Backoff = Backoff;
 
 module.exports = instance;
 },
+"lib/message_request.js": function(module, exports, require){var logger = require('minilog')('message:request');
+
+var opTable = {
+  control: ['nameSync'],
+  message: ['publish', 'subscribe', 'sync', 'unsubscribe'],
+  presence: ['get', 'set', 'subscribe', 'sync', 'unsubscribe'],
+  status: ['get', 'set', 'subscribe', 'sync', 'unsubscribe'],
+  stream: ['get', 'push', 'subscribe', 'sync']
+};
+
+var Request = function (operation, scope) {
+  this.message = {
+    op: operation,
+    to: scope
+  };
+
+  if (!this._isValid()) {
+    throw new Error('Invalid request message.');
+  }
+};
+
+Request.buildGet = function (scope, options) {
+  return new Request('get', scope).setOptions(options);
+};
+
+Request.buildPublish = function (scope, value) {
+  var request = new Request('publish', scope);
+  if (value) {
+    request.message.value = value;
+
+    return request;
+  }
+};
+
+Request.buildPush = function (scope, resource, action, value) {
+  var request = new Request('push', scope);
+  if (resource && action && value) {
+    request.message.resource = resource;
+    request.message.action = action;
+    request.message.value = value;
+
+    return request;
+  } else {
+    throw new Error('Invalid push request message.');
+  }
+};
+
+Request.buildNameSync = function (scope, options) {
+  return new Request('nameSync', scope).setOptions(options);
+};
+
+Request.buildSet = function (scope, value, clientData, key, userType) {
+  var request = new Request('set', scope);
+  if (value) {
+    request.message.value = value;
+    request.message.key = key;
+    request.message.type= userType;
+    if (typeof(clientData) != 'function') {
+      request.message.clientData = clientData;
+    }
+
+    return request;
+  }
+};
+
+Request.buildSync = function (scope, options) {
+  return new Request('sync', scope).setOptions(options);
+};
+
+Request.buildSubscribe = function (scope, options) {
+  return new Request('subscribe', scope).setOptions(options);
+};
+
+Request.buildUnsubscribe = function (scope, options) {
+  return new Request('unsubscribe', scope);
+};
+
+Request.prototype.getMessage = function () {
+  return this.message;
+};
+
+Request.prototype.setOptions = function (options) {
+  if (options && typeof options != 'function') {
+    this.message.options = options;
+  }
+
+  return this;
+};
+
+Request.prototype.setOptionsVersion = function (version) {
+  if (this.options) {
+    this.options.version = version;
+  } else {
+    this.options = { version: version };
+  }
+};
+
+Request.prototype.isOptionsSet = function () {
+  return !!this.message.options;
+};
+
+Request.prototype.isPresence = function () {
+  return this.type === 'presence';
+};
+
+// TO DO: config class should return the required data via getters
+Request.setUserData = function (message, configuration) {
+  message.userData = configuration && configuration.userData;
+};
+
+// TO DO: config class should return the required data via getters
+Request.setAuthData = function (message, configuration) {
+  if (configuration && configuration.auth) {
+    message.auth = configuration.auth;
+    message.userId = configuration.userId;
+    message.userType = configuration.userType;
+    message.accountName = configuration.accountName;
+  }
+};
+
+Request.getAck = function (message) {
+  return (message && message.ack);
+};
+
+Request.getOp = function (message) {
+  return (message && message.op);
+};
+
+Request.getTo = function (message) {
+  return (message && message.to);
+};
+
+Request.getValue = function (message) {
+  return (message && message.value);
+};
+
+Request.getTime = function (message) {
+  return (message && message.time);
+};
+
+Request.setAck = function (message, ack) {
+  if (message && ack) { message.ack = ack; }
+};
+
+// scope = 'presence:/this/ticket/1'
+Request.prototype._isValid = function () {
+  if (!this.message.op || !this.message.to) {
+    return false;
+  }
+
+  var type = this._getType();
+  if (type) {
+    this.type = type;
+    return this._isValidType(type) && this._isValidOperation(type);
+  }
+  return false;
+};
+
+Request.prototype._isValidType = function () {
+  var types = Object.keys(opTable);
+  for (var i = 0; i < types.length; i++) {
+    if (types[i] === this.type) { return true; }
+  }
+  return false;
+};
+
+Request.prototype._isValidOperation = function () {
+  var ops = opTable[this.type];
+  return ops && ops.indexOf(this.message.op) >= 0;
+};
+
+Request.prototype._getType = function () {
+  return this.message.to.substring(0, this.message.to.indexOf(':'));
+};
+
+module.exports = Request;
+},
+"lib/message_response.js": function(module, exports, require){var logger = require('minilog')('message:response');
+
+var Response = function (message, requestMessage) {
+  this.message = message;
+  this.requestMessage = requestMessage;
+
+  if (!this.isValid()) {
+    throw new Error('Invalid response message.');
+  }
+};
+
+Response.parse = function (data, requestMessage) {
+  if (data) {
+    return new Response(data, requestMessage);
+  }
+};
+
+Response.prototype.getMessage = function () {
+  return this.message;
+};
+
+Response.prototype.isValid = function () {
+  // TO DO: validate *value* ?
+  if (this.message.op === 'ack') {
+    return this.message.value === this.requestMessage.ack;
+  }
+  else {
+    return this.message.op && this.message.to &&
+            this.message.to === this.requestMessage.to;
+  }
+};
+
+Response.prototype.forceV2Presence = function () {
+  // Sync v1 for presence scopes is inconsistent: the result should be a 'get'
+  // message, but instead is an 'online' message.  Take a v2 response and
+  // massage it to v1 format prior to returning to the caller.
+  var message = this.message, value = {}, userId;
+  for (userId in message.value) {
+    if (message.value.hasOwnProperty(userId)) {
+      // Skip when not defined; causes exception in FF for 'Work Offline'
+      if (!message.value[userId]) { continue; }
+      value[userId] = message.value[userId].userType;
+    }
+  }
+  message.value = value;
+  message.op = 'online';
+};
+
+module.exports = Response;
+},
 "lib/radar_client.js": function(module, exports, require){/* globals setImmediate */
 var MicroEE = require('microee'),
     eio = require('engine.io-client'),
@@ -49,7 +276,9 @@ var MicroEE = require('microee'),
     StateMachine = require('./state.js'),
     immediate = typeof setImmediate != 'undefined' ? setImmediate :
                                     function(fn) { setTimeout(fn, 1); },
-    getClientVersion = require('./client_version.js');
+    getClientVersion = require('./client_version.js'),
+    Request = require('./message_request.js'),
+    Response = require('./message_response.js');
 
 function Client(backend) {
   var self = this;
@@ -156,160 +385,135 @@ Client.prototype.currentClientId = function() {
   return this._socket && this._socket.id;
 };
 
+// Return the scope object for a given message type
+
 Client.prototype.message = function(scope) {
-  return new Scope('message:/'+this._configuration.accountName+'/'+scope, this);
+  return new Scope(_buildScopeName('message', this._configuration, scope), this);
 };
 
 // Access the "presence" chainable operations
 Client.prototype.presence = function(scope) {
-  return new Scope('presence:/'+this._configuration.accountName+'/'+scope, this);
+  return new Scope(_buildScopeName('presence', this._configuration, scope), this);
 };
 
 // Access the "status" chainable operations
 Client.prototype.status = function(scope) {
-  return new Scope('status:/'+this._configuration.accountName+'/'+scope, this);
+  return new Scope(_buildScopeName('status', this._configuration, scope), this);
 };
 
 Client.prototype.stream = function(scope) {
-  return new Scope('stream:/'+this._configuration.accountName+'/'+scope, this);
+  return new Scope(_buildScopeName('stream', this._configuration, scope), this);
 };
 
 // Access the "control" chainable operations
 Client.prototype.control = function(scope) {
-  return new Scope('control:/'+this._configuration.accountName+'/'+scope, this);
+  return new Scope(_buildScopeName('control', this._configuration, scope), this);
 };
 
+// Operations
+
 Client.prototype.nameSync = function(scope, options, callback) {
-  var message = { op: 'nameSync', to: scope };
-  if (typeof options == 'function') {
-    callback = options;
-  } else {
-    message.options = options;
-  }
-  return this._write(message, callback);
+  return this._write(Request.buildNameSync(scope, options).getMessage(), callback);
 };
 
 Client.prototype.push = function(scope, resource, action, value, callback) {
-  return this._write({
-    op: 'push',
-    to: scope,
-    resource: resource,
-    action: action,
-    value: value
-  }, callback);
+  return this._write(Request.buildPush(scope, resource, action, value).getMessage(), callback);
 };
 
 Client.prototype.set = function(scope, value, clientData, callback) {
-  var message = {
-    op: 'set',
-    to: scope,
-    value: value,
-    key: this._configuration.userId,
-    type: this._configuration.userType
-  };
-
-  if (typeof(clientData) === 'function') {
-    callback = clientData;
-  } else {
-    message.clientData = clientData;
-  }
-
-  return this._write(message, callback);
+  callback = callbackSet(callback, clientData);
+  return this._write(Request.buildSet(scope, value, clientData,
+          this._configuration.userId, this._configuration.userType).getMessage(), callback);
 };
 
 Client.prototype.publish = function(scope, value, callback) {
-  return this._write({
-    op: 'publish',
-    to: scope,
-    value: value
-  }, callback);
+  return this._write(Request.buildPublish(scope, value).getMessage(), callback);
 };
 
 Client.prototype.subscribe = function(scope, options, callback) {
-  var message = { op: 'subscribe', to: scope };
-  if (typeof options == 'function') {
-    callback = options;
-  } else {
-    message.options = options;
-  }
-  return this._write(message, callback);
+  callback = callbackSet(callback, options);
+  return this._write(Request.buildSubscribe(scope, options).getMessage(), callback);
 };
 
 Client.prototype.unsubscribe = function(scope, callback) {
-  return this._write({ op: 'unsubscribe', to: scope }, callback);
+  return this._write(Request.buildUnsubscribe(scope).getMessage(), callback);
 };
 
-// Sync and get return the actual value of the operation
-var init = function(propertyName) {
-  Client.prototype[propertyName] = function(scope, options, callback) {
-    var message = { op: propertyName, to: scope };
-    // options is an optional argument
-    if (typeof options == 'function') {
-      callback = options;
-    } else {
-      message.options = options;
-    }
-    // Sync v1 for presence scopes acts inconsistently. The result should be a
-    // "get" message, but it is actually a "online" message.
-    // So force v2 and translate the result to v1 format.
-    if (propertyName == 'sync' && !message.options && scope.match(/^presence.+/)) {
-      message.options = { version: 2 };
-      this.when('get', function(message) {
-        var value = {}, userId;
-        if (!message || !message.to || message.to != scope) {
-          return false;
-        }
-
-        for (userId in message.value) {
-          if (message.value.hasOwnProperty(userId)) {
-            // Skip when not defined; causes exception in FF for 'Work Offline'
-            if (!message.value[userId]) { continue; }
-            value[userId] = message.value[userId].userType;
-          }
-        }
-        message.value = value;
-        message.op = 'online';
-        if (callback) {
-          callback(message);
-        }
-        return true;
-      });
-    } else {
-      this.when('get', function(message) {
-        if (!message || !message.to || message.to != scope) {
-          return false;
-        }
-        if (callback) {
-          callback(message);
-        }
-        return true;
-      });
-    }
-    // sync/get never register or return acks (since they always send back a
-    // data message)
-    return this._write(message);
-  };
+var callbackSet = function (callback, options) {
+  if (typeof options === 'function') { callback = options; }
+  return callback;
 };
 
-var props = ['get', 'sync'];
-for(var i = 0; i < props.length; i++){
-  init(props[i]);
-}
+// sync returns the actual value of the operation
+Client.prototype.sync = function (scope, options, callback) {
+  var request = Request.buildSync(scope, options),
+      response;
+
+  callback = callbackSet(callback, options);
+  if (!request.isOptionsSet() && request.isPresence()) {
+    request.setOptionsVersion(2);
+    this.when('get', function (data) {
+      response = Response.parse(data, request.getMessage());
+      if (response) {
+        // force v2 presence
+        response.forceV2Presence();
+        if (callback) {
+          callback(response.getMessage());
+        }
+        return true;
+      }
+      return false;
+    });
+  } else {
+    this.when('get', function (data) {
+      response = Response.parse(data, request.getMessage());
+      if (response) {
+        if (callback) {
+          callback(response.getMessage());
+        }
+        return true;
+      }
+      return false;
+    });
+  }
+
+  // sync does not return ACK (it sends back a data message)
+  return this._write(request.getMessage());
+};
+
+// get returns the actual value of the operation
+Client.prototype.get = function (scope, options, callback) {
+  var request = Request.buildGet(scope, options),
+      response;
+
+  callback = callbackSet(callback, options);
+  this.when('get', function (data) {
+    response = Response.parse(data, request.getMessage());
+    if (response) {
+      if (callback) {
+        callback(response.getMessage());
+      }
+      return true;
+    }
+    return false;
+  });
+
+  // get does not return ACK (it sends back a data message)
+  return this._write(request.getMessage());
+};
 
 // Private API
+
+var _buildScopeName = function (type, configuration, scope) {
+  return type + ':/' + configuration.accountName + '/' + scope;
+};
 
 Client.prototype._addListeners = function () {
   // Add authentication data to a message; _write() emits authenticateMessage
   this.on('authenticateMessage', function(message) {
-    if (this._configuration) {
-      message.userData = this._configuration.userData;
-      if (this._configuration.auth) {
-        message.auth = this._configuration.auth;
-        message.userId = this._configuration.userId;
-        message.userType = this._configuration.userType;
-        message.accountName = this._configuration.accountName;
-      }
-    }
+    Request.setUserData(message, this._configuration);
+    Request.setAuthData(message, this._configuration);
+
     this.emit('messageAuthenticated', message);
   });
 
@@ -320,17 +524,17 @@ Client.prototype._addListeners = function () {
 };
 
 Client.prototype._write = function(message, callback) {
-  var client = this;
+  var self = this;
 
   if (callback) {
-    message.ack = this._ackCounter++;
+    Request.setAck(message, this._ackCounter++);
+
     // Wait ack
-    this.when('ack', function(m) {
-      client.logger().debug('ack', m);
-      if (!m || !m.value || m.value != message.ack) {
-        return false;
-      }
+    this.when('ack', function(data) {
+      self.logger().debug('ack', data);
+      if (!Response.parse(data, message)) { return false; }
       callback(message);
+
       return true;
     });
   }
@@ -338,53 +542,78 @@ Client.prototype._write = function(message, callback) {
   return this;
 };
 
+/*
+Client.prototype._write_new = function(request, callback) {
+  var self = this;
+
+  if (callback) {
+    request.setAck(this._ackCounter++);
+
+    // Wait ack
+    this.when('ack', function(data) {
+      self.logger().debug('ack', data);
+      if (!Response.parse(data, request)) { return false; }
+      callback(request.getMessage());
+
+      return true;
+    });
+  }
+  this.emit('authenticateMessage', request);
+  return this;
+};
+*/
+
 Client.prototype._batch = function(message) {
-  if (!(message.to && message.value && message.time)) {
+  var to = Request.getTo(message),
+      value = Request.getValue(message),
+      time = Request.getTime(message);
+
+  if (!to || !value || !time) {
     return false;
   }
 
-  var index = 0, data, time,
-      length = message.value.length,
-      newest = message.time,
-      current = this._channelSyncTimes[message.to] || 0;
+  var index = 0, data,
+      length = value.length,
+      newest = time,
+      current = this._channelSyncTimes[to] || 0;
 
   for (; index < length; index = index + 2) {
-    data = JSON.parse(message.value[index]);
-    time = message.value[index + 1];
+    data = JSON.parse(value[index]);
+    time = value[index + 1];
 
     if (time > current) {
-      this.emitNext(message.to, data);
+      this.emitNext(to, data);
     }
     if (time > newest) {
       newest = time;
     }
   }
-  this._channelSyncTimes[message.to] = newest;
+  this._channelSyncTimes[to] = newest;
 };
 
 Client.prototype._createManager = function() {
-  var client = this, manager = this.manager = StateMachine.create();
+  var self = this, manager = this.manager = StateMachine.create();
 
   manager.on('enterState', function(state) {
-    client.emit(state);
+    self.emit(state);
   });
 
   manager.on('event', function(event) {
-    client.emit(event);
+    self.emit(event);
   });
 
   manager.on('connect', function(data) {
-    var socket = client._socket = new client.backend.Socket(client._configuration);
+    var socket = self._socket = new self.backend.Socket(self._configuration);
 
     socket.once('open', function() {
-      client.logger().debug("socket open", socket.id);
+      self.logger().debug("socket open", socket.id);
       manager.established();
     });
 
     socket.once('close', function(reason, description) {
-      client.logger().debug('socket closed', socket.id, reason, description);
+      self.logger().debug('socket closed', socket.id, reason, description);
       socket.removeAllListeners('message');
-      client._socket = null;
+      self._socket = null;
 
       // Patch for polling-xhr continuing to poll after socket close (HTTP:POST
       // failure).  socket.transport is in error but not closed, so if a subsequent
@@ -399,8 +628,8 @@ Client.prototype._createManager = function() {
       }
     });
 
-    socket.on('message', function(message) {
-      client._messageReceived(message);
+    socket.on('message', function (message) {
+      self._messageReceived(message);
     });
 
     manager.removeAllListeners('close');
@@ -410,9 +639,9 @@ Client.prototype._createManager = function() {
   });
 
   manager.on('activate', function() {
-    client._identitySet();
-    client._restore();
-    client.emit('ready');
+    self._identitySet();
+    self._restore();
+    self.emit('ready');
   });
 
   manager.on('authenticate', function() {
@@ -421,32 +650,39 @@ Client.prototype._createManager = function() {
   });
 
   manager.on('disconnect', function() {
-    client._restoreRequired = true;
+    self._restoreRequired = true;
   });
 };
 
 // Memorize subscriptions and presence states; return "true" for a message that
 // adds to the memorized subscriptions or presences
 Client.prototype._memorize = function(message) {
-  switch(message.op) {
+  var op = Request.getOp(message),
+      to = Request.getTo(message),
+      value = Request.getValue(message);
+
+  switch(op) {
     case 'unsubscribe':
       // Remove from queue
-      if (this._subscriptions[message.to]) {
-        delete this._subscriptions[message.to];
+      if (this._subscriptions[to]) {
+        delete this._subscriptions[to];
       }
       return true;
+
     case 'sync':
     case 'subscribe':
-      if (this._subscriptions[message.to] != 'sync') {
-        this._subscriptions[message.to] = message.op;
+      if (this._subscriptions[to] != 'sync') {
+        this._subscriptions[to] = op;
       }
       return true;
+
     case 'set':
-      if (message.to.substr(0, 'presence:/'.length) == 'presence:/') {
-        this._presences[message.to] = message.value;
+      if (to.substr(0, 'presence:/'.length) == 'presence:/') {
+        this._presences[to] = value;
         return true;
       }
   }
+
   return false;
 };
 
@@ -481,14 +717,16 @@ Client.prototype._restore = function() {
 };
 
 Client.prototype._sendMessage = function(message) {
-  var memorized = this._memorize(message);
+  var memorized = this._memorize(message),
+      ack = Request.getAck(message);
+
   this.emit('message:out', message);
 
   if (this._socket && this.manager.is('activated')) {
     this._socket.sendPacket('message', JSON.stringify(message));
   } else if (this._isConfigured) {
     this._restoreRequired = true;
-    if (!memorized || message.ack) {
+    if (!memorized || ack) {
       this._queuedMessages.push(message);
     }
     this.manager.connectWhenAble();
@@ -496,25 +734,31 @@ Client.prototype._sendMessage = function(message) {
 };
 
 Client.prototype._messageReceived = function (msg) {
-  var message = JSON.parse(msg);
+  var message = JSON.parse(msg),
+      op = Request.getOp(message),
+      to = Request.getTo(message);
+
   this.emit('message:in', message);
-  switch (message.op) {
+
+  switch (op) {
     case 'err':
     case 'ack':
     case 'get':
-      this.emitNext(message.op, message);
+      this.emitNext(op, message);
       break;
+
     case 'sync':
       this._batch(message);
       break;
+
     default:
-      this.emitNext(message.to, message);
+      this.emitNext(to, message);
   }
 };
 
 Client.prototype.emitNext = function() {
-  var args = Array.prototype.slice.call(arguments), client = this;
-  immediate(function(){ client.emit.apply(client, args); });
+  var args = Array.prototype.slice.call(arguments), self = this;
+  immediate(function(){ self.emit.apply(self, args); });
 };
 
 Client.prototype._identitySet = function () {
@@ -555,7 +799,7 @@ module.exports = Client;
 var props = [ 'set', 'get', 'subscribe', 'unsubscribe', 'publish', 'push', 'sync',
   'on', 'once', 'when', 'removeListener', 'removeAllListeners', 'nameSync'];
 
-var init = function(name) {
+var init = function (name) {
   Scope.prototype[name] = function () {
     var args = Array.prototype.slice.apply(arguments);
     args.unshift(this.prefix);
@@ -564,7 +808,7 @@ var init = function(name) {
   };
 };
 
-for(var i = 0; i < props.length; i++){
+for (var i = 0; i < props.length; i++){
   init(props[i]);
 }
 
