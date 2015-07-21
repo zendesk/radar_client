@@ -449,33 +449,23 @@ Client.prototype.sync = function (scope, options, callback) {
   var request = Request.buildSync(scope, options),
       response;
 
+  var whenCallback = function (data) {
+    response = Response.parse(data, request.getMessage());
+    if (response) {
+      if (!request.isOptionsSet()) { response.forceV2Presence(); }
+      if (callback) {
+        callback(response.getMessage());
+      }
+      return true;
+    }
+    return false;
+  };
+
   callback = callbackSet(callback, options);
   if (!request.isOptionsSet() && request.isPresence()) {
     request.setOptionsVersion(2);
-    this.when('get', function (data) {
-      response = Response.parse(data, request.getMessage());
-      if (response) {
-        // force v2 presence
-        response.forceV2Presence();
-        if (callback) {
-          callback(response.getMessage());
-        }
-        return true;
-      }
-      return false;
-    });
-  } else {
-    this.when('get', function (data) {
-      response = Response.parse(data, request.getMessage());
-      if (response) {
-        if (callback) {
-          callback(response.getMessage());
-        }
-        return true;
-      }
-      return false;
-    });
   }
+  this.when('get', whenCallback);
 
   // sync does not return ACK (it sends back a data message)
   return this._write(request.getMessage());
@@ -486,8 +476,7 @@ Client.prototype.get = function (scope, options, callback) {
   var request = Request.buildGet(scope, options),
       response;
 
-  callback = callbackSet(callback, options);
-  this.when('get', function (data) {
+  var whenCallback = function (data) {
     response = Response.parse(data, request.getMessage());
     if (response) {
       if (callback) {
@@ -496,7 +485,10 @@ Client.prototype.get = function (scope, options, callback) {
       return true;
     }
     return false;
-  });
+  };
+
+  callback = callbackSet(callback, options);
+  this.when('get', whenCallback);
 
   // get does not return ACK (it sends back a data message)
   return this._write(request.getMessage());
