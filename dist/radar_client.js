@@ -184,7 +184,6 @@ Request.prototype.getVersion = function () {
 
 // Private methods
 
-// scope = 'presence:/this/ticket/1'
 Request.prototype._isValid = function () {
   if (!this.message.op || !this.message.to) {
     return false;
