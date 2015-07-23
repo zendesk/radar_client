@@ -2,6 +2,7 @@ var assert = require('assert'),
     RadarClient = require('../lib/radar_client.js'),
     MockEngine = require('./lib/engine.js'),
     Request = require('../lib/message_request.js'),
+    Response = require('../lib/message_response.js'),
     HOUR = 1000 * 60 * 60,
     client;
 
@@ -215,9 +216,11 @@ exports.RadarClient = {
       client.configure({ accountName: 'test', userId: 123, userType: 0 });
       assert.ok(!client.manager.is('activated'));
       client.subscribe('status:/test/account/1', function(){});
+      //console.log('test: got here 1');
       assert.ok(client._restoreRequired);
       assert.ok(!client.manager.is('activated'));
       assert.equal(client._queuedMessages.length, 1);
+      //console.log('test: got here 2');
       assert.deepEqual(client._subscriptions, { 'status:/test/account/1': 'subscribe' });
     },
 
@@ -304,6 +307,7 @@ exports.RadarClient = {
           passed = false,
           scope = 'status:/test/account/1',
           message = { op: 'get', to: scope },
+          //response = new Response(JSON.stringify(message)),
           callback = function(msg) {
             passed = true;
             assert.deepEqual(msg, message);
@@ -311,6 +315,7 @@ exports.RadarClient = {
 
       client.when = function(operation, fn) {
         called = true;
+        //fn(response);
         fn(message);
       };
 
@@ -323,12 +328,15 @@ exports.RadarClient = {
       var called = false,
           passed = true,
           message = { op: 'get', to: 'status:/test/account/2' },
+          //response = new Response(JSON.stringify(message)),
           callback = function(msg) {
+            console.log('test: callback CALLED.....');
             passed = false;
           };
 
       client.when = function(operation, fn) {
         called = true;
+        //fn(response);
         fn(message);
       };
 
@@ -336,6 +344,9 @@ exports.RadarClient = {
         { client.get('status:/test/account/1', callback); },
         /Invalid response/
       );
+      //client.get('status:/test/account/1', callback);
+      console.log('test: called:', called);
+      console.log('test: passed:', passed);
       assert.ok(called);
       assert.ok(passed);
     }
@@ -375,6 +386,7 @@ exports.RadarClient = {
             passed = false,
             scope = 'presence:/test/account/1',
             message = { op: 'sync', to: scope },
+            //response = new Response(JSON.stringify(message)),
             callback = function(msg) {
               passed = true;
               assert.deepEqual(msg, message);
@@ -382,6 +394,7 @@ exports.RadarClient = {
 
         client.when = function(operation, fn) {
           called = true;
+          //fn(response);
           fn(message);
         };
 
@@ -394,12 +407,14 @@ exports.RadarClient = {
         var called = false,
             passed = true,
             message = { op: 'sync', to: 'presence:/test/account/2' },
+            //response = new Response(JSON.stringify(message)),
             callback = function(msg) {
               passed = false;
             };
 
         client.when = function(operation, fn) {
           called = true;
+          //fn(response);
           fn(message);
         };
 
@@ -407,6 +422,7 @@ exports.RadarClient = {
           { client.sync('presence:/test/account/1', { version: 2 }, callback); },
           /Invalid response/
         );
+        //client.sync('presence:/test/account/1', { version: 2 }, callback);
         assert.ok(called);
         assert.ok(passed);
       }

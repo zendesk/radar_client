@@ -69,24 +69,17 @@ Request.buildGet = function (scope, options) {
 
 Request.buildPublish = function (scope, value) {
   var request = new Request('publish', scope);
-  if (value) {
-    request.message.value = value;
-
-    return request;
-  }
+  request.setAttr('value', value);
+  return request;
 };
 
 Request.buildPush = function (scope, resource, action, value) {
   var request = new Request('push', scope);
-  if (resource && action && value) {
-    request.message.resource = resource;
-    request.message.action = action;
-    request.message.value = value;
+  request.setAttr('resource', resource);
+  request.setAttr('action', action);
+  request.setAttr('value', value);
 
-    return request;
-  } else {
-    throw new Error('Invalid push request message.');
-  }
+  return request;
 };
 
 Request.buildNameSync = function (scope, options) {
@@ -95,16 +88,13 @@ Request.buildNameSync = function (scope, options) {
 
 Request.buildSet = function (scope, value, clientData, key, userType) {
   var request = new Request('set', scope);
-  if (value) {
-    request.message.value = value;
-    request.message.key = key;
-    request.message.type= userType;
-    if (typeof(clientData) != 'function') {
-      request.message.clientData = clientData;
-    }
-
-    return request;
+  request.setAttr('value', value);
+  request._setAttrOptionalDefined('key', key);
+  request._setAttrOptionalUndefined('type', userType);
+  if (typeof(clientData) != 'function') {
+    request._setAttrOptionalUndefined('clientData', clientData);
   }
+  return request;
 };
 
 Request.buildSync = function (scope, options) {
@@ -117,34 +107,6 @@ Request.buildSubscribe = function (scope, options) {
 
 Request.buildUnsubscribe = function (scope, options) {
   return new Request('unsubscribe', scope);
-};
-
-Request.prototype.getMessage = function () {
-  return this.message;
-};
-
-Request.prototype.setOptions = function (options) {
-  if (options && typeof options != 'function') {
-    this.message.options = options;
-  }
-
-  return this;
-};
-
-Request.prototype.setOptionsVersion = function (version) {
-  if (this.options) {
-    this.options.version = version;
-  } else {
-    this.options = { version: version };
-  }
-};
-
-Request.prototype.isOptionsSet = function () {
-  return !!this.message.options;
-};
-
-Request.prototype.isPresence = function () {
-  return this.type === 'presence';
 };
 
 // TO DO: config class should return the required data via getters
@@ -162,29 +124,65 @@ Request.setAuthData = function (message, configuration) {
   }
 };
 
-Request.getAck = function (message) {
-  return (message && message.ack);
+Request.getAttr = function (message, attr) {
+  return (message && message[attr]);
 };
 
-Request.getOp = function (message) {
-  return (message && message.op);
+Request.setAttr = function (message, attr, value) {
+  if (message && attr) { message[attr] = value; }
 };
 
-Request.getTo = function (message) {
-  return (message && message.to);
+// Instance methods
+
+Request.prototype.getMessage = function () {
+  return this.message;
 };
 
-Request.getValue = function (message) {
-  return (message && message.value);
+Request.prototype.setOptions = function (options) {
+  if (options && typeof options != 'function') {
+    this.message.options = options;
+    this.version = 2;
+  } else {
+    this.version = 1;
+  }
+
+  return this;
 };
 
-Request.getTime = function (message) {
-  return (message && message.time);
+Request.prototype.isPresence = function () {
+  return this.type === 'presence';
 };
 
-Request.setAck = function (message, ack) {
-  if (message && ack) { message.ack = ack; }
+Request.prototype._setAttrOptionalUndefined = function (keyName, keyValue) {
+  if (keyName) {
+    this.message[keyName] = keyValue;
+  }
 };
+
+Request.prototype._setAttrOptionalDefined = function (keyName, keyValue) {
+  if (keyName && keyValue) {
+    this.message[keyName] = keyValue;
+  }
+};
+
+Request.prototype.setAttr = function (keyName, keyValue) {
+  if (!keyName || !keyValue) {
+    throw new Error('Invalid request attribute');
+  }
+  this.message[keyName] = keyValue;
+};
+
+Request.prototype.getAttr = function (keyName) {
+  if (keyName) {
+    return this.message[keyName];
+  }
+};
+
+Request.prototype.getVersion = function () {
+  return this.version;
+};
+
+// Private methods
 
 // scope = 'presence:/this/ticket/1'
 Request.prototype._isValid = function () {
@@ -235,6 +233,12 @@ Response.parse = function (data, requestMessage) {
     return new Response(data, requestMessage);
   }
 };
+
+Response.getAttr = function (message, attr) {
+  return message && message[attr];
+};
+
+// Instance methods
 
 Response.prototype.getMessage = function () {
   return this.message;
@@ -413,30 +417,36 @@ Client.prototype.control = function(scope) {
 // Operations
 
 Client.prototype.nameSync = function(scope, options, callback) {
-  return this._write(Request.buildNameSync(scope, options).getMessage(), callback);
+  var request = Request.buildNameSync(scope, options);
+  return this._write(request.getMessage(), callback);
 };
 
 Client.prototype.push = function(scope, resource, action, value, callback) {
-  return this._write(Request.buildPush(scope, resource, action, value).getMessage(), callback);
+  var request = Request.buildPush(scope, resource, action, value);
+  return this._write(request.getMessage(), callback);
 };
 
 Client.prototype.set = function(scope, value, clientData, callback) {
   callback = callbackSet(callback, clientData);
-  return this._write(Request.buildSet(scope, value, clientData,
-          this._configuration.userId, this._configuration.userType).getMessage(), callback);
+  var request = Request.buildSet(scope, value, clientData,
+                  this._configuration.userId, this._configuration.userType);
+  return this._write(request.getMessage(), callback);
 };
 
 Client.prototype.publish = function(scope, value, callback) {
-  return this._write(Request.buildPublish(scope, value).getMessage(), callback);
+  var request = Request.buildPublish(scope, value);
+  return this._write(request.getMessage(), callback);
 };
 
 Client.prototype.subscribe = function(scope, options, callback) {
   callback = callbackSet(callback, options);
-  return this._write(Request.buildSubscribe(scope, options).getMessage(), callback);
+  var request = Request.buildSubscribe(scope, options);
+  return this._write(request.getMessage(), callback);
 };
 
 Client.prototype.unsubscribe = function(scope, callback) {
-  return this._write(Request.buildUnsubscribe(scope).getMessage(), callback);
+  var request = Request.buildUnsubscribe(scope);
+  return this._write(request.getMessage(), callback);
 };
 
 var callbackSet = function (callback, options) {
@@ -452,7 +462,9 @@ Client.prototype.sync = function (scope, options, callback) {
   var whenCallback = function (data) {
     response = Response.parse(data, request.getMessage());
     if (response) {
-      if (!request.isOptionsSet()) { response.forceV2Presence(); }
+      if (request.getVersion() === 1 && request.isPresence()) {
+        response.forceV2Presence();
+      }
       if (callback) {
         callback(response.getMessage());
       }
@@ -462,9 +474,6 @@ Client.prototype.sync = function (scope, options, callback) {
   };
 
   callback = callbackSet(callback, options);
-  if (!request.isOptionsSet() && request.isPresence()) {
-    request.setOptionsVersion(2);
-  }
   this.when('get', whenCallback);
 
   // sync does not return ACK (it sends back a data message)
@@ -519,7 +528,7 @@ Client.prototype._write = function(message, callback) {
   var self = this;
 
   if (callback) {
-    Request.setAck(message, this._ackCounter++);
+    Request.setAttr(message, 'ack', this._ackCounter++);
 
     // Wait ack
     this.when('ack', function(data) {
@@ -534,31 +543,10 @@ Client.prototype._write = function(message, callback) {
   return this;
 };
 
-/*
-Client.prototype._write_new = function(request, callback) {
-  var self = this;
-
-  if (callback) {
-    request.setAck(this._ackCounter++);
-
-    // Wait ack
-    this.when('ack', function(data) {
-      self.logger().debug('ack', data);
-      if (!Response.parse(data, request)) { return false; }
-      callback(request.getMessage());
-
-      return true;
-    });
-  }
-  this.emit('authenticateMessage', request);
-  return this;
-};
-*/
-
 Client.prototype._batch = function(message) {
-  var to = Request.getTo(message),
-      value = Request.getValue(message),
-      time = Request.getTime(message);
+  var to = Response.getAttr(message, 'to'),
+      value = Response.getAttr(message, 'value'),
+      time = Response.getAttr(message, 'time');
 
   if (!to || !value || !time) {
     return false;
@@ -649,9 +637,9 @@ Client.prototype._createManager = function() {
 // Memorize subscriptions and presence states; return "true" for a message that
 // adds to the memorized subscriptions or presences
 Client.prototype._memorize = function(message) {
-  var op = Request.getOp(message),
-      to = Request.getTo(message),
-      value = Request.getValue(message);
+  var op = Request.getAttr(message, 'op'),
+      to = Request.getAttr(message, 'to'),
+      value = Request.getAttr(message, 'value');
 
   switch(op) {
     case 'unsubscribe':
@@ -710,7 +698,7 @@ Client.prototype._restore = function() {
 
 Client.prototype._sendMessage = function(message) {
   var memorized = this._memorize(message),
-      ack = Request.getAck(message);
+      ack = Request.getAttr(message, 'ack');
 
   this.emit('message:out', message);
 
@@ -727,8 +715,8 @@ Client.prototype._sendMessage = function(message) {
 
 Client.prototype._messageReceived = function (msg) {
   var message = JSON.parse(msg),
-      op = Request.getOp(message),
-      to = Request.getTo(message);
+      op = Response.getAttr(message, 'op'),
+      to = Response.getAttr(message, 'to');
 
   this.emit('message:in', message);
 
