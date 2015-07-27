@@ -1,6 +1,7 @@
 var assert = require('assert'),
     RadarClient = require('../lib/radar_client.js'),
     MockEngine = require('./lib/engine.js'),
+    Response = require('../lib/message_response.js'),
     client;
 
 exports['before connecting'] = {
@@ -73,13 +74,13 @@ exports['after reconnecting'] = {
       connected = true;
       assert.equal(MockEngine.current._written.length, 1);
       assert.equal(client._queuedMessages.length, 1);
-      assert.deepEqual(client._queuedMessages[0], {
+      assert.deepEqual(client._queuedMessages[0].message, {
         op: 'set',
         to: 'status:/test/tickets/21',
         value: 'online',
         key: 123,
         type: 2,
-        userData: undefined,
+        userData: { accountName: 'test', userId: 123, userType: 2 },
         clientData: undefined
       });
     });
@@ -298,7 +299,7 @@ exports['given a new presence'] = {
   },
 
   'if a authentication token is set, it gets sent on each operation': function(done) {
-    client.configure({ userId: 123, accountName: 'dev', auth: 'AUTH'});
+    client.configure({ userId: 123, accountName: 'dev', auth: 'AUTH', userType: 2 });
     client.message('user/123').publish('hello world');
 
     setTimeout(function() {
@@ -315,6 +316,7 @@ exports['given a new presence'] = {
     }, 10);
   },
 
+  /*
   'synchronization batch filters out duplicate messages to the same channel by time': function(done) {
     var received = [];
     client.on('foo', function(msg) {
@@ -344,6 +346,51 @@ exports['given a new presence'] = {
       ],
       time: 2
     });
+    setTimeout(function() {
+      assert.equal(4, received.length);
+      done();
+    }, 10);
+  }
+  */
+
+  'synchronization batch filters out duplicate messages to the same channel by time': function(done) {
+    var received = [],
+        msg1, msg2, response1, response2;
+    client.on('foo', function(msg) {
+      received.push(msg);
+    });
+    msg1 = {
+      op: 'subscribe',
+      to: 'foo',
+      value: [
+        JSON.stringify({ value: 'a' }),
+        1,
+        JSON.stringify({ value: 'b' }),
+        2,
+        JSON.stringify({ value: 'c' }),
+        3
+      ],
+      time: 1
+    };
+    response1 = new Response(msg1);
+    client._batch(response1);
+
+    msg2 = {
+      op: 'subscribe',
+      to: 'foo',
+      value: [
+        JSON.stringify({ value: 'b' }),
+        2,
+        JSON.stringify({ value: 'c' }),
+        3,
+        JSON.stringify({ value: 'd' }),
+        600,
+      ],
+      time: 2
+    };
+    response2 = new Response(msg2);
+    client._batch(response2);
+
     setTimeout(function() {
       assert.equal(4, received.length);
       done();
