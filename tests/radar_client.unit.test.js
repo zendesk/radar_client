@@ -128,7 +128,7 @@ exports.RadarClient = {
 
       client._write = function(hash, fn) {
         called = true;
-        assert.deepEqual(hash, {
+        assert.deepEqual(hash.message, {
           op: 'set',
           to: 'status:/test/account/1',
           value: 'whatever',
@@ -170,7 +170,7 @@ exports.RadarClient = {
 
       client._write = function(hash, fn) {
         called = true;
-        assert.deepEqual(hash, {
+        assert.deepEqual(hash.message, {
           op: 'publish',
           to: 'message:/test/account/1',
           value: 'whatever'
@@ -190,7 +190,7 @@ exports.RadarClient = {
 
       client._write = function(hash, fn) {
         called = true;
-        assert.deepEqual(hash, {
+        assert.deepEqual(hash.message, {
           op: 'subscribe',
           to: 'status:/test/account/1',
         });
@@ -239,7 +239,7 @@ exports.RadarClient = {
 
       client._write = function(hash, fn) {
         called = true;
-        assert.deepEqual(hash, {
+        assert.deepEqual(hash.message, {
           op: 'unsubscribe',
           to: 'status:/test/account/1',
         });
@@ -278,7 +278,7 @@ exports.RadarClient = {
 
       client._write = function(hash) {
         called = true;
-        assert.deepEqual(hash, {
+        assert.deepEqual(hash.message, {
           op: 'get',
           to: 'status:/test/account/1'
         });
@@ -305,6 +305,7 @@ exports.RadarClient = {
           passed = false,
           scope = 'status:/test/account/1',
           message = { op: 'get', to: scope },
+          response = new Response(message),
           callback = function(msg) {
             passed = true;
             assert.deepEqual(msg, message);
@@ -312,7 +313,7 @@ exports.RadarClient = {
 
       client.when = function(operation, fn) {
         called = true;
-        fn(message);
+        fn(response);
       };
 
       client.get(scope, callback);
@@ -324,19 +325,17 @@ exports.RadarClient = {
       var called = false,
           passed = true,
           message = { op: 'get', to: 'status:/test/account/2' },
+          response = new Response(message),
           callback = function(msg) {
             passed = false;
           };
 
       client.when = function(operation, fn) {
         called = true;
-        fn(message);
+        fn(response);
       };
 
-      assert.throws(function ()
-        { client.get('status:/test/account/1', callback); },
-        /Invalid response/
-      );
+      client.get('status:/test/account/1', callback);
       assert.ok(called);
       assert.ok(passed);
     }
@@ -348,7 +347,7 @@ exports.RadarClient = {
 
       client._write = function(hash) {
         called = true;
-        assert.deepEqual(hash, {
+        assert.deepEqual(hash.message, {
           op: 'sync',
           to: 'status:/test/account/1'
         });
@@ -376,6 +375,7 @@ exports.RadarClient = {
             passed = false,
             scope = 'presence:/test/account/1',
             message = { op: 'sync', to: scope },
+            response = new Response(message),
             callback = function(msg) {
               passed = true;
               assert.deepEqual(msg, message);
@@ -383,7 +383,7 @@ exports.RadarClient = {
 
         client.when = function(operation, fn) {
           called = true;
-          fn(message);
+          fn(response);
         };
 
         client.sync(scope, { version: 2 }, callback);
@@ -395,19 +395,17 @@ exports.RadarClient = {
         var called = false,
             passed = true,
             message = { op: 'sync', to: 'presence:/test/account/2' },
+            response = new Response(message),
             callback = function(msg) {
               passed = false;
             };
 
         client.when = function(operation, fn) {
           called = true;
-          fn(message);
+          fn(response);
         };
 
-        assert.throws(function ()
-          { client.sync('presence:/test/account/1', { version: 2 }, callback); },
-          /Invalid response/
-        );
+        client.sync('presence:/test/account/1', { version: 2 }, callback);
         assert.ok(called);
         assert.ok(passed);
       }
@@ -432,13 +430,16 @@ exports.RadarClient = {
         // Previous online emits should not affect the callback
         client.emit(scope, { op: 'online', to: scope, value: { 100: 2 } });
 
-        client.emit('get', {
+        var message = {
           op: 'get', to: scope,
           value: {
             100: { userType: 2, clients: {} },
             200: { userType: 0, clients: {} }
           }
-        });
+        };
+
+        var response = new Response(message);
+        client.emit('get', response);
       }
     }
   },
@@ -446,14 +447,19 @@ exports.RadarClient = {
   'internal methods': {
     '_memorize' : {
       'memorizing a sync/subscribe should work': function(done) {
+        var request;
+
         assert.equal(0, Object.keys(client._subscriptions).length);
-        client._memorize({ op: 'subscribe', to: 'foo'});
+        request = Request.buildSubscribe('presence:/test/ticket/1');
+        client._memorize(request);
         assert.equal(1, Object.keys(client._subscriptions).length);
 
-        client._memorize({ op: 'sync', to: 'bar'});
+        request = Request.buildSync('status:/test/ticket/1');
+        client._memorize(request);
         assert.equal(2, Object.keys(client._subscriptions).length);
 
-        client._memorize({ op: 'get', to: 'bar' });
+        request = Request.buildGet('status:/test/ticket/1');
+        client._memorize(request);
         // Should be a no-op
         assert.equal(2, Object.keys(client._subscriptions).length);
 
@@ -461,15 +467,19 @@ exports.RadarClient = {
       },
 
       'memorizing a set(online) and unmemorizing a set(offline) should work': function(done) {
+        var request;
+
         assert.equal(0, Object.keys(client._presences).length);
-        client._memorize({ op: 'set', to: 'presence:/foo/bar', value: 'online' });
+        request = Request.buildSet('presence:/foo/bar', 'online');
+        client._memorize(request);
         assert.equal('online', client._presences['presence:/foo/bar']);
         assert.equal(1, Object.keys(client._presences).length);
         // Duplicate should be ignored
-        client._memorize({ op: 'set', to: 'presence:/foo/bar', value: 'online' });
+        client._memorize(request);
         assert.equal(1, Object.keys(client._presences).length);
 
-        client._memorize({ op: 'set', to: 'presence:/foo/bar', value: 'offline' });
+        request = Request.buildSet('presence:/foo/bar', 'offline');
+        client._memorize(request);
         assert.equal(1, Object.keys(client._presences).length);
         assert.equal('offline', client._presences['presence:/foo/bar']);
         done();
@@ -477,58 +487,72 @@ exports.RadarClient = {
 
       'memorizing a unsubscribe should remove any sync/subscribe': function(done) {
         // Set up
-        client._memorize({ op: 'subscribe', to: 'foo'});
-        client._memorize({ op: 'sync', to: 'bar'});
+        var request = Request.buildSubscribe('status:/test/ticket/1');
+        client._memorize(request);
+        request = Request.buildSync('status:/test/ticket/2');
+        client._memorize(request);
         assert.equal(2, Object.keys(client._subscriptions).length);
+
         // Unsubscribe
-        client._memorize({ op: 'unsubscribe', to: 'foo'});
+        request = Request.buildUnsubscribe('status:/test/ticket/1');
+        client._memorize(request);
         assert.equal(1, Object.keys(client._subscriptions).length);
-        client._memorize({ op: 'unsubscribe', to: 'bar'});
+        request = Request.buildUnsubscribe('status:/test/ticket/2');
+        client._memorize(request);
         assert.equal(0, Object.keys(client._subscriptions).length);
         done();
       },
 
       'duplicated subscribes and syncs should only be stored once and sync is more important than subscribe': function(done) {
         // Simple duplicates
-        client._memorize({ op: 'subscribe', to: 'foo'});
+        var request = Request.buildSubscribe('status:/test/ticket/1');
+        client._memorize(request);
         assert.equal(1, Object.keys(client._subscriptions).length);
-        client._memorize({ op: 'subscribe', to: 'foo'});
+        client._memorize(request);
         assert.equal(1, Object.keys(client._subscriptions).length);
 
 
         client._subscriptions = {};
         // Simple duplicates
-        client._memorize({ op: 'sync', to: 'abc'});
+        request = Request.buildSync('status:/test/ticket/2');
+        client._memorize(request);
         assert.equal(1, Object.keys(client._subscriptions).length);
-        client._memorize({ op: 'sync', to: 'abc'});
+        client._memorize(request);
         assert.equal(1, Object.keys(client._subscriptions).length);
 
         client._subscriptions = {};
         // Sync after subscribe
-        client._memorize({ op: 'sync', to: 'bar'});
+        request = Request.buildSubscribe('status:/test/ticket/3');
+        client._memorize(request);
         assert.equal(1, Object.keys(client._subscriptions).length);
-        client._memorize({ op: 'sync', to: 'bar'});
+        request = Request.buildSync('status:/test/ticket/3');
+        client._memorize(request);
         assert.equal(1, Object.keys(client._subscriptions).length);
-        assert.equal('sync', client._subscriptions.bar);
+        assert.equal('sync', client._subscriptions['status:/test/ticket/3']);
 
         client._subscriptions = {};
         // Subscribe after sync
-        client._memorize({ op: 'sync', to: 'baz'});
+        request = Request.buildSync('status:/test/ticket/4');
+        client._memorize(request);
         assert.equal(1, Object.keys(client._subscriptions).length);
-        assert.equal('sync', client._subscriptions.baz);
+        assert.equal('sync', client._subscriptions['status:/test/ticket/4']);
         // When we sync and subscribe, it means just sync
-        client._memorize({ op: 'subscribe', to: 'baz'});
+        request = Request.buildSubscribe('status:/test/ticket/4');
+        client._memorize(request);
         assert.equal(1, Object.keys(client._subscriptions).length);
-        assert.equal('sync', client._subscriptions.baz);
+        assert.equal('sync', client._subscriptions['status:/test/ticket/4']);
 
         done();
       }
     },
+
     '_restore' : {
       'restore presences' : function(done){
         MockEngine.current._written = [];
-        client._memorize({ op: 'set', to: 'presence:/foo/bar', value: 'online' });
-        client._memorize({ op: 'set', to: 'presence:/foo/bar2', value: 'offline' });
+        var request = Request.buildSet('presence:/foo/bar', 'online');
+        client._memorize(request);
+        request = Request.buildSet('presence:/foo/bar2', 'offline');
+        client._memorize(request);
         client._restoreRequired = true;
         client.configure({ accountName: 'foo', userId: 123, userType: 2 });
         client.alloc('test', function() {
@@ -546,10 +570,13 @@ exports.RadarClient = {
           done();
         });
       },
+
       'restore subscriptions' : function(done){
         MockEngine.current._written = [];
-        client._memorize({ op: 'subscribe', to: 'status:/foo/bar' });
-        client._memorize({ op: 'subscribe', to: 'message:/foo/bar2' });
+        var request = Request.buildSubscribe('status:/foo/bar');
+        client._memorize(request);
+        request = Request.buildSubscribe('message:/foo/bar2');
+        client._memorize(request);
         client._restoreRequired = true;
         client.configure({ accountName: 'foo', userId: 123, userType: 2 });
         client.alloc('test', function() {
@@ -585,22 +612,23 @@ exports.RadarClient = {
       'should register an ack event handler that calls the callback function once the appropriate ack message has been received': function() {
         var called = false,
             passed = false,
-            message = { op: 'subscribe', to: 'status:/account/scope/1' },
+            request = Request.buildSubscribe('status:/account/scope/1'),
             ackMessage = { value: -2 },
             callback = function(msg) {
               passed = true;
-              assert.deepEqual(msg, message);
+              assert.deepEqual(msg, request.getMessage());
             };
 
         client.when = function(name, fn) {
           called = true;
           assert.equal(name, 'ack');
           ackMessage.op = 'ack';
-          ackMessage.value = message.ack;
-          fn(ackMessage);
+          ackMessage.value = request.getAttr('ack');
+          var response = new Response(ackMessage);
+          fn(response);
         };
 
-        client._write(message, callback);
+        client._write(request, callback);
         assert.ok(called);
         assert.ok(passed);
       },
@@ -608,20 +636,18 @@ exports.RadarClient = {
       'should register an ack event handler that does not call the callback function for ack messages with a different value': function() {
         var called = false,
             passed = true,
-            message = { op: 'subscribe', to: 'status:/account/scope/1' },
+            request = Request.buildSubscribe('status:/account/scope/1'),
             ackMessage = { op: 'ack', value: -2 },
+            response = new Response(ackMessage),
             callback = function(msg) { passed = false; };
 
         client.when = function(name, fn) {
           called = true;
           assert.equal(name, 'ack');
-          fn(ackMessage);
+          fn(response);
         };
 
-        assert.throws(function ()
-          { client._write(message, callback); },
-          /Invalid response/
-        );
+        client._write(request, callback);
         assert.ok(called);
         assert.ok(passed);
       }
@@ -629,20 +655,43 @@ exports.RadarClient = {
 
     '._batch': {
       'should ignore messages without the appropriate properties': {
+        'op': function() {
+          var message = { to: 'status:/dev/ticket/1', value: 'x', time: new Date() / 1000 },
+              response;
+          
+          assert.throws(function ()
+            { response = new Response(message); },
+            /missing op/
+          );
+          assert.deepEqual(client._channelSyncTimes, {});
+        },
+
         'to': function() {
-          assert.ok(!client._batch({ value: 'x', time: new Date() / 1000 }));
+          var message = { op: 'subscribe', value: 'x', time: new Date() / 1000 },
+              response;
+          
+          assert.throws(function ()
+            { response = new Response(message); },
+            /missing to/
+          );
           assert.deepEqual(client._channelSyncTimes, {});
         },
 
         'value': function() {
+          var message = { op: 'subscribe', to: 'you', value: 'x'},
+              response = new Response(message);
+
           assert.equal(client._channelSyncTimes.you, undefined);
-          assert.ok(!client._batch({ value: 'x', to: 'you' }));
+          assert.ok(!client._batch(response));
           assert.equal(client._channelSyncTimes.you, undefined);
         },
 
         'time': function() {
+          var message = { op: 'subscribe', to: 'you', value: 'x' },
+              response = new Response(message);
+
           assert.equal(client._channelSyncTimes.you, undefined);
-          assert.ok(!client._batch({ value: 'x', to: 'you' }));
+          assert.ok(!client._batch(response));
           assert.equal(client._channelSyncTimes.you, undefined);
         }
       },
@@ -650,13 +699,15 @@ exports.RadarClient = {
       'should not ignore messages that have all the appropriate properties': function() {
         var now = new Date(),
             message = {
+              op: 'subscribe',
               to: 'you',
               value: [ '{}', now ],
               time: now
-            };
+            },
+            response = new Response(message);
 
         assert.equal(client._channelSyncTimes.you, undefined);
-        assert.notEqual(client._batch(message), false);
+        assert.notEqual(client._batch(response), false);
         assert.equal(client._channelSyncTimes.you, now);
       },
 
@@ -664,20 +715,22 @@ exports.RadarClient = {
         var called = false,
             now = new Date(),
             message = {
+              op: 'subscribe',
               to: 'you',
               value: [ '{ "something": 1 }', now ],
               time: now
-            };
+            },
+            response = new Response(message);
 
         client._channelSyncTimes.you = now - HOUR;
 
         client.emitNext = function(name, data) {
           called = true;
-          assert.equal(name, message.to);
-          assert.deepEqual(data, JSON.parse(message.value[0]));
+          assert.equal(name, response.getAttr('to'));
+          assert.deepEqual(data, JSON.parse(response.getAttr('value')[0]));
         };
 
-        assert.notEqual(client._batch(message), false);
+        assert.notEqual(client._batch(response), false);
         assert.equal(client._channelSyncTimes.you, now);
         assert.ok(called);
       }
@@ -876,7 +929,7 @@ exports.RadarClient = {
     '._sendMessage': {
       'should call sendPacket() on the _socket if the manager is activated': function() {
         var called = false,
-            message = { test: 1 };
+            request = Request.buildSubscribe('status:/test/ticket/1');
 
         client.manager.is = function(state) { return state == 'activated'; };
 
@@ -884,27 +937,27 @@ exports.RadarClient = {
           sendPacket: function(name, data) {
             called = true;
             assert.equal(name, 'message');
-            assert.equal(data, JSON.stringify(message));
+            assert.equal(data, JSON.stringify(request.getMessage()));
           }
         };
 
-        client._sendMessage(message);
+        client._sendMessage(request);
         assert.ok(called);
       },
 
       'should queue the message if the client has been configured, but is not activated': function() {
-        var message = { test: 1 };
+        var request = Request.buildSet('status:/test/ticket/1', 'any_value');
 
         client.configure({});
-        client._sendMessage(message);
-        assert.deepEqual(message, client._queuedMessages[0]);
+        client._sendMessage(request);
+        assert.deepEqual(request, client._queuedMessages[0]);
       },
 
       'should ignore the message if the client has not been configured': function() {
-        var message = { test: 1 };
+        var request = Request.buildSet('status:/test/ticket/1', 'any_value');
 
         assert.ok(!client._isConfigured);
-        client._sendMessage(message);
+        client._sendMessage(request);
         assert.equal(client._queuedMessages.length, 0);
       }
     },
@@ -922,7 +975,7 @@ exports.RadarClient = {
             if (name === 'message:in') return;
             called = true;
             assert.equal(name, message.op);
-            assert.deepEqual(data, message);
+            assert.deepEqual(data.message, message);
           };
 
           client._messageReceived(json);
@@ -933,6 +986,7 @@ exports.RadarClient = {
           var called = false,
               message = {
                 op: 'ack',
+                value: 1
               },
               json = JSON.stringify(message);
 
@@ -940,7 +994,7 @@ exports.RadarClient = {
             if (name === 'message:in') return;
             called = true;
             assert.equal(name, message.op);
-            assert.deepEqual(data, message);
+            assert.deepEqual(data.message, message);
           };
 
           client._messageReceived(json);
@@ -951,6 +1005,7 @@ exports.RadarClient = {
           var called = false,
               message = {
                 op: 'get',
+                to: 'staus:/test/ticket/1'
               },
               json = JSON.stringify(message);
 
@@ -958,7 +1013,7 @@ exports.RadarClient = {
             if (name === 'message:in') return;
             called = true;
             assert.equal(name, message.op);
-            assert.deepEqual(data, message);
+            assert.deepEqual(data.message, message);
           };
 
           client._messageReceived(json);
@@ -969,12 +1024,13 @@ exports.RadarClient = {
           var called = false,
               message = {
                 op: 'sync',
+                to: 'staus:/test/ticket/1'
               },
               json = JSON.stringify(message);
 
           client._batch = function(msg) {
             called = true;
-            assert.deepEqual(msg, message);
+            assert.deepEqual(msg.message, message);
           };
 
           client._messageReceived(json);
