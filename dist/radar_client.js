@@ -89,10 +89,10 @@ Request.buildNameSync = function (scope, options) {
 Request.buildSet = function (scope, value, clientData, key, userType) {
   var request = new Request('set', scope);
   request.setAttr('value', value);
-  request._setAttrOptionalDefined('key', key);
-  request._setAttrOptionalUndefined('type', userType);
+  request.setAttrOptionalDefined('key', key);
+  request.setAttrOptionalUndefined('type', userType);
   if (typeof(clientData) != 'function') {
-    request._setAttrOptionalUndefined('clientData', clientData);
+    request.setAttrOptionalUndefined('clientData', clientData);
   }
   return request;
 };
@@ -137,12 +137,6 @@ Request.getAttr = function (message, attr) {
   return (message && message[attr]);
 };
 
-/*
-Request.setAttr = function (message, attr, value) {
-  if (message && attr) { message[attr] = value; }
-};
-*/
-
 // Instance methods
 
 Request.prototype.getMessage = function () {
@@ -164,13 +158,13 @@ Request.prototype.isPresence = function () {
   return this.type === 'presence';
 };
 
-Request.prototype._setAttrOptionalUndefined = function (keyName, keyValue) {
+Request.prototype.setAttrOptionalUndefined = function (keyName, keyValue) {
   if (keyName) {
     this.message[keyName] = keyValue;
   }
 };
 
-Request.prototype._setAttrOptionalDefined = function (keyName, keyValue) {
+Request.prototype.setAttrOptionalDefined = function (keyName, keyValue) {
   if (keyName && keyValue) {
     this.message[keyName] = keyValue;
   }
