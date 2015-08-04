@@ -109,27 +109,13 @@ Request.buildUnsubscribe = function (scope, options) {
   return new Request('unsubscribe', scope);
 };
 
+// TO DO: config class should return the required data via getters
 Request.prototype.setAuthData = function (configuration) {
   if (configuration && configuration.auth) {
     this.setAttr('auth', configuration.auth);
     this.setAttr('userId', configuration.userId);
     this.setAttr('userType', configuration.userType);
     this.setAttr('accountName', configuration.accountName);
-  }
-};
-
-// TO DO: config class should return the required data via getters
-Request.setUserData_old = function (message, configuration) {
-  message.userData = configuration && configuration.userData;
-};
-
-// TO DO: config class should return the required data via getters
-Request.setAuthData_old = function (message, configuration) {
-  if (configuration && configuration.auth) {
-    message.auth = configuration.auth;
-    message.userId = configuration.userId;
-    message.userType = configuration.userType;
-    message.accountName = configuration.accountName;
   }
 };
 
@@ -176,13 +162,6 @@ Request.prototype.setAttrOptional = function (keyName, keyValue) {
   if (keyName && (keyValue === 0 || keyValue)) {
     this.message[keyName] = keyValue;
   }
-};
-
-Request.prototype.setAttr_old = function (keyName, keyValue) {
-  if (!keyName || !keyValue) {
-    throw new Error('Invalid request attribute');
-  }
-  this.message[keyName] = keyValue;
 };
 
 Request.prototype.getAttr = function (keyName) {
