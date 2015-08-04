@@ -80,8 +80,7 @@ exports['after reconnecting'] = {
         value: 'online',
         key: 123,
         type: 2,
-        userData: { accountName: 'test', userId: 123, userType: 2 },
-        clientData: undefined
+        userData: { accountName: 'test', userId: 123, userType: 2 }
       });
     });
 
@@ -315,43 +314,6 @@ exports['given a new presence'] = {
       done();
     }, 10);
   },
-
-  /*
-  'synchronization batch filters out duplicate messages to the same channel by time': function(done) {
-    var received = [];
-    client.on('foo', function(msg) {
-      received.push(msg);
-    });
-    client._batch({
-      to: 'foo',
-      value: [
-        JSON.stringify({ value: 'a' }),
-        1,
-        JSON.stringify({ value: 'b' }),
-        2,
-        JSON.stringify({ value: 'c' }),
-        3
-      ],
-      time: 1
-    });
-    client._batch({
-      to: 'foo',
-      value: [
-        JSON.stringify({ value: 'b' }),
-        2,
-        JSON.stringify({ value: 'c' }),
-        3,
-        JSON.stringify({ value: 'd' }),
-        600,
-      ],
-      time: 2
-    });
-    setTimeout(function() {
-      assert.equal(4, received.length);
-      done();
-    }, 10);
-  }
-  */
 
   'synchronization batch filters out duplicate messages to the same channel by time': function(done) {
     var received = [],

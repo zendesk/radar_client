@@ -89,10 +89,10 @@ Request.buildNameSync = function (scope, options) {
 Request.buildSet = function (scope, value, clientData, key, userType) {
   var request = new Request('set', scope);
   request.setAttr('value', value);
-  request.setAttrOptionalDefined('key', key);
-  request.setAttrOptionalUndefined('type', userType);
+  request.setAttrOptional('key', key);
+  request.setAttrOptional('type', userType);
   if (typeof(clientData) != 'function') {
-    request.setAttrOptionalUndefined('clientData', clientData);
+    request.setAttrOptional('clientData', clientData);
   }
   return request;
 };
@@ -158,19 +158,27 @@ Request.prototype.isPresence = function () {
   return this.type === 'presence';
 };
 
-Request.prototype.setAttrOptionalUndefined = function (keyName, keyValue) {
-  if (keyName) {
-    this.message[keyName] = keyValue;
-  }
-};
-
-Request.prototype.setAttrOptionalDefined = function (keyName, keyValue) {
-  if (keyName && keyValue) {
+Request.prototype.setAttrOptional = function (keyName, keyValue) {
+  if (keyName && (keyValue === 0 || keyValue)) {
     this.message[keyName] = keyValue;
   }
 };
 
 Request.prototype.setAttr = function (keyName, keyValue) {
+  //if (!keyName || !keyValue) {
+  if (!(keyName && (keyValue === 0 || keyValue))) {
+    throw new Error('Invalid request attribute');
+  }
+  this.message[keyName] = keyValue;
+};
+
+Request.prototype.setAttrOptional = function (keyName, keyValue) {
+  if (keyName && (keyValue === 0 || keyValue)) {
+    this.message[keyName] = keyValue;
+  }
+};
+
+Request.prototype.setAttr_old = function (keyName, keyValue) {
   if (!keyName || !keyValue) {
     throw new Error('Invalid request attribute');
   }
@@ -406,29 +414,26 @@ Client.prototype.currentClientId = function() {
   return this._socket && this._socket.id;
 };
 
-// Return the scope object for a given message type
+// Return the chainable scope object for a given message type
 
 Client.prototype.message = function(scope) {
-  return new Scope(_buildScopeName('message', this._configuration, scope), this);
+  return new Scope('message', scope, this);
 };
 
-// Access the "presence" chainable operations
 Client.prototype.presence = function(scope) {
-  return new Scope(_buildScopeName('presence', this._configuration, scope), this);
+  return new Scope('presence', scope, this);
 };
 
-// Access the "status" chainable operations
 Client.prototype.status = function(scope) {
-  return new Scope(_buildScopeName('status', this._configuration, scope), this);
+  return new Scope('status', scope, this);
 };
 
 Client.prototype.stream = function(scope) {
-  return new Scope(_buildScopeName('stream', this._configuration, scope), this);
+  return new Scope('stream', scope, this);
 };
 
-// Access the "control" chainable operations
 Client.prototype.control = function(scope) {
-  return new Scope(_buildScopeName('control', this._configuration, scope), this);
+  return new Scope('control', scope, this);
 };
 
 // Operations
@@ -517,10 +522,6 @@ Client.prototype.get = function (scope, options, callback) {
 };
 
 // Private API
-
-var _buildScopeName = function (type, configuration, scope) {
-  return type + ':/' + configuration.accountName + '/' + scope;
-};
 
 Client.prototype._addListeners = function () {
   // Add authentication data to a request message; _write() emits authenticateMessage
@@ -783,9 +784,9 @@ Client.setBackend = function(lib) { eio = lib; };
 
 module.exports = Client;
 },
-"lib/scope.js": function(module, exports, require){function Scope(prefix, client) {
-  this.prefix = prefix;
+"lib/scope.js": function(module, exports, require){function Scope(typeName, scope, client) {
   this.client = client;
+  this.prefix = this._buildScopePrefix(typeName, scope, client._configuration);
 }
 
 var props = [ 'set', 'get', 'subscribe', 'unsubscribe', 'publish', 'push', 'sync',
@@ -800,9 +801,13 @@ var init = function (name) {
   };
 };
 
-for (var i = 0; i < props.length; i++){
+for (var i = 0; i < props.length; i++) {
   init(props[i]);
 }
+
+Scope.prototype._buildScopePrefix = function (typeName, scope, configuration) {
+  return typeName + ':/' + configuration.accountName + '/' + scope;
+};
 
 module.exports = Scope;
 },
