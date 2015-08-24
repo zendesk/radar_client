@@ -193,6 +193,7 @@ exports.RadarClient = {
         assert.deepEqual(hash.message, {
           op: 'subscribe',
           to: 'status:/test/account/1',
+          options: { version: 1 }
         });
         assert.equal(fn, callback);
       };
@@ -280,7 +281,8 @@ exports.RadarClient = {
         called = true;
         assert.deepEqual(hash.message, {
           op: 'get',
-          to: 'status:/test/account/1'
+          to: 'status:/test/account/1',
+          options: { version: 1 }
         });
       };
 
@@ -349,7 +351,8 @@ exports.RadarClient = {
         called = true;
         assert.deepEqual(hash.message, {
           op: 'sync',
-          to: 'status:/test/account/1'
+          to: 'status:/test/account/1',
+          options: { version: 1 }
         });
       };
 
@@ -596,7 +599,7 @@ exports.RadarClient = {
     '._write': {
       'should emit an authenticateMessage event': function() {
         var called = false,
-            message = { op: 'subscribe', to: 'status:/account/scope/1' },
+            message = { op: 'subscribe', to: 'status:/account/scope/1', options: { version: 1 }},
             request = Request.buildSubscribe(message.to);
 
         client.emit = function(name, data) {
@@ -659,10 +662,7 @@ exports.RadarClient = {
           var message = { to: 'status:/dev/ticket/1', value: 'x', time: new Date() / 1000 },
               response;
           
-          assert.throws(function ()
-            { response = new Response(message); },
-            /missing op/
-          );
+          response = new Response(message);
           assert.deepEqual(client._channelSyncTimes, {});
         },
 
@@ -670,10 +670,7 @@ exports.RadarClient = {
           var message = { op: 'subscribe', value: 'x', time: new Date() / 1000 },
               response;
           
-          assert.throws(function ()
-            { response = new Response(message); },
-            /missing to/
-          );
+          response = new Response(message);
           assert.deepEqual(client._channelSyncTimes, {});
         },
 

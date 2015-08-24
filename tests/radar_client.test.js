@@ -80,7 +80,8 @@ exports['after reconnecting'] = {
         value: 'online',
         key: 123,
         type: 2,
-        userData: { accountName: 'test', userId: 123, userType: 2 }
+        userData: undefined,
+        clientData: undefined
       });
     });
 
