@@ -1,8 +1,10 @@
 language: node_js
 node_js:
-  - "0.8"
+  - "0.10"
+script: npm test && ./scripts/run_radar_tests
 notifications:
   flowdock:
     secure: GzhfVfSDKQtvfCaHHh2AYTLn/kWOUvHK+SM44AfWX10pwQXCicSR5kx7jMIDrU//0+T2CP/m1EJDnK15CTix+vRJLTwybgc4b8NOl0XmnZXVcW+4i8uhKnXA3bm6+dgVxvUCwNy69dbk7H7CkyFZOzJcZCVliiRBZcbj41uwMqc=
 branches:
-  only: [master, staging, production, pobrien/server_side_client_state]
+  only: [master, staging, production]
+sudo: false
