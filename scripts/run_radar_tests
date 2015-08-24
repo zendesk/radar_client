@@ -10,7 +10,7 @@ npm install
 npm link radar_client
 npm test
 if [ $? -ne 0 ]
-then exit 64
+then exit 1
 fi
 cd ..
 # cleanup
