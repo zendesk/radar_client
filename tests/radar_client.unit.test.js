@@ -126,9 +126,9 @@ exports.RadarClient = {
     'should call _write() with a set operation definition hash': function() {
       var called = false, callback = function(){};
 
-      client._write = function(hash, fn) {
+      client._write = function(request, fn) {
         called = true;
-        assert.deepEqual(hash.message, {
+        assert.deepEqual(request.getMessage(), {
           op: 'set',
           to: 'status:/test/account/1',
           value: 'whatever',
@@ -168,9 +168,9 @@ exports.RadarClient = {
     'should call _write() with a publish operation definition hash': function() {
       var called = false, callback = function(){};
 
-      client._write = function(hash, fn) {
+      client._write = function(request, fn) {
         called = true;
-        assert.deepEqual(hash.message, {
+        assert.deepEqual(request.getMessage(), {
           op: 'publish',
           to: 'message:/test/account/1',
           value: 'whatever'
@@ -188,9 +188,9 @@ exports.RadarClient = {
     'should call _write() with a subscribe operation definition hash': function() {
       var called = false, callback = function(){};
 
-      client._write = function(hash, fn) {
+      client._write = function(request, fn) {
         called = true;
-        assert.deepEqual(hash.message, {
+        assert.deepEqual(request.getMessage(), {
           op: 'subscribe',
           to: 'status:/test/account/1',
           options: { version: 1 }
@@ -238,9 +238,9 @@ exports.RadarClient = {
     'should call _write() with a unsubscribe operation definition hash': function() {
       var called = false, callback = function(){};
 
-      client._write = function(hash, fn) {
+      client._write = function(request, fn) {
         called = true;
-        assert.deepEqual(hash.message, {
+        assert.deepEqual(request.getMessage(), {
           op: 'unsubscribe',
           to: 'status:/test/account/1',
         });
@@ -277,9 +277,9 @@ exports.RadarClient = {
     'should call _write() with a get operation definition hash': function() {
       var called = false;
 
-      client._write = function(hash) {
+      client._write = function(request) {
         called = true;
-        assert.deepEqual(hash.message, {
+        assert.deepEqual(request.getMessage(), {
           op: 'get',
           to: 'status:/test/account/1',
           options: { version: 1 }
@@ -347,9 +347,9 @@ exports.RadarClient = {
     'should call _write() with a sync operation definition hash': function() {
       var called = false;
 
-      client._write = function(hash) {
+      client._write = function(request) {
         called = true;
-        assert.deepEqual(hash.message, {
+        assert.deepEqual(request.getMessage(), {
           op: 'sync',
           to: 'status:/test/account/1',
           options: { version: 1 }
@@ -600,7 +600,7 @@ exports.RadarClient = {
       'should emit an authenticateMessage event': function() {
         var called = false,
             message = { op: 'subscribe', to: 'status:/account/scope/1', options: { version: 1 }},
-            request = Request.buildSubscribe(message.to);
+            request = Request.buildSubscribe(message.to).setOptions();
 
         client.emit = function(name, data) {
           called = true;
