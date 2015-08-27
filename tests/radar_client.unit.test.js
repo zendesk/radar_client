@@ -192,8 +192,7 @@ exports.RadarClient = {
         called = true;
         assert.deepEqual(request.getMessage(), {
           op: 'subscribe',
-          to: 'status:/test/account/1',
-          options: { version: 1 }
+          to: 'status:/test/account/1'
         });
         assert.equal(fn, callback);
       };
@@ -281,8 +280,7 @@ exports.RadarClient = {
         called = true;
         assert.deepEqual(request.getMessage(), {
           op: 'get',
-          to: 'status:/test/account/1',
-          options: { version: 1 }
+          to: 'status:/test/account/1'
         });
       };
 
@@ -351,8 +349,7 @@ exports.RadarClient = {
         called = true;
         assert.deepEqual(request.getMessage(), {
           op: 'sync',
-          to: 'status:/test/account/1',
-          options: { version: 1 }
+          to: 'status:/test/account/1'
         });
       };
 
@@ -599,8 +596,8 @@ exports.RadarClient = {
     '._write': {
       'should emit an authenticateMessage event': function() {
         var called = false,
-            message = { op: 'subscribe', to: 'status:/account/scope/1', options: { version: 1 }},
-            request = Request.buildSubscribe(message.to).setOptions();
+            message = { op: 'subscribe', to: 'status:/account/scope/1'},
+            request = Request.buildSubscribe(message.to);
 
         client.emit = function(name, data) {
           called = true;
