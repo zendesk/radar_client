@@ -149,7 +149,7 @@ exports.RadarClient = {
       client.set('presence:/test/account/1', 'online');
       assert.ok(client._restoreRequired);
       assert.ok(!client.manager.is('activated'));
-      assert.equal(client._queuedMessages.length, 0);
+      assert.equal(client._queuedRequests.length, 0);
       assert.deepEqual(client._presences, { 'presence:/test/account/1': 'online' });
     },
 
@@ -159,7 +159,7 @@ exports.RadarClient = {
       client.set('presence:/test/account/1', 'online', function(){});
       assert.ok(client._restoreRequired);
       assert.ok(!client.manager.is('activated'));
-      assert.equal(client._queuedMessages.length, 1);
+      assert.equal(client._queuedRequests.length, 1);
       assert.deepEqual(client._presences, { 'presence:/test/account/1': 'online' });
     }
   },
@@ -208,7 +208,7 @@ exports.RadarClient = {
       client.subscribe('status:/test/account/1');
       assert.ok(client._restoreRequired);
       assert.ok(!client.manager.is('activated'));
-      assert.equal(client._queuedMessages.length, 0);
+      assert.equal(client._queuedRequests.length, 0);
       assert.deepEqual(client._subscriptions, { 'status:/test/account/1': 'subscribe' });
     },
 
@@ -218,7 +218,7 @@ exports.RadarClient = {
       client.subscribe('status:/test/account/1', function(){});
       assert.ok(client._restoreRequired);
       assert.ok(!client.manager.is('activated'));
-      assert.equal(client._queuedMessages.length, 1);
+      assert.equal(client._queuedRequests.length, 1);
       assert.deepEqual(client._subscriptions, { 'status:/test/account/1': 'subscribe' });
     },
 
@@ -228,7 +228,7 @@ exports.RadarClient = {
       client.sync('presence:/test/account/1');
       assert.ok(client._restoreRequired);
       assert.ok(!client.manager.is('activated'));
-      assert.equal(client._queuedMessages.length, 0);
+      assert.equal(client._queuedRequests.length, 0);
       assert.deepEqual(client._subscriptions, { 'presence:/test/account/1': 'sync' });
     }
   },
@@ -257,7 +257,7 @@ exports.RadarClient = {
       client.unsubscribe('presence:/test/account/1');
       assert.ok(client._restoreRequired);
       assert.ok(!client.manager.is('activated'));
-      assert.equal(client._queuedMessages.length, 0);
+      assert.equal(client._queuedRequests.length, 0);
       assert.deepEqual(client._subscriptions, {});
     },
 
@@ -267,7 +267,7 @@ exports.RadarClient = {
       client.unsubscribe('presence:/test/account/1', function(){});
       assert.ok(client._restoreRequired);
       assert.ok(!client.manager.is('activated'));
-      assert.equal(client._queuedMessages.length, 1);
+      assert.equal(client._queuedRequests.length, 1);
       assert.deepEqual(client._subscriptions, {});
     }
   },
@@ -305,7 +305,6 @@ exports.RadarClient = {
           passed = false,
           scope = 'status:/test/account/1',
           message = { op: 'get', to: scope },
-          response = new Response(message),
           callback = function(msg) {
             passed = true;
             assert.deepEqual(msg, message);
@@ -313,7 +312,7 @@ exports.RadarClient = {
 
       client.when = function(operation, fn) {
         called = true;
-        fn(response);
+        fn(message);
       };
 
       client.get(scope, callback);
@@ -325,14 +324,13 @@ exports.RadarClient = {
       var called = false,
           passed = true,
           message = { op: 'get', to: 'status:/test/account/2' },
-          response = new Response(message),
           callback = function(msg) {
             passed = false;
           };
 
       client.when = function(operation, fn) {
         called = true;
-        fn(response);
+        fn(message);
       };
 
       client.get('status:/test/account/1', callback);
@@ -375,7 +373,6 @@ exports.RadarClient = {
             passed = false,
             scope = 'presence:/test/account/1',
             message = { op: 'sync', to: scope },
-            response = new Response(message),
             callback = function(msg) {
               passed = true;
               assert.deepEqual(msg, message);
@@ -383,7 +380,7 @@ exports.RadarClient = {
 
         client.when = function(operation, fn) {
           called = true;
-          fn(response);
+          fn(message);
         };
 
         client.sync(scope, { version: 2 }, callback);
@@ -438,8 +435,7 @@ exports.RadarClient = {
           }
         };
 
-        var response = new Response(message);
-        client.emit('get', response);
+        client.emit('get', message);
       }
     }
   },
@@ -605,7 +601,8 @@ exports.RadarClient = {
           assert.deepEqual(data, message);
         };
 
-        client._write(request.getMessage());
+        //client._write(request.getMessage());
+        client._write(request);
         assert.ok(called);
       },
 
@@ -624,8 +621,7 @@ exports.RadarClient = {
           assert.equal(name, 'ack');
           ackMessage.op = 'ack';
           ackMessage.value = request.getAttr('ack');
-          var response = new Response(ackMessage);
-          fn(response);
+          fn(ackMessage);
         };
 
         client._write(request, callback);
@@ -887,7 +883,7 @@ exports.RadarClient = {
                 called = 0;
 
             while (count < 10) {
-              client._queuedMessages.push({ test: count++ });
+              client._queuedRequests.push({ test: count++ });
             }
 
             client._restoreRequired = true;
@@ -944,7 +940,7 @@ exports.RadarClient = {
 
         client.configure({});
         client._sendMessage(request);
-        assert.deepEqual(request, client._queuedMessages[0]);
+        assert.deepEqual(request, client._queuedRequests[0]);
       },
 
       'should ignore the message if the client has not been configured': function() {
@@ -952,7 +948,7 @@ exports.RadarClient = {
 
         assert.ok(!client._isConfigured);
         client._sendMessage(request);
-        assert.equal(client._queuedMessages.length, 0);
+        assert.equal(client._queuedRequests.length, 0);
       }
     },
 
@@ -969,7 +965,7 @@ exports.RadarClient = {
             if (name === 'message:in') return;
             called = true;
             assert.equal(name, message.op);
-            assert.deepEqual(data.message, message);
+            assert.deepEqual(data, message);
           };
 
           client._messageReceived(json);
@@ -988,7 +984,7 @@ exports.RadarClient = {
             if (name === 'message:in') return;
             called = true;
             assert.equal(name, message.op);
-            assert.deepEqual(data.message, message);
+            assert.deepEqual(data, message);
           };
 
           client._messageReceived(json);
@@ -1007,7 +1003,7 @@ exports.RadarClient = {
             if (name === 'message:in') return;
             called = true;
             assert.equal(name, message.op);
-            assert.deepEqual(data.message, message);
+            assert.deepEqual(data, message);
           };
 
           client._messageReceived(json);

@@ -73,8 +73,8 @@ exports['after reconnecting'] = {
     client.once('connect', function() {
       connected = true;
       assert.equal(MockEngine.current._written.length, 1);
-      assert.equal(client._queuedMessages.length, 1);
-      assert.deepEqual(client._queuedMessages[0].message, {
+      assert.equal(client._queuedRequests.length, 1);
+      assert.deepEqual(client._queuedRequests[0].message, {
         op: 'set',
         to: 'status:/test/tickets/21',
         value: 'online',
@@ -87,7 +87,7 @@ exports['after reconnecting'] = {
 
     client.once('ready', function() {
       assert.ok(connected);
-      assert.equal(client._queuedMessages.length, 0);
+      assert.equal(client._queuedRequests.length, 0);
       assert.ok(
         MockEngine.current._written.some(function(message) {
           return message.op == 'set' &&
