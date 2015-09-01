@@ -81,7 +81,6 @@ exports['after reconnecting'] = {
         key: 123,
         type: 2,
         userData: undefined
-        //clientData: undefined
       });
     });
 
