@@ -1,0 +1,18 @@
+#! /bin/bash
+
+# clone a radar repo
+git clone https://github.com/zendesk/radar.git
+# link this version of client
+npm link
+cd radar
+npm install
+# replace radar_client with our version
+npm link radar_client
+npm test
+if [ $? -ne 0 ]
+then exit 1
+fi
+cd ..
+# cleanup
+rm -rf radar
+npm unlink radar_client
