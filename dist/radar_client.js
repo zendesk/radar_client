@@ -380,7 +380,7 @@ Client.prototype._batched = function(message) {
       newest = message.time,
       current = this._channelSyncTimes[message.to] || 0;
 
-  console.log('_batched messages:',length/2);
+  //console.log('_batched messages:',length/2);
 
   for (; index < length; index = index + 2) {
     data = JSON.parse(message.value[index]);
