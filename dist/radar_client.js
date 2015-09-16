@@ -355,6 +355,7 @@ Client.prototype._batch = function(message) {
       length = message.value.length,
       newest = message.time,
       current = this._channelSyncTimes[message.to] || 0;
+      //console.log(length, newest, current)
 
   for (; index < length; index = index + 2) {
     data = JSON.parse(message.value[index]);
@@ -374,11 +375,12 @@ Client.prototype._batched = function(message) {
   if (!(message.to && message.value && message.time)) {
     return false;
   }
-
+  //console.log(message.value)
   var index = 0, data, time,
       length = message.value.length,
       newest = message.time,
       current = this._channelSyncTimes[message.to] || 0;
+      //console.log(length, newest, current)
 
   //console.log('_batched messages:',length/2);
 
@@ -535,6 +537,11 @@ Client.prototype._messageReceived = function (msg) {
   this.emit('message:in', message);
   switch (message.op) {
     case 'err':
+      //console.log(message)
+      if(message.value === 'auth' && (((_ref = message.origin) != null ? _ref.to : void 0) != null)){
+        this.emitNext(message.origin.to, {op: 'auth', origin: message.origin});
+        break
+      }
     case 'ack':
     case 'get':
       this.emitNext(message.op, message);
