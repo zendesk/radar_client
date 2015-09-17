@@ -49,7 +49,9 @@ var MicroEE = require('microee'),
     StateMachine = require('./state.js'),
     immediate = typeof setImmediate != 'undefined' ? setImmediate :
                                     function(fn) { setTimeout(fn, 1); },
-    getClientVersion = require('./client_version.js');
+    getClientVersion = require('./client_version.js'),
+    Request = require('radar_message').Request,
+    Response = require('radar_message').Response;
 
 function Client(backend) {
   var self = this;
@@ -60,7 +62,7 @@ function Client(backend) {
   this._presences = {};
   this._subscriptions = {};
   this._restoreRequired = false;
-  this._queuedMessages = [];
+  this._queuedRequests = [];
   this._isConfigured = false;
 
   this._createManager();
@@ -156,235 +158,231 @@ Client.prototype.currentClientId = function() {
   return this._socket && this._socket.id;
 };
 
+// Return the chainable scope object for a given message type
+
 Client.prototype.message = function(scope) {
-  return new Scope('message:/'+this._configuration.accountName+'/'+scope, this);
+  return new Scope('message', scope, this);
 };
 
-// Access the "presence" chainable operations
 Client.prototype.presence = function(scope) {
-  return new Scope('presence:/'+this._configuration.accountName+'/'+scope, this);
+  return new Scope('presence', scope, this);
 };
 
-// Access the "status" chainable operations
 Client.prototype.status = function(scope) {
-  return new Scope('status:/'+this._configuration.accountName+'/'+scope, this);
+  return new Scope('status', scope, this);
 };
 
 Client.prototype.stream = function(scope) {
-  return new Scope('stream:/'+this._configuration.accountName+'/'+scope, this);
+  return new Scope('stream', scope, this);
 };
 
-// Access the "control" chainable operations
 Client.prototype.control = function(scope) {
-  return new Scope('control:/'+this._configuration.accountName+'/'+scope, this);
+  return new Scope('control', scope, this);
 };
+
+// Operations
 
 Client.prototype.nameSync = function(scope, options, callback) {
-  var message = { op: 'nameSync', to: scope };
-  if (typeof options == 'function') {
-    callback = options;
-  } else {
-    message.options = options;
-  }
-  return this._write(message, callback);
+  var request = Request.buildNameSync(scope, options);
+  return this._write(request, callback);
 };
 
 Client.prototype.push = function(scope, resource, action, value, callback) {
-  return this._write({
-    op: 'push',
-    to: scope,
-    resource: resource,
-    action: action,
-    value: value
-  }, callback);
+  var request = Request.buildPush(scope, resource, action, value);
+  return this._write(request, callback);
 };
 
 Client.prototype.set = function(scope, value, clientData, callback) {
-  var message = {
-    op: 'set',
-    to: scope,
-    value: value,
-    key: this._configuration.userId,
-    type: this._configuration.userType
-  };
+  var request;
 
-  if (typeof(clientData) === 'function') {
-    callback = clientData;
-  } else {
-    message.clientData = clientData;
-  }
+  callback = _chooseFunction(clientData, callback);
+  clientData = _nullIfFunction(clientData);
 
-  return this._write(message, callback);
+  request = Request.buildSet(scope, value,
+                  this._configuration.userId, this._configuration.userType,
+                  clientData);
+
+  return this._write(request, callback);
 };
 
 Client.prototype.publish = function(scope, value, callback) {
-  return this._write({
-    op: 'publish',
-    to: scope,
-    value: value
-  }, callback);
+  var request = Request.buildPublish(scope, value);
+  return this._write(request, callback);
 };
 
 Client.prototype.subscribe = function(scope, options, callback) {
-  var message = { op: 'subscribe', to: scope };
-  if (typeof options == 'function') {
-    callback = options;
-  } else {
-    message.options = options;
-  }
-  return this._write(message, callback);
+  callback = _chooseFunction(options, callback);
+  options = _nullIfFunction(options);
+
+  var request = Request.buildSubscribe(scope, options);
+
+  return this._write(request, callback);
 };
 
 Client.prototype.unsubscribe = function(scope, callback) {
-  return this._write({ op: 'unsubscribe', to: scope }, callback);
+  var request = Request.buildUnsubscribe(scope);
+  return this._write(request, callback);
 };
 
-// Sync and get return the actual value of the operation
-var init = function(propertyName) {
-  Client.prototype[propertyName] = function(scope, options, callback) {
-    var message = { op: propertyName, to: scope };
-    // options is an optional argument
-    if (typeof options == 'function') {
-      callback = options;
-    } else {
-      message.options = options;
-    }
-    // Sync v1 for presence scopes acts inconsistently. The result should be a
-    // "get" message, but it is actually a "online" message.
-    // So force v2 and translate the result to v1 format.
-    if (propertyName == 'sync' && !message.options && scope.match(/^presence.+/)) {
-      message.options = { version: 2 };
-      this.when('get', function(message) {
-        var value = {}, userId;
-        if (!message || !message.to || message.to != scope) {
-          return false;
-        }
+// sync returns the actual value of the operation
+Client.prototype.sync = function (scope, options, callback) {
+  var request, onResponse, v1Presence;
 
-        for (userId in message.value) {
-          if (message.value.hasOwnProperty(userId)) {
-            // Skip when not defined; causes exception in FF for 'Work Offline'
-            if (!message.value[userId]) { continue; }
-            value[userId] = message.value[userId].userType;
-          }
-        }
-        message.value = value;
-        message.op = 'online';
-        if (callback) {
-          callback(message);
-        }
-        return true;
-      });
-    } else {
-      this.when('get', function(message) {
-        if (!message || !message.to || message.to != scope) {
-          return false;
-        }
-        if (callback) {
-          callback(message);
-        }
-        return true;
-      });
+  callback = _chooseFunction(options, callback);
+  options = _nullIfFunction(options);
+
+  request = Request.buildSync(scope, options);
+
+  v1Presence = !options && request.isPresence();
+  onResponse = function (message) {
+    var response = new Response(message);
+    if (response && response.isFor(request)) {
+      if (v1Presence) {
+        response.forceV1Response();
+      }
+      if (callback) {
+        callback(response.getMessage());
+      }
+      return true;
     }
-    // sync/get never register or return acks (since they always send back a
-    // data message)
-    return this._write(message);
+    return false;
   };
+
+  this.when('get', onResponse);
+
+  // sync does not return ACK (it sends back a data message)
+  return this._write(request);
 };
 
-var props = ['get', 'sync'];
-for(var i = 0; i < props.length; i++){
-  init(props[i]);
-}
+// get returns the actual value of the operation
+Client.prototype.get = function (scope, options, callback) {
+  var request;
+
+  callback = _chooseFunction(options, callback);
+  options = _nullIfFunction(options);
+
+  request = Request.buildGet(scope, options);
+
+  var onResponse = function (message) {
+    var response = new Response(message);
+    if (response && response.isFor(request)) {
+      if (callback) {
+        callback(response.getMessage());
+      }
+      return true;
+    }
+    return false;
+  };
+
+  this.when('get', onResponse);
+
+  // get does not return ACK (it sends back a data message)
+  return this._write(request);
+};
 
 // Private API
 
+var _chooseFunction = function (options, callback) {
+  return typeof(options) === 'function' ? options : callback;
+};
+
+var _nullIfFunction = function (options) {
+  if (typeof(options) === 'function') {
+    return null;
+  }
+  return options;
+};
+
 Client.prototype._addListeners = function () {
-  // Add authentication data to a message; _write() emits authenticateMessage
+  // Add authentication data to a request message; _write() emits authenticateMessage
   this.on('authenticateMessage', function(message) {
-    if (this._configuration) {
-      message.userData = this._configuration.userData;
-      if (this._configuration.auth) {
-        message.auth = this._configuration.auth;
-        message.userId = this._configuration.userId;
-        message.userType = this._configuration.userType;
-        message.accountName = this._configuration.accountName;
-      }
-    }
-    this.emit('messageAuthenticated', message);
+    var request = new Request(message);
+    request.setAuthData(this._configuration);
+
+    this.emit('messageAuthenticated', request.getMessage());
   });
 
-  // Once the message is authenticated, send it to the server
+  // Once the request is authenticated, send it to the server
   this.on('messageAuthenticated', function(message) {
-    this._sendMessage(message);
+    var request = new Request(message);
+    this._sendMessage(request);
   });
 };
 
-Client.prototype._write = function(message, callback) {
-  var client = this;
+Client.prototype._write = function(request, callback) {
+  var self = this;
 
   if (callback) {
-    message.ack = this._ackCounter++;
+    request.setAttr('ack', this._ackCounter++);
+
     // Wait ack
-    this.when('ack', function(m) {
-      client.logger().debug('ack', m);
-      if (!m || !m.value || m.value != message.ack) {
-        return false;
-      }
-      callback(message);
+    this.when('ack', function(message) {
+      var response = new Response(message);
+      self.logger().debug('ack', response);
+      if (!response.isAckFor(request)) { return false; }
+      callback(request.getMessage());
+
       return true;
     });
   }
-  this.emit('authenticateMessage', message);
+
+  this.emit('authenticateMessage', request.getMessage());
+
   return this;
 };
 
-Client.prototype._batch = function(message) {
-  if (!(message.to && message.value && message.time)) {
+Client.prototype._batch = function(response) {
+  var to = response.getAttr('to'),
+      value = response.getAttr('value'),
+      time = response.getAttr('time');
+
+  if (!response.isValid()) {
+    this.logger().info('response is invalid:', response.getMessage());
     return false;
   }
 
-  var index = 0, data, time,
-      length = message.value.length,
-      newest = message.time,
-      current = this._channelSyncTimes[message.to] || 0;
+  var index = 0, data,
+      length = value.length,
+      newest = time,
+      current = this._channelSyncTimes[to] || 0;
 
   for (; index < length; index = index + 2) {
-    data = JSON.parse(message.value[index]);
-    time = message.value[index + 1];
+    data = JSON.parse(value[index]);
+    time = value[index + 1];
 
     if (time > current) {
-      this.emitNext(message.to, data);
+      this.emitNext(to, data);
     }
     if (time > newest) {
       newest = time;
     }
   }
-  this._channelSyncTimes[message.to] = newest;
+  this._channelSyncTimes[to] = newest;
 };
 
 Client.prototype._createManager = function() {
-  var client = this, manager = this.manager = StateMachine.create();
+  var self = this, manager = this.manager = StateMachine.create();
 
   manager.on('enterState', function(state) {
-    client.emit(state);
+    self.emit(state);
   });
 
   manager.on('event', function(event) {
-    client.emit(event);
+    self.emit(event);
   });
 
   manager.on('connect', function(data) {
-    var socket = client._socket = new client.backend.Socket(client._configuration);
+    var socket = self._socket = new self.backend.Socket(self._configuration);
 
     socket.once('open', function() {
-      client.logger().debug("socket open", socket.id);
+      self.logger().debug("socket open", socket.id);
       manager.established();
     });
 
     socket.once('close', function(reason, description) {
-      client.logger().debug('socket closed', socket.id, reason, description);
+      self.logger().debug('socket closed', socket.id, reason, description);
       socket.removeAllListeners('message');
-      client._socket = null;
+      self._socket = null;
 
       // Patch for polling-xhr continuing to poll after socket close (HTTP:POST
       // failure).  socket.transport is in error but not closed, so if a subsequent
@@ -399,8 +397,8 @@ Client.prototype._createManager = function() {
       }
     });
 
-    socket.on('message', function(message) {
-      client._messageReceived(message);
+    socket.on('message', function (message) {
+      self._messageReceived(message);
     });
 
     manager.removeAllListeners('close');
@@ -410,9 +408,9 @@ Client.prototype._createManager = function() {
   });
 
   manager.on('activate', function() {
-    client._identitySet();
-    client._restore();
-    client.emit('ready');
+    self._identitySet();
+    self._restore();
+    self.emit('ready');
   });
 
   manager.on('authenticate', function() {
@@ -421,40 +419,47 @@ Client.prototype._createManager = function() {
   });
 
   manager.on('disconnect', function() {
-    client._restoreRequired = true;
+    self._restoreRequired = true;
   });
 };
 
 // Memorize subscriptions and presence states; return "true" for a message that
 // adds to the memorized subscriptions or presences
-Client.prototype._memorize = function(message) {
-  switch(message.op) {
+Client.prototype._memorize = function(request) {
+  var op = request.getAttr('op'),
+      to = request.getAttr('to'),
+      value = request.getAttr('value');
+
+  switch(op) {
     case 'unsubscribe':
       // Remove from queue
-      if (this._subscriptions[message.to]) {
-        delete this._subscriptions[message.to];
+      if (this._subscriptions[to]) {
+        delete this._subscriptions[to];
       }
       return true;
+
     case 'sync':
     case 'subscribe':
-      if (this._subscriptions[message.to] != 'sync') {
-        this._subscriptions[message.to] = message.op;
+      // A catch for when *subscribe* is called after *sync*
+      if (this._subscriptions[to] != 'sync') {
+        this._subscriptions[to] = op;
       }
       return true;
+
     case 'set':
-      if (message.to.substr(0, 'presence:/'.length) == 'presence:/') {
-        this._presences[message.to] = message.value;
+      if (request.isPresence()) {
+        this._presences[to] = value;
         return true;
       }
   }
+
   return false;
 };
 
 Client.prototype._restore = function() {
-  var item, i, to, message, counts = { subscriptions: 0, presences: 0, messages: 0 };
+  var item, to, counts = { subscriptions: 0, presences: 0, messages: 0 };
   if (this._restoreRequired) {
     this._restoreRequired = false;
-
 
     for (to in this._subscriptions) {
       if (this._subscriptions.hasOwnProperty(to)) {
@@ -471,8 +476,8 @@ Client.prototype._restore = function() {
       }
     }
 
-    while (this._queuedMessages.length) {
-      this._write(this._queuedMessages.shift());
+    while (this._queuedRequests.length) {
+      this._write(this._queuedRequests.shift());
       counts.messages += 1;
     }
 
@@ -480,41 +485,49 @@ Client.prototype._restore = function() {
   }
 };
 
-Client.prototype._sendMessage = function(message) {
-  var memorized = this._memorize(message);
-  this.emit('message:out', message);
+Client.prototype._sendMessage = function(request) {
+  var memorized = this._memorize(request),
+      ack = request.getAttr('ack');
+
+  this.emit('message:out', request.getMessage());
 
   if (this._socket && this.manager.is('activated')) {
-    this._socket.sendPacket('message', JSON.stringify(message));
+    this._socket.sendPacket('message', request.payload());
   } else if (this._isConfigured) {
     this._restoreRequired = true;
-    if (!memorized || message.ack) {
-      this._queuedMessages.push(message);
+    if (!memorized || ack) {
+      this._queuedRequests.push(request);
     }
     this.manager.connectWhenAble();
   }
 };
 
 Client.prototype._messageReceived = function (msg) {
-  var message = JSON.parse(msg);
-  this.emit('message:in', message);
-  switch (message.op) {
+  var response = new Response(JSON.parse(msg)),
+      op = response.getAttr('op'),
+      to = response.getAttr('to');
+
+  this.emit('message:in', response.getMessage());
+
+  switch (op) {
     case 'err':
     case 'ack':
     case 'get':
-      this.emitNext(message.op, message);
+      this.emitNext(op, response.getMessage());
       break;
+
     case 'sync':
-      this._batch(message);
+      this._batch(response);
       break;
+
     default:
-      this.emitNext(message.to, message);
+      this.emitNext(to, response.getMessage());
   }
 };
 
 Client.prototype.emitNext = function() {
-  var args = Array.prototype.slice.call(arguments), client = this;
-  immediate(function(){ client.emit.apply(client, args); });
+  var args = Array.prototype.slice.call(arguments), self = this;
+  immediate(function(){ self.emit.apply(self, args); });
 };
 
 Client.prototype._identitySet = function () {
@@ -526,8 +539,11 @@ Client.prototype._identitySet = function () {
   var association = { id : this._socket.id, name: this.name };
   var clientVersion = getClientVersion();
   var options = { association: association, clientVersion: clientVersion };
+  var self = this;
 
-  this.control('clientName').nameSync(options);
+  this.control('clientName').nameSync(options, function (message) {
+    self.logger('nameSync message: ' + JSON.stringify(message));
+  });
 }; 
 
 // Variant (by Jeff Ward) of code behind node-uuid, but avoids need for module
@@ -547,15 +563,15 @@ Client.setBackend = function(lib) { eio = lib; };
 
 module.exports = Client;
 },
-"lib/scope.js": function(module, exports, require){function Scope(prefix, client) {
-  this.prefix = prefix;
+"lib/scope.js": function(module, exports, require){function Scope(typeName, scope, client) {
   this.client = client;
+  this.prefix = this._buildScopePrefix(typeName, scope, client.configuration('accountName'));
 }
 
 var props = [ 'set', 'get', 'subscribe', 'unsubscribe', 'publish', 'push', 'sync',
   'on', 'once', 'when', 'removeListener', 'removeAllListeners', 'nameSync'];
 
-var init = function(name) {
+var init = function (name) {
   Scope.prototype[name] = function () {
     var args = Array.prototype.slice.apply(arguments);
     args.unshift(this.prefix);
@@ -564,9 +580,13 @@ var init = function(name) {
   };
 };
 
-for(var i = 0; i < props.length; i++){
+for (var i = 0; i < props.length; i++) {
   init(props[i]);
 }
+
+Scope.prototype._buildScopePrefix = function (typeName, scope, accountName) {
+  return typeName + ':/' + accountName + '/' + scope;
+};
 
 module.exports = Scope;
 },
