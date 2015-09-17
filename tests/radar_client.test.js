@@ -1,7 +1,7 @@
 var assert = require('assert'),
     RadarClient = require('../lib/radar_client.js'),
     MockEngine = require('./lib/engine.js'),
-    Response = require('../lib/message_response.js'),
+    Response = require('radar_message').Response,
     client;
 
 exports['before connecting'] = {
