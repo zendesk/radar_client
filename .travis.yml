@@ -6,5 +6,5 @@ notifications:
   flowdock:
     secure: GzhfVfSDKQtvfCaHHh2AYTLn/kWOUvHK+SM44AfWX10pwQXCicSR5kx7jMIDrU//0+T2CP/m1EJDnK15CTix+vRJLTwybgc4b8NOl0XmnZXVcW+4i8uhKnXA3bm6+dgVxvUCwNy69dbk7H7CkyFZOzJcZCVliiRBZcbj41uwMqc=
 branches:
-  only: [master, staging, production, pobrien/feature_message_protocol_v2_branch1]
+  only: [master, staging, production]
 sudo: false
