@@ -50,6 +50,8 @@
     "test-one-solo": "./node_modules/.bin/mocha --ui exports --reporter spec --slow 2000ms --bail",
     "prebuild": "npm run check-modules",
     "build": "npm run version-build; ./node_modules/gluejs/bin/gluejs --include ./lib --npm microee,sfsm --replace engine.io-client=eio,minilog=Minilog --global RadarClient --main lib/index.js --out dist/radar_client.js",
-    "version-build": "node scripts/add_client_version.js"
+    "version-build": "node scripts/add_client_version.js",
+    "prepublish": "npm run build; if [ $(git diff --name-status dist/radar_client.js | wc -l) -ne  \"0\" ]; then npm run warn-dist-check-in && exit 1; fi",
+    "warn-dist-check-in": "echo 'dist file needs to be checked in before publishing to NPM.'"
   }
 }
