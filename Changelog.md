@@ -1,3 +1,11 @@
+### 0.15.0
+* Use radar message library
+  - significant refactor that changes most of the code underlying the public
+    APIs, which have *not* been changed
+  - explicitly extracted the message "library" code in the refactor above to a
+    separate radar_message library
+  - pin radar_message version (we'll specify versions of package moving forward)
+
 ### 0.14.5
 * Presence resource can set online and include client data (to be broadcasted
   as part of the client_online and client_updated events). 
