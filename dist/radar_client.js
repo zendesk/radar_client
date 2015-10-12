@@ -648,6 +648,7 @@ function create() {
       },
 
       ondisconnected: function(event, from, to) {
+        console.log('KIKAPCS')
         backoff.increment();
 
         if (this._timer) {
