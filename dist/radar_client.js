@@ -5,8 +5,13 @@ require.m[0] = { "engine.io-client": { exports: eio },
   this.failures = 0;
 }
 
-Backoff.durations = [1000, 2000, 4000, 8000, 16000, 32000]; // seconds (ticks)
-Backoff.fallback = 60000;
+//Backoff.durations = [1000, 2000, 4000, 8000, 16000, 32000]; // seconds (ticks)
+Backoff.durations = [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000]; // seconds (ticks)
+Backoff.durations.concat([2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000]);
+Backoff.durations.concat([4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000]);
+Backoff.durations.concat([10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000]);
+Backoff.fallback = 20000;
+console.log(Backoff.durations)
 
 Backoff.prototype.get = function() {
   return Backoff.durations[this.failures] || Backoff.fallback;
@@ -419,6 +424,7 @@ Client.prototype._createManager = function() {
     });
 
     socket.once('close', function(reason, description) {
+      console.log('CSUK')
       client.logger().debug('socket closed', socket.id, reason, description);
       socket.removeAllListeners('message');
       client._socket = null;
