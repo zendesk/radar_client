@@ -6,12 +6,12 @@ require.m[0] = { "engine.io-client": { exports: eio },
 }
 
 //Backoff.durations = [1000, 2000, 4000, 8000, 16000, 32000]; // seconds (ticks)
-Backoff.durations = [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000]; // seconds (ticks)
-Backoff.durations.concat([2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000]);
-Backoff.durations.concat([4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000]);
-Backoff.durations.concat([10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000]);
+var durations = [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000];
+durations = durations.concat([2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000]);
+durations = durations.concat([4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000]);
+durations = durations.concat([10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000]);
+Backoff.durations = durations
 Backoff.fallback = 20000;
-console.log(Backoff.durations)
 
 Backoff.prototype.get = function() {
   return Backoff.durations[this.failures] || Backoff.fallback;
@@ -680,7 +680,8 @@ function create() {
 
   // For testing
   machine._backoff = backoff;
-  machine._connectTimeout = 10000;
+  //machine._connectTimeout = 10000;
+  machine._connectTimeout = 10;
 
   for (var property in MicroEE.prototype) {
     if (MicroEE.prototype.hasOwnProperty(property)) {
