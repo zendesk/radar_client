@@ -424,7 +424,7 @@ Client.prototype._createManager = function() {
     });
 
     socket.once('close', function(reason, description) {
-      console.log('CSUK')
+      console.log('CSUK',reason,description)
       client.logger().debug('socket closed', socket.id, reason, description);
       socket.removeAllListeners('message');
       client._socket = null;
@@ -654,7 +654,6 @@ function create() {
       },
 
       ondisconnected: function(event, from, to) {
-        console.log('KIKAPCS')
         backoff.increment();
 
         if (this._timer) {
