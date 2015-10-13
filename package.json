@@ -36,7 +36,7 @@
     "sfsm": "0.0.4"
   },
   "devDependencies": {
-    "gluejs": "0.2.0",
+    "gluejs": "2.3.9",
     "mocha": "*"
   },
   "scripts": {
@@ -49,7 +49,7 @@
     "test-one": "./node_modules/.bin/mocha --ui exports --reporter spec --slow 2000ms --bail \"$TEST\"",
     "test-one-solo": "./node_modules/.bin/mocha --ui exports --reporter spec --slow 2000ms --bail",
     "prebuild": "npm run check-modules",
-    "build": "npm run version-build; ./node_modules/gluejs/bin/gluejs --include ./lib --npm microee,sfsm --replace engine.io-client=eio,minilog=Minilog --global RadarClient --main lib/index.js --out dist/radar_client.js",
+    "build": "npm run version-build; node scripts/build.js",
     "version-build": "node scripts/add_client_version.js"
   }
 }
