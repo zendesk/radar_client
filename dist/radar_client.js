@@ -239,6 +239,7 @@ function Client(backend) {
   this._subscriptions = {};
   this._restoreRequired = false;
   this._queuedRequests = [];
+  this._identitySetRequired = true;
   this._isConfigured = false;
 
   this._createManager();
@@ -596,6 +597,7 @@ Client.prototype._createManager = function() {
 
   manager.on('disconnect', function() {
     self._restoreRequired = true;
+    self._identitySetRequired = true;
   });
 };
 
@@ -671,6 +673,7 @@ Client.prototype._sendMessage = function(request) {
     this._socket.sendPacket('message', request.payload());
   } else if (this._isConfigured) {
     this._restoreRequired = true;
+    this._identitySetRequired = true;
     if (!memorized || ack) {
       this._queuedRequests.push(request);
     }
@@ -707,19 +710,23 @@ Client.prototype.emitNext = function() {
 };
 
 Client.prototype._identitySet = function () {
-  if (!this.name) {
-    this.name = this._uuidV4Generate();
+  if (this._identitySetRequired) {
+    this._identitySetRequired = false;
+
+    if (!this.name) {
+      this.name = this._uuidV4Generate();
+    }
+
+    // Send msg that associates this.id with current name
+    var association = { id : this._socket.id, name: this.name };
+    var clientVersion = getClientVersion();
+    var options = { association: association, clientVersion: clientVersion };
+    var self = this;
+
+    this.control('clientName').nameSync(options, function (message) {
+      self.logger('nameSync message: ' + JSON.stringify(message));
+    });
   }
-
-  // Send msg that associates this.id with current name
-  var association = { id : this._socket.id, name: this.name };
-  var clientVersion = getClientVersion();
-  var options = { association: association, clientVersion: clientVersion };
-  var self = this;
-
-  this.control('clientName').nameSync(options, function (message) {
-    self.logger('nameSync message: ' + JSON.stringify(message));
-  });
 }; 
 
 // Variant (by Jeff Ward) of code behind node-uuid, but avoids need for module
