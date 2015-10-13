@@ -640,6 +640,7 @@ function create() {
       },
 
       onconnecting: function() {
+        console.log('onconnecting')
         this.startGuard();
       },
 
@@ -650,10 +651,12 @@ function create() {
       },
 
       onclose: function() {
+        console.log('onclose')
         this.cancelGuard();
       },
 
       ondisconnected: function(event, from, to) {
+        console.log('ondisconnected')
         backoff.increment();
 
         if (this._timer) {
@@ -704,9 +707,11 @@ function create() {
   };
 
   machine.startGuard = function() {
+    console.log('startGuard')
     machine.cancelGuard();
     machine._guard = setTimeout(function() {
       log.info("startGuard: disconnect from timeout");
+      console.log('machine disconnect')
       machine.disconnect();
     }, machine._connectTimeout);
   };
