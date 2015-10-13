@@ -640,18 +640,19 @@ function create() {
       },
 
       onconnecting: function() {
-        console.log('onconnecting')
+        console.log('onconnecting>startGuard')
         this.startGuard();
       },
 
       onestablished: function() {
+        console.log('onestablished>cancelGuard')
         this.cancelGuard();
         backoff.success();
         this.authenticate();
       },
 
       onclose: function() {
-        console.log('onclose')
+        console.log('onclose>cancelGuard')
         this.cancelGuard();
       },
 
@@ -707,11 +708,11 @@ function create() {
   };
 
   machine.startGuard = function() {
-    console.log('startGuard')
+    console.log('startGuard started')
     machine.cancelGuard();
     machine._guard = setTimeout(function() {
       log.info("startGuard: disconnect from timeout");
-      console.log('machine disconnect')
+      console.log('startGuard lejárt')
       machine.disconnect();
     }, machine._connectTimeout);
   };
