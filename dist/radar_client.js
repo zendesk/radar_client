@@ -680,8 +680,8 @@ function create() {
 
   // For testing
   machine._backoff = backoff;
-  //machine._connectTimeout = 10000;
-  machine._connectTimeout = 10;
+  machine._connectTimeout = 10000;
+  //machine._connectTimeout = 10;
 
   for (var property in MicroEE.prototype) {
     if (MicroEE.prototype.hasOwnProperty(property)) {
