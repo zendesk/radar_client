@@ -26,6 +26,8 @@
             durations = durations.concat([4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000]);
             durations = durations.concat([10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000]);
             Backoff.durations = durations
+            aaa(3459,"backoff durations:")
+            console.log(Backoff.durations)
             Backoff.fallback = 20000;
 
             Backoff.prototype.get = function() {
@@ -33,7 +35,9 @@
             };
 
             Backoff.prototype.increment = function() {
+                aaa(4875, "backoff increment from: " + this.failures)
                 this.failures++;
+                aaa(4876, "backoff increment to: " + this.failures)
             };
 
             Backoff.prototype.success = function() {
@@ -474,7 +478,7 @@
                     });
 
                     socket.once('close', function(reason, description) {
-                        aaa(4567, 'socket close reason = ' + reason)
+                        aaa(4567, 'socket close reason = ' + reason + ' manager.current = ' + manager.current)
                         client.logger().debug('socket closed', socket.id, reason, description);
                         socket.removeAllListeners('message');
                         client._socket = null;
@@ -740,6 +744,7 @@
                             },
 
                             ondisconnected: function(event, from, to) {
+                                aaa(7435, "ondisconnected started! backoff.time = " + backoff.get())
                                 backoff.increment();
 
                                 if (this._timer) {
