@@ -5,4 +5,4 @@
   --replace engine.io-client=eio,minilog=Minilog \
   --global RadarClient \
   --main lib/index.js \
-  --out dist/radar_client.js
+  --out dist/radar_client_NOT_OVERRIDE.js
