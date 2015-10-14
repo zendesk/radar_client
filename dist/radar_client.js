@@ -26,8 +26,6 @@
             durations = durations.concat([4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000]);
             durations = durations.concat([10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000]);
             Backoff.durations = durations
-            aaa(3459,"backoff durations:")
-            console.log(Backoff.durations)
             Backoff.fallback = 20000;
 
             Backoff.prototype.get = function() {
@@ -35,9 +33,7 @@
             };
 
             Backoff.prototype.increment = function() {
-                aaa(4875, "backoff increment from: " + this.failures)
                 this.failures++;
-                aaa(4876, "backoff increment to: " + this.failures)
             };
 
             Backoff.prototype.success = function() {
@@ -106,6 +102,7 @@
             // persists through many connects and disconnects.
             // The state machine - "manager" - handles connects and disconnects
             Client.prototype.alloc = function(useName, callback) {
+                aaa(3573, "radar alloc started.")
                 var self = this;
                 if (!this._uses[useName]) {
                     this.logger().info('alloc: ', useName);
@@ -172,6 +169,7 @@
 
                 if (this._isConfigured && this._waitingForConfigure) {
                     this._waitingForConfigure = false;
+                    aaa(3727, 'start manager cos configure')
                     this.manager.start();
                 }
 
@@ -773,7 +771,6 @@
                 // For testing
                 machine._backoff = backoff;
                 machine._connectTimeout = 10000;
-                //machine._connectTimeout = 10;
 
                 for (var property in MicroEE.prototype) {
                     if (MicroEE.prototype.hasOwnProperty(property)) {
@@ -812,11 +809,14 @@
                 };
 
                 machine.connectWhenAble = function() {
+                    aaa(2383, 'connectWhenAble current = ' + this.current)
                     if (!(this.is('connected') || this.is('activated'))) {
                         if (this.can('connect')) {
+                            aaa(2333, 'connect cos connectWhenAble')
                             this.connect();
                         } else {
                             this.once('enterState', function() {
+                                aaa(2467, 'call connectWhenAble cos once')
                                 machine.connectWhenAble();
                             });
                         }
