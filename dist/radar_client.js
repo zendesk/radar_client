@@ -590,9 +590,11 @@
                     if (!memorized || message.ack) {
                         this._queuedMessages.push(message);
                     }
-                    aaa(3939, '_sendMessage>connectWhenAble current = ' + this.manager.current)
-                    console.log(message)
-                    this.manager.connectWhenAble();
+                    //aaa(3939, '_sendMessage>connectWhenAble current = ' + this.manager.current)
+                    //console.log(message)
+                    // Skalkaz: This is wrong. Just becuase you keep asking when the bus will arrive,
+                    // the bus won't arrive sooner.
+                    //this.manager.connectWhenAble();
                 }
             };
 
