@@ -1,3 +1,7 @@
+### 0.15.1
+* fix: send nameSync only once per session.
+* Replace gluejs implementation of build script.
+
 ### 0.15.0
 * Use radar message library
   - significant refactor that changes most of the code underlying the public
