@@ -590,6 +590,8 @@
                     if (!memorized || message.ack) {
                         this._queuedMessages.push(message);
                     }
+                    aaa(3939, '_sendMessage>connectWhenAble current = ' + this.manager.current)
+                    console.log(message)
                     this.manager.connectWhenAble();
                 }
             };
@@ -788,6 +790,7 @@
                     if (this.is('activated')) {
                         this.activate();
                     } else {
+                        aaa(2258, 'start>connectWhenAble current = ' + this.current)
                         this.connectWhenAble();
                     }
                 };
