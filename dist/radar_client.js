@@ -489,9 +489,15 @@
                             socket.transport.close();
                         }
 
-                        if (!manager.is('closed')) {
-                            manager.disconnect();
+                        if (manager.firstClose){
+                            manager.firstClose = false
+                        } else {
+                            manager.firstClose = true  
                         }
+                        
+                        if (!manager.firstClose && !manager.is('closed')) {
+                            manager.disconnect();
+                        } 
                     });
 
                     socket.on('message', function(message) {
