@@ -489,64 +489,7 @@
                             socket.transport.close();
                         }
 
-                        aaa(2347,"firstClose before: " + manager.firstClose)
-                        if (manager.firstClose){
-                            manager.firstClose = false
-                        } else {
-                            manager.firstClose = true  
-                            manager.emit('connectHidden')
-                        }
-                        aaa(7653,"firstClose after: " + manager.firstClose)
-
-                        if (!manager.firstClose && !manager.is('closed')) {
-                            manager.disconnect();
-                        } 
-                    });
-
-                    socket.on('message', function(message) {
-                        client._messageReceived(message);
-                    });
-
-                    manager.removeAllListeners('close');
-                    manager.once('close', function() {
-                        socket.close();
-                    });
-                });
-
-                manager.on('connectHidden', function(data) {
-                    aaa(1221, 'connet start -> new socket')
-                    var socket = client._socket = new client.backend.Socket(client._configuration);
-
-                    socket.once('open', function() {
-                        client.logger().debug("socket open", socket.id);
-                        aaa(9812, 'socket open > established > ignored')
-                        //manager.established();
-                    });
-
-                    socket.once('close', function(reason, description) {
-                        aaa(8456, 'socket close reason = ' + reason + ' manager.current = ' + manager.current)
-                        client.logger().debug('socket closed', socket.id, reason, description);
-                        socket.removeAllListeners('message');
-                        client._socket = null;
-
-                        // Patch for polling-xhr continuing to poll after socket close (HTTP:POST
-                        // failure).  socket.transport is in error but not closed, so if a subsequent
-                        // poll succeeds, the transport remains open and polling until server closes
-                        // the socket.
-                        if (socket.transport) {
-                            socket.transport.close();
-                        }
-
-                        aaa(3345,"firstClose before: " + manager.firstClose)
-                        if (manager.firstClose){
-                            manager.firstClose = false
-                        } else {
-                            aaa(7732, "this is not possible")
-                            //manager.firstClose = true  
-                        }
-                        aaa(3346,"firstClose after: " + manager.firstClose)
-
-                        if (!manager.firstClose && !manager.is('closed')) {
+                        if (!manager.is('closed')) {
                             manager.disconnect();
                         } 
                     });
@@ -877,8 +820,8 @@
                             aaa(2333, 'connect cos connectWhenAble')
                             this.connect();
                         } else {
-                            this.once('enterState', function() {
-                                aaa(2467, 'call connectWhenAble cos once')
+                            this.once('enterState', function(toState) {
+                                aaa(2467, 'call connectWhenAble cos once toState: ' + toState)
                                 machine.connectWhenAble();
                             });
                         }
