@@ -1,3 +1,50 @@
+### 0.15.1
+* fix: send nameSync only once per session.
+* Replace gluejs implementation of build script.
+
+### 0.15.0
+* Use radar message library
+  - significant refactor that changes most of the code underlying the public
+    APIs, which have *not* been changed
+  - explicitly extracted the message "library" code in the refactor above to a
+    separate radar_message library
+  - pin radar_message version (we'll specify versions of package moving forward)
+
+### 0.14.5
+* Presence resource can set online and include client data (to be broadcasted
+  as part of the client_online and client_updated events). 
+
+### 0.14.4
+* One change to the modfified set of build steps
+  - use "npm version --no-git-tag-version patch" to bump the version locally
+    but not create a git commit and tag
+  - "npm run build" to update getClientVersion(), and update dist/
+  - commit changes to GH
+  - git tag version && git push --tags
+  - npm publish
+
+### 0.14.3
+* No new code, but use a modified set of build steps
+  - use "npm version --no-git-tag-version patch" to bump the version locally
+    but not create a git commit and tag
+  - "npm run version-build" to update getClientVersion()
+  - commit changes to GH
+  - git tag && git push --tags
+  - npm publish
+
+### 0.14.2
+* Update package.json version to 0.14.2 and tag
+  - getClientVersion() still returns 0.14.1
+
+### 0.14.1
+* Update package.json version to 0.14.1 and tag
+
+### 0.14.0
+* Code changes to support server side client state
+  - generate client UUID; send to server as client name
+  - auto-generate getClientVersion() and its source file
+  - add nameSync method and new *control* scope
+
 ### 0.13.1
 * Code cleanup
   - comment capitalization, comment line length, code line length
