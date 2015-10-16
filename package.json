@@ -34,7 +34,7 @@
     "minilog": "*",
     "engine.io-client": "1.4.2",
     "sfsm": "0.0.4",
-    "radar_message": "git@github.com:ziteboard/radar_message.git#master"
+    "radar_message": "https://github.com/ziteboard/radar_message.git"
   },
   "devDependencies": {
     "gluejs": "2.3.9",
