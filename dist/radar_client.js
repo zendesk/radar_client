@@ -771,7 +771,7 @@
                     });
 
                     socket.once('close', function(reason, description) {
-                        aaa(4009, 'socket close')
+                        //aaa(4009, 'socket close')
                         self.logger().debug('socket closed', socket.id, reason, description);
                         socket.removeAllListeners('message');
                         self._socket = null;
@@ -903,6 +903,7 @@
             };
 
             Client.prototype._messageReceived = function(msg) {
+
                 var response = new Response(JSON.parse(msg)),
                     op = response.getAttr('op'),
                     to = response.getAttr('to');
@@ -929,7 +930,6 @@
                         break;
 
                     case 'synced':
-                        aaa(2346, 'synced received')
                         this._batched(response);
                         break;
 
