@@ -909,15 +909,11 @@
                     to = response.getAttr('to');
 
                 this.emit('message:in', response.getMessage());
-
                 switch (op) {
                     case 'err':  
-                        //console.log(message)
-                        if (message.value === 'auth' && (((_ref = message.origin) != null ? _ref.to : void 0) != null)) {
-                            this.emitNext(message.origin.to, {
-                                op: 'auth',
-                                origin: message.origin
-                            });
+                        message = response.getMessage()
+                        if (message.value === 'auth') {
+                            this.emit('auth/expire', message)
                             break
                         }                                      
                     case 'ack':
