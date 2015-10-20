@@ -38,7 +38,9 @@
   },
   "devDependencies": {
     "gluejs": "2.3.9",
-    "mocha": "*"
+    "jshint": "^2.8.0",
+    "mocha": "^2.3.3",
+    "sinon": "^1.17.1"
   },
   "scripts": {
     "check-clean": "if [[ $(git diff --shortstat 2> /dev/null | tail -n1) != \"\" ]]; then npm run warn-dirty-tree && exit 1; fi",
