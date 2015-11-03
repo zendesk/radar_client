@@ -1,11 +1,18 @@
 var assert = require('assert'),
     log = require('minilog')('state.test'),
     StateMachine = require('../lib/state.js'),
-    machine;
+    machine,
+    sinon = require('sinon'),
+    clock;
 
 exports['given a state machine'] = {
   beforeEach: function() {
     machine = StateMachine.create();
+    clock = sinon.useFakeTimers();
+  },
+
+  afterEach: function() {
+    clock.restore();
   },
 
   'calling start twice should not cause two connections': function(done) {
@@ -29,6 +36,7 @@ exports['given a state machine'] = {
 
   'if the user calls disconnect the machine will reconnect after a delay': function(done) {
     this.timeout(4000);
+
     machine.open();
     machine.connect();
     assert.ok(machine.is('connecting'));
@@ -37,6 +45,7 @@ exports['given a state machine'] = {
       done();
     });
     machine.disconnect();
+    clock.tick(2500);
   },
 
   'the first connection should begin connecting, after disconnected it should automatically reconnect': function(done) {
@@ -57,6 +66,7 @@ exports['given a state machine'] = {
     });
 
     machine.disconnect();
+    clock.tick(2500);
   },
 
   'connections that hang should be detected after 10 seconds': function(done) {
@@ -67,6 +77,7 @@ exports['given a state machine'] = {
     };
 
     machine.connect();
+    clock.tick(10001);
   },
 
   'should not get caught by timeout if connect fails for different reasons' : function(done) {
@@ -93,6 +104,8 @@ exports['given a state machine'] = {
       }
     });
     machine.connect();
+
+    clock.tick(15001);
   },
 
   'connections that fail should cause exponential backoff, finally emit unavailable': function(done) {
@@ -114,6 +127,8 @@ exports['given a state machine'] = {
     });
 
     machine.connect();
+
+    clock.tick(64000);
 
   },
 
