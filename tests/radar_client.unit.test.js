@@ -465,8 +465,7 @@ exports.RadarClient = {
         assert.equal(1, Object.keys(client._presences).length);
 
         client._memorize({ op: 'set', to: 'presence:/foo/bar', value: 'offline' });
-        assert.equal(1, Object.keys(client._presences).length);
-        assert.equal('offline', client._presences['presence:/foo/bar']);
+        assert.equal(0, Object.keys(client._presences).length);
         done();
       },
 
@@ -527,16 +526,11 @@ exports.RadarClient = {
         client._restoreRequired = true;
         client.configure({ accountName: 'foo', userId: 123, userType: 2 });
         client.alloc('test', function() {
-          assert.equal(MockEngine.current._written.length, 3);
+          assert.equal(MockEngine.current._written.length, 2);
           assert.ok(MockEngine.current._written.some(function(message) {
             return (message.op == 'set' &&
               message.to == 'presence:/foo/bar' &&
               message.value == 'online');
-          }));
-          assert.ok(MockEngine.current._written.some(function(message) {
-            return (message.op == 'set' &&
-              message.to == 'presence:/foo/bar2' &&
-              message.value == 'offline');
           }));
           done();
         });
