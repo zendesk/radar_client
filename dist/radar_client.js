@@ -513,8 +513,8 @@ Client.prototype._batch = function(response) {
       value = response.getAttr('value'),
       time = response.getAttr('time');
 
-  if (!response.isValid()) {
-    this.logger().info('response is invalid:', response.getMessage());
+  if (!response.isValidForSync()) {
+    this.logger().info('response is invalid for sync:', response.getMessage());
     return false;
   }
 
@@ -800,7 +800,25 @@ module.exports = {
     "url": "https://github.com/4031651/node-javascript-state-machine/issues"
   },
   "_id": "sfsm@0.0.4",
-  "_from": "sfsm@0.0.4"
+  "dist": {
+    "shasum": "92ee09d4bde7ea2cc3e84be8fa13da181e823136",
+    "tarball": "http://registry.npmjs.org/sfsm/-/sfsm-0.0.4.tgz"
+  },
+  "_from": "sfsm@0.0.4",
+  "_npmVersion": "1.2.25",
+  "_npmUser": {
+    "name": "4031651",
+    "email": "4031651@gmail.com"
+  },
+  "maintainers": [
+    {
+      "name": "4031651",
+      "email": "4031651@gmail.com"
+    }
+  ],
+  "directories": {},
+  "_shasum": "92ee09d4bde7ea2cc3e84be8fa13da181e823136",
+  "_resolved": "https://registry.npmjs.org/sfsm/-/sfsm-0.0.4.tgz"
 };
 },
 "state-machine.js": function(module, exports, require){
@@ -1081,14 +1099,31 @@ module.exports = {
     "mocha": "*",
     "uglify-js": "~2.4.12"
   },
-  "readme": "# microEE\n\nA client and server side library for routing events.\n\n[![Build Status](https://secure.travis-ci.org/mixu/microee.png?branch=master)](https://travis-ci.org/mixu/microee)\n\nI was disgusted by the size of [MiniEE](https://github.com/mixu/miniee) (122 sloc, 4.4kb), so I decided a rewrite was in order.\n\nMicroEE is a more satisfying (~50 sloc, ~1200 characters), and passes the same tests as MiniEE (excluding the RegExp support, but including many real-world tests, such as removing a once() callback, and checking for the correct order of once callback removal).\n\n# Installing:\n\n    npm install microee\n\n# In-browser version\n\nUse the version in `./dist/`. It exports a single global, `microee`.\n\nTo run the in-browser tests, open `./test/index.html` in the browser after cloning this repo and doing npm install (to get Mocha).\n\n# Usage example: `microee.mixin`\n\n    var MicroEE = require('microee');\n    function MyClass() {\n      // ...\n    }\n    MicroEE.mixin(MyClass);\n    MyClass.prototype.foo = function() {\n      // ...\n    };\n\n    var obj = new MyClass();\n    // set string callback\n    obj.on('event', function(arg1, arg2) { console.log(arg1, arg2); });\n    obj.emit('event', 'aaa', 'bbb'); // trigger callback\n\n# API\n\nThe API is based on [Node's EventEmitter](http://nodejs.org/api/events.html).\n\nThere are two additional niceties: `emitter.when(event, listener)` and `.mixin()`.\n\nSupport for `emitter.listeners(event)` was added in `v0.0.6`.\n\n## emitter.on(event, listener)\n\nAdds a listener to the end of the listeners array for the specified event.\n\n```\nserver.on('connection', function (stream) {\n  console.log('someone connected!');\n});\n```\n\nReturns emitter, so calls can be chained.\n\n## emitter.once(event, listener)\n\nAdds a one time listener for the event. This listener is invoked only the next time the event is fired, after which it is removed.\n\nReturns emitter, so calls can be chained.\n\n## emitter.when(event, listener)\n\nAddition to the regular API. If `listener` returns true, the listener is removed. Useful for waiting for a particular set of parameters on a recurring event e.g. in tests.\n\nReturns emitter, so calls can be chained.\n\n## microee.mixin(object)\n\nAddition to the regular API. Extends `object.prototype` with all the microee methods, allowing other classes to act like event emitters.\n\n## emitter.emit(event, [arg1], [arg2], [...])\n\nExecute all listeners on `event`, with the supplied arguments.\n\nReturns emitter, so calls can be chained.\n\n## emitter.removeListener(event, listener)\n\nRemove a listener from the listener array for the specified event.\n\n## emitter.removeAllListeners([event])\n\nRemoves all listeners, or those of the specified event.\n\n## emitter.listeners(event)\n\nReturns an array of listeners for the specified event.\n",
-  "readmeFilename": "readme.md",
   "bugs": {
     "url": "https://github.com/mixu/microee/issues"
   },
-  "homepage": "https://github.com/mixu/microee",
   "_id": "microee@0.0.6",
-  "_from": "microee@*"
+  "dist": {
+    "shasum": "a12bdb0103681e8b126a9b071eba4c467c78fffe",
+    "tarball": "http://registry.npmjs.org/microee/-/microee-0.0.6.tgz"
+  },
+  "_from": "microee@*",
+  "_npmVersion": "1.2.31",
+  "_npmUser": {
+    "name": "mixu",
+    "email": "mixu@mixu.net"
+  },
+  "maintainers": [
+    {
+      "name": "mixu",
+      "email": "mixu@mixu.net"
+    }
+  ],
+  "directories": {},
+  "_shasum": "a12bdb0103681e8b126a9b071eba4c467c78fffe",
+  "_resolved": "https://registry.npmjs.org/microee/-/microee-0.0.6.tgz",
+  "readme": "ERROR: No README data found!",
+  "homepage": "https://github.com/mixu/microee"
 };
 }
 };
@@ -1116,28 +1151,12 @@ module.exports = {
     "test-one": "mocha --ui exports --reporter spec --slow 2000ms --bail \"$TEST\"",
     "test-one-solo": "mocha --ui exports --reporter spec --slow 2000ms --bail"
   },
-  "gitHead": "41a9e7a4fd440be7d3ff4a1df359f0bc2030db67",
+  "gitHead": "f81bbb425d97591bb5ed0e36d625c0467245afe4",
+  "readme": "# Radar Message\n\nHigh Level API for creating radar messages.\n\n## Status\n[![Build Status](https://travis-ci.org/zendesk/radar_message.png?branch=master)](https://travis-ci.org/zendesk/radar_message) <a href=\"https://codeclimate.com/github/zendesk/radar_message\"><img src=\"https://codeclimate.com/github/zendesk/radar_message/badges/gpa.svg\" /></a>\n\n\n## Documentation\n\nSee https://github.com/zendesk/radar/blob/master/doc/RadarMessageSpecificationV2.md\n\n## How to contribute\n\n- Fork http://github.com/zendesk/radar_message, clone, make changes (including a Changelog update), commit, push, PR\n- Then fork http://github.com/zendesk/radar_client, clone, update and test with radar_message changes (including a Changelog update), commit, push, PR\n\n## Copyright and License\n\nCopyright 2015, Zendesk Inc.\nLicensed under the Apache License Version 2.0, http://www.apache.org/licenses/LICENSE-2.0\n",
+  "readmeFilename": "README.md",
   "_id": "radar_message@1.0.1",
-  "_shasum": "acfba853478bc57bcfed9a922ababc8abc594c71",
-  "_from": "radar_message@1.0.1",
-  "_npmVersion": "2.1.4",
-  "_nodeVersion": "0.10.21",
-  "_npmUser": {
-    "name": "bolddane",
-    "email": "patrick_obrien53@yahoo.com"
-  },
-  "maintainers": [
-    {
-      "name": "bolddane",
-      "email": "patrick_obrien53@yahoo.com"
-    }
-  ],
-  "dist": {
-    "shasum": "acfba853478bc57bcfed9a922ababc8abc594c71",
-    "tarball": "http://registry.npmjs.org/radar_message/-/radar_message-1.0.1.tgz"
-  },
-  "directories": {},
-  "_resolved": "https://registry.npmjs.org/radar_message/-/radar_message-1.0.1.tgz"
+  "_shasum": "d829809a04ad277458c03683f4765272830e770f",
+  "_from": "../radar_message"
 };
 },
 "lib/index.js": function(module, exports, require){
@@ -1165,7 +1184,8 @@ var opTable = {
 var Request = function (message) {
   this.message = message;
 
-  if (!this._isValid()) {
+  this.valid = this._isValid();
+  if (!this.isValid()) {
     logger.error('invalid request. op: ' + this.message.op + '; to: ' + this.message.to);
     this.message = {};
   }
@@ -1226,10 +1246,21 @@ Request.buildSubscribe = function (scope, options) {
   return new Request(message).setOptions(options);
 };
 
-Request.buildUnsubscribe = function (scope, options) {
+Request.buildUnsubscribe = function (scope) {
   var message = { op: 'unsubscribe', to: scope};
   return new Request(message);
 };
+
+Request.parse = function (data) {
+  try {
+    var message = JSON.parse(data);
+    return message;
+  } catch (e) {
+  }
+
+  return {};
+};
+
 
 // Instance methods
 
@@ -1262,6 +1293,10 @@ Request.prototype.setOptions = function (options) {
   return this;
 };
 
+Request.prototype.getOptions = function () {
+  return this.getAttr('options');
+};
+
 Request.prototype.isPresence = function () {
   return this.type === 'presence';
 };
@@ -1281,6 +1316,14 @@ Request.prototype.payload = function () {
 Request.prototype.getType = function () {
   return this.type;
 };
+
+Request.prototype.isValid = function () {
+  return this.valid;
+}
+
+Request.prototype.isOp = function (operation) {
+  return (this.getAttr('op') === operation);
+}
 
 // Private methods
 
@@ -1303,7 +1346,7 @@ Request.prototype._isValid = function () {
 
 Request.prototype._isValidType = function (type) {
   for (var key in opTable) {
-    if (opTable.hasOwnProperty(key) && key == type) {
+    if (opTable.hasOwnProperty(key) && key === type) {
       return true;
     }
   }
@@ -1336,7 +1379,8 @@ var logger = require('minilog')('message:response');
 function Response (message) {
   this.message = message;
 
-  if (!this._validate()) {
+  this.valid = this._isValid();
+  if (!this.isValid()) {
     logger.error('invalid response. message: ' + JSON.stringify(message));
     this.message = {};
   }
@@ -1346,7 +1390,7 @@ Response.prototype.getMessage = function () {
   return this.message;
 };
 
-Response.prototype._validate = function () {
+Response.prototype._isValid= function () {
   if (!this.message.op) {
     this.errMsg = 'missing op';
     return false;
@@ -1362,7 +1406,7 @@ Response.prototype._validate = function () {
       break;
 
     default:
-      if (this.message.op != 'err' && !this.message.to) {
+      if (this.message.op !== 'err' && !this.message.to) {
         this.errMsg = 'missing to';
         logger.error(this.errMsg);
         return false;
@@ -1372,9 +1416,14 @@ Response.prototype._validate = function () {
   return true;
 };
 
-Response.prototype.isValid = function () {
+// TODO: should probably be renamed isValidForSync
+Response.prototype.isValidForSync = function () {
   return !!this.message.to && !!this.message.value && !!this.message.time;
 };
+
+Response.prototype.isValid = function () {
+  return this.valid;
+}
 
 Response.prototype.isFor = function (request) {
   return this.getAttr('to') === request.getAttr('to');
