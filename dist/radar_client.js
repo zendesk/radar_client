@@ -613,6 +613,9 @@ Client.prototype._memorize = function(request) {
       if (this._subscriptions[to]) {
         delete this._subscriptions[to];
       }
+      if (this._channelSyncTimes[message.to]) {
+        delete this._channelSyncTimes[message.to];
+      }
       return true;
 
     case 'sync':
