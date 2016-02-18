@@ -2,8 +2,10 @@
   "name": "radar_client",
   "description": "Realtime apps with a high level API based on engine.io",
   "version": "0.15.1",
-  "author": "Mikito Takada <mikito.takada@gmail.com>",
+  "license": "Apache-2.0",
+  "author": "Zendesk, Inc.",
   "contributors": [
+    "Mikito Takada <mikito.takada@gmail.com>",
     {
       "name": "Sam Shull",
       "url": "http://github.com/samshull"
