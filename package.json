@@ -42,19 +42,23 @@
     "gulp-webpack": "^1.5.0",
     "jshint": "^2.8.0",
     "mocha": "^2.3.3",
-    "sinon": "^1.17.1"
+    "sinon": "^1.17.1",
+    "standard": "^6.0.5"
   },
   "scripts": {
     "check-clean": "if [[ $(git diff --shortstat 2> /dev/null | tail -n1) != \"\" ]]; then npm run warn-dirty-tree && exit 1; fi",
     "check-modules": "if [ -z \"$SKIP_PACKAGE_CHECK\" ] && [ ./package.json -nt ./node_modules ]; then npm run warn-outdated && exit 1; else rm -rf ./node_modules/sfsm/demo; fi",
     "warn-outdated": "echo 'Your node_modules are out of date. Please run \"rm -rf node_modules && npm install\" in order to ensure you have the latest dependencies.'",
     "warn-dirty-tree": "echo 'Your repo tree is dirty.'",
-    "pretest": "npm run build",
+    "pretest": "npm run build && standard",
     "test": "ls ./tests/*.test.js | xargs -n 1 -t -I {} sh -c 'TEST=\"{}\" npm run test-one'",
     "test-one": "./node_modules/.bin/mocha --ui exports --reporter spec --slow 2000ms --bail \"$TEST\"",
     "test-one-solo": "./node_modules/.bin/mocha --ui exports --reporter spec --slow 2000ms --bail",
     "prebuild": "npm run check-modules",
     "build": "npm run version-build; gulp",
     "version-build": "node scripts/add_client_version.js"
+  },
+  "standard": {
+    "ignore": ["dist/*"]
   }
 }
