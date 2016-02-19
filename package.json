@@ -37,7 +37,9 @@
     "radar_message": "1.0.1"
   },
   "devDependencies": {
-    "gluejs": "2.3.9",
+    "gulp": "^3.9.1",
+    "gulp-rename": "^1.2.2",
+    "gulp-webpack": "^1.5.0",
     "jshint": "^2.8.0",
     "mocha": "^2.3.3",
     "sinon": "^1.17.1"
@@ -52,7 +54,7 @@
     "test-one": "./node_modules/.bin/mocha --ui exports --reporter spec --slow 2000ms --bail \"$TEST\"",
     "test-one-solo": "./node_modules/.bin/mocha --ui exports --reporter spec --slow 2000ms --bail",
     "prebuild": "npm run check-modules",
-    "build": "npm run version-build; node scripts/build.js",
+    "build": "npm run version-build; gulp",
     "version-build": "node scripts/add_client_version.js"
   }
 }
