@@ -1,3 +1,6 @@
+### 0.15.3
+* [PR #70](https://github.com/zendesk/radar_client/pull/70) - Loosen version range on radar_message dependency
+
 ### 0.15.2
 * [PR #67](https://github.com/zendesk/radar_client/pull/67) - Reformat to standardjs
 * [PR #66](https://github.com/zendesk/radar_client/pull/66) - Fix license metadata in package.json
