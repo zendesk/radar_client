@@ -1,3 +1,6 @@
+### 0.15.4
+* [PR #71](https://github.com/zendesk/radar_client/pull/71) - Second try: flexible minor, patch specifier for radar_message dependency
+
 ### 0.15.3
 * [PR #70](https://github.com/zendesk/radar_client/pull/70) - Loosen version range on radar_message dependency
 

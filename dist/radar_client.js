@@ -624,9 +624,6 @@ var RadarClient =
 	    if(!ev) { this._events = {}; }
 	    else { this._events[ev] && (this._events[ev] = []); }
 	  },
-	  listeners: function(ev) {
-	    return (this._events ? this._events[ev] || [] : []);
-	  },
 	  emit: function(ev) {
 	    this._events || (this._events = {});
 	    var args = Array.prototype.slice.call(arguments, 1), i, e = this._events[ev] || [];
@@ -1076,7 +1073,7 @@ var RadarClient =
 
 	// Auto-generated file, overwritten by scripts/add_package_version.js
 
-	function getClientVersion () { return '0.15.3' }
+	function getClientVersion () { return '0.15.4' }
 
 	module.exports = getClientVersion
 
@@ -1087,8 +1084,10 @@ var RadarClient =
 
 	var Request = __webpack_require__(11),
 	    Response = __webpack_require__(12),
+	    Batch = __webpack_require__(13),
 	    RadarMessage = function() {};
 
+	RadarMessage.Batch = Batch;
 	RadarMessage.Request = Request;
 	RadarMessage.Response = Response;
 
@@ -1102,7 +1101,7 @@ var RadarClient =
 	var logger = __webpack_require__(6)('message:request');
 
 	var opTable = {
-	  control: ['nameSync'],
+	  control: ['nameSync', 'disconnect'],
 	  message: ['publish', 'subscribe', 'sync', 'unsubscribe'],
 	  presence: ['get', 'set', 'subscribe', 'sync', 'unsubscribe'],
 	  status: ['get', 'set', 'subscribe', 'sync', 'unsubscribe'],
@@ -1173,7 +1172,7 @@ var RadarClient =
 	  return new Request(message).setOptions(options);
 	};
 
-	Request.buildUnsubscribe = function (scope, options) {
+	Request.buildUnsubscribe = function (scope) {
 	  var message = { op: 'unsubscribe', to: scope};
 	  return new Request(message);
 	};
@@ -1250,7 +1249,7 @@ var RadarClient =
 
 	Request.prototype._isValidType = function (type) {
 	  for (var key in opTable) {
-	    if (opTable.hasOwnProperty(key) && key == type) {
+	    if (opTable.hasOwnProperty(key) && key === type) {
 	      return true;
 	    }
 	  }
@@ -1312,7 +1311,7 @@ var RadarClient =
 	      break;
 
 	    default:
-	      if (this.message.op != 'err' && !this.message.to) {
+	      if (this.message.op !== 'err' && !this.message.to) {
 	        this.errMsg = 'missing to';
 	        logger.error(this.errMsg);
 	        return false;
@@ -1357,6 +1356,38 @@ var RadarClient =
 	};
 
 	module.exports = Response;
+
+
+/***/ },
+/* 13 */
+/***/ function(module, exports) {
+
+	function Batch () {
+		var messages = Array.prototype.slice.call(arguments)
+		this.value = messages
+	}
+
+	Batch.prototype.op = 'batch'
+
+	Object.defineProperty(Batch.prototype, 'length', {
+		get: function () {
+			return this.value.length
+		}
+	})
+
+	Batch.prototype.add = function (message) {
+		this.value.push(message)
+	}
+
+	Batch.prototype.toJSON = function () {
+		return {
+			op: this.op,
+			length: this.length,
+			value: this.value
+		}
+	}
+
+	module.exports = Batch
 
 
 /***/ }
