@@ -1,79 +1,79 @@
-var assert = require('assert'),
-    RadarClient = require('../lib/radar_client.js'),
-    MockEngine = require('./lib/engine.js'),
-    Response = require('radar_message').Response,
-    client;
+var assert = require('assert')
+var RadarClient = require('../lib/radar_client.js')
+var MockEngine = require('./lib/engine.js')
+var Response = require('radar_message').Response
+var client
 
 exports['before connecting'] = {
-  before: function(done) {
-    RadarClient.setBackend(MockEngine);
-    done();
+  before: function (done) {
+    RadarClient.setBackend(MockEngine)
+    done()
   },
-  after: function(done) {
-    RadarClient.setBackend({});
-    done();
-  },
-
-  beforeEach: function(done) {
-    client = new RadarClient();
-    done();
+  after: function (done) {
+    RadarClient.setBackend({})
+    done()
   },
 
-  afterEach: function(done) {
-    MockEngine.current._written = [];
-    done();
+  beforeEach: function (done) {
+    client = new RadarClient()
+    done()
   },
 
-  'making set() calls should not cause errors when not connected': function() {
-    client.presence('tickets/21').set('online');
-    client.presence('tickets/21').subscribe();
-    client.presence('tickets/21').unsubscribe();
-    client.message('user/123').publish('hello world');
-    client.presence('tickets/21').get(function() {});
-    client.status('user/123').set('foo', 'bar');
-    client.on('foo', function() {});
+  afterEach: function (done) {
+    MockEngine.current._written = []
+    done()
   },
 
-  'calling alloc or dealloc before configure call should not cause errors': function(done) {
-    client.dealloc('test');
-    client.alloc('test', function() {
+  'making set() calls should not cause errors when not connected': function () {
+    client.presence('tickets/21').set('online')
+    client.presence('tickets/21').subscribe()
+    client.presence('tickets/21').unsubscribe()
+    client.message('user/123').publish('hello world')
+    client.presence('tickets/21').get(function () {})
+    client.status('user/123').set('foo', 'bar')
+    client.on('foo', function () {})
+  },
+
+  'calling alloc or dealloc before configure call should not cause errors': function (done) {
+    client.dealloc('test')
+    client.alloc('test', function () {
       // This should never be called because of the dealloc
-      assert.ok(false);
-    });
-    client.dealloc('test');
-    client.dealloc('test2');
-    client.alloc('test2', done);
-    client.configure({ userId: 123, accountName: 'dev' });
+      assert.ok(false)
+    })
+    client.dealloc('test')
+    client.dealloc('test2')
+    client.alloc('test2', done)
+    client.configure({ userId: 123, accountName: 'dev' })
   }
 
-};
+}
 
 exports['after reconnecting'] = {
-  before: function() {
-    RadarClient.setBackend(MockEngine);
+  before: function () {
+    RadarClient.setBackend(MockEngine)
   },
 
-  after: function() {
-    RadarClient.setBackend({});
+  after: function () {
+    RadarClient.setBackend({})
   },
 
-  beforeEach: function(done) {
-    client = new RadarClient();
-    client.configure({ accountName: 'test', userId: 123, userType: 2 });
-    client.alloc('channel', done);
+  beforeEach: function (done) {
+    client = new RadarClient()
+    client.configure({ accountName: 'test', userId: 123, userType: 2 })
+    client.alloc('channel', done)
   },
 
-  afterEach: function() {
-    MockEngine.current._written = [];
+  afterEach: function () {
+    MockEngine.current._written = []
   },
 
-  'should send queued messages': function(done) {
-    var connected = false;
+  'should send queued messages': function (done) {
+    var connected = false
 
-    client.once('connect', function() {
-      connected = true;
-      assert.equal(MockEngine.current._written.length, 1);
-      assert.equal(client._queuedRequests.length, 1);
+    client.once('connect', function () {
+      connected = true
+      assert.equal(MockEngine.current._written.length, 1)
+      assert.equal(client._queuedRequests.length, 1)
       assert.deepEqual(client._queuedRequests[0].message, {
         op: 'set',
         to: 'status:/test/tickets/21',
@@ -81,246 +81,249 @@ exports['after reconnecting'] = {
         key: 123,
         type: 2,
         userData: undefined
-      });
-    });
+      })
+    })
 
-    client.once('ready', function() {
-      assert.ok(connected);
-      assert.equal(client._queuedRequests.length, 0);
+    client.once('ready', function () {
+      assert.ok(connected)
+      assert.equal(client._queuedRequests.length, 0)
       assert.ok(
-        MockEngine.current._written.some(function(message) {
-          return message.op == 'set' &&
-            message.to == 'status:/test/tickets/21' &&
-            message.value == 'online';
+        MockEngine.current._written.some(function (message) {
+          return message.op === 'set' &&
+          message.to === 'status:/test/tickets/21' &&
+          message.value === 'online'
         })
-      );
-      done();
-    });
+      )
+      done()
+    })
 
-    client.manager.disconnect();
-    assert.equal(client.currentState(), 'disconnected');
-    client.status('tickets/21').set('online');
-    assert.equal(client.currentState(), 'connecting');
+    client.manager.disconnect()
+    assert.equal(client.currentState(), 'disconnected')
+    client.status('tickets/21').set('online')
+    assert.equal(client.currentState(), 'connecting')
   },
 
-  'should resend queued presences': function(done) {
-    this.timeout(4000);
-    var connected = false;
+  'should resend queued presences': function (done) {
+    this.timeout(4000)
+    var connected = false
 
-    client.presence('tickets/21').set('online');
+    client.presence('tickets/21').set('online')
 
-    client.once('connect', function() {
-      connected = true;
-      assert.equal(Object.keys(client._presences).length, 1);
-      assert.equal(client._presences['presence:/test/tickets/21'], 'online');
-    });
+    client.once('connect', function () {
+      connected = true
+      assert.equal(Object.keys(client._presences).length, 1)
+      assert.equal(client._presences['presence:/test/tickets/21'], 'online')
+    })
 
-    client.once('ready', function() {
-      assert.ok(connected);
-      assert.equal(Object.keys(client._presences).length, 1);
+    client.once('ready', function () {
+      assert.ok(connected)
+      assert.equal(Object.keys(client._presences).length, 1)
       assert.ok(
-        MockEngine.current._written.some(function(message) {
-          return message.op == 'set' &&
-            message.to == 'presence:/test/tickets/21' &&
-            message.value == 'online';
+        MockEngine.current._written.some(function (message) {
+          return message.op === 'set' &&
+          message.to === 'presence:/test/tickets/21' &&
+          message.value === 'online'
         })
-      );
-      done();
-    });
+      )
+      done()
+    })
 
-    client.manager.disconnect();
-    assert.equal(client.currentState(), 'disconnected');
+    client.manager.disconnect()
+    assert.equal(client.currentState(), 'disconnected')
   },
 
-  'should resend queued subscriptions': function(done) {
-    this.timeout(4000);
-    var connected = false;
+  'should resend queued subscriptions': function (done) {
+    this.timeout(4000)
+    var connected = false
 
-    client.presence('tickets/21').subscribe();
+    client.presence('tickets/21').subscribe()
 
-    client.once('connect', function() {
-      connected = true;
-      assert.equal(Object.keys(client._subscriptions).length, 1);
-      assert.equal(client._subscriptions['presence:/test/tickets/21'], 'subscribe');
-    });
+    client.once('connect', function () {
+      connected = true
+      assert.equal(Object.keys(client._subscriptions).length, 1)
+      assert.equal(client._subscriptions['presence:/test/tickets/21'], 'subscribe')
+    })
 
-    client.once('ready', function() {
-      assert.ok(connected);
-      assert.equal(Object.keys(client._subscriptions).length, 1);
+    client.once('ready', function () {
+      assert.ok(connected)
+      assert.equal(Object.keys(client._subscriptions).length, 1)
       assert.ok(
-        MockEngine.current._written.some(function(message) {
-          return message.op == 'subscribe' &&
-            message.to == 'presence:/test/tickets/21';
+        MockEngine.current._written.some(function (message) {
+          return message.op === 'subscribe' &&
+          message.to === 'presence:/test/tickets/21'
         })
-      );
-      done();
-    });
+      )
+      done()
+    })
 
-    client.manager.disconnect();
-    assert.equal(client.currentState(), 'disconnected');
+    client.manager.disconnect()
+    assert.equal(client.currentState(), 'disconnected')
   }
-};
+}
 
 exports['given a new presence'] = {
-  beforeEach: function(done) {
-    client = new RadarClient(MockEngine).configure({ userId: 123, accountName: 'dev' })
-      .alloc('test', done);
+  beforeEach: function (done) {
+    client = new RadarClient(MockEngine).configure({ userId: '123', accountName: 'dev' })
+      .alloc('test', done)
   },
 
-  afterEach: function(done) {
-    MockEngine.current._written = [];
-    done();
+  afterEach: function (done) {
+    MockEngine.current._written = []
+    done()
   },
 
-  'can configure my id': function(done) {
-    assert.equal(123, client._configuration.userId);
-    done();
+  'can configure my id': function (done) {
+    assert.equal('123', client._configuration.userId)
+    done()
   },
 
-  'can set presence online in a scope': function(done) {
-    client.presence('tickets/21').set('online');
+  'can set presence online in a scope': function (done) {
+    client.presence('tickets/21').set('online')
 
-    setTimeout(function() {
+    setTimeout(function () {
       assert.ok(
-        MockEngine.current._written.some(function(message) {
-          return (message.op == 'set' &&
-            message.to == 'presence:/dev/tickets/21' &&
-            message.value == 'online');
+        MockEngine.current._written.some(function (message) {
+          return (message.op === 'set' &&
+          message.to === 'presence:/dev/tickets/21' &&
+          message.value === 'online')
         })
-      );
+      )
 
-      done();
-    }, 5);
+      done()
+    }, 5)
   },
 
-  'can set presence offline in a scope': function(done) {
-    client.presence('tickets/21').set('offline');
-    setTimeout(function() {
+  'can set presence offline in a scope': function (done) {
+    client.presence('tickets/21').set('offline')
+    setTimeout(function () {
       assert.ok(
-        MockEngine.current._written.some(function(message) {
+        MockEngine.current._written.some(function (message) {
           return (
-            message.op == 'set' &&
-            message.to == 'presence:/dev/tickets/21' &&
-            message.value == 'offline' &&
-            message.key == '123'
-          );
+          message.op === 'set' &&
+          message.to === 'presence:/dev/tickets/21' &&
+          message.value === 'offline' &&
+          message.key === '123'
+          )
         })
-      );
+      )
 
-      done();
-    }, 5);
+      done()
+    }, 5)
   },
 
-  'can subscribe to a presence scope': function(done) {
-    client.presence('tickets/21').subscribe();
+  'can subscribe to a presence scope': function (done) {
+    client.presence('tickets/21').subscribe()
 
-    setTimeout(function() {
+    setTimeout(function () {
       assert.ok(
-        MockEngine.current._written.some(function(message) {
-          return (message.op == 'subscribe' &&
-            message.to == 'presence:/dev/tickets/21'
-          );
+        MockEngine.current._written.some(function (message) {
+          return (message.op === 'subscribe' &&
+          message.to === 'presence:/dev/tickets/21'
+          )
         })
-      );
+      )
 
-      done();
-    }, 5);
+      done()
+    }, 5)
   },
 
-  'can unsubscribe from a presence scope': function(done) {
-    client.presence('tickets/21').unsubscribe();
+  'can unsubscribe from a presence scope': function (done) {
+    client.presence('tickets/21').unsubscribe()
 
-    setTimeout(function() {
+    setTimeout(function () {
       assert.ok(
-        MockEngine.current._written.some(function(message) {
-          return (message.op == 'unsubscribe' &&
-            message.to == 'presence:/dev/tickets/21'
-          );
+        MockEngine.current._written.some(function (message) {
+          return (message.op === 'unsubscribe' &&
+          message.to === 'presence:/dev/tickets/21'
+          )
         })
-      );
+      )
 
-      done();
-    }, 5);
+      done()
+    }, 5)
   },
 
-  'can do a one time get for a scope': function(done) {
-    client.presence('tickets/21').get(function(results) {
-      done();
-    });
+  'can do a one time get for a scope': function (done) {
+    client.presence('tickets/21').get(function (results) {
+      done()
+    })
   },
 
-  'can set options for a get operation': function(done) {
-    client.presence('tickets/21').get({ version: 2}, function(results) {
+  'can set options for a get operation': function (done) {
+    client.presence('tickets/21').get({version: 2}, function (results) {
       assert.ok(
-        MockEngine.current._written.some(function(message) {
-          return (message.op == 'get' &&
-            message.to == 'presence:/dev/tickets/21' &&
-            message.options &&
-            message.options.version == 2
-          );
+        MockEngine.current._written.some(function (message) {
+          return (message.op === 'get' &&
+          message.to === 'presence:/dev/tickets/21' &&
+          message.options &&
+          message.options.version === 2
+          )
         })
-      );
-      done();
-    });
+      )
+      done()
+    })
   },
 
-  'can set options for a sync operation': function(done) {
-    client.presence('tickets/21').sync({ version: 2 });
+  'can set options for a sync operation': function (done) {
+    client.presence('tickets/21').sync({ version: 2 })
 
-    setTimeout(function() {
+    setTimeout(function () {
       assert.ok(
-        MockEngine.current._written.some(function(message) {
-          return (message.op == 'sync' &&
-            message.to == 'presence:/dev/tickets/21' &&
-            message.options &&
-            message.options.version == 2
-          );
+        MockEngine.current._written.some(function (message) {
+          return (message.op === 'sync' &&
+          message.to === 'presence:/dev/tickets/21' &&
+          message.options &&
+          message.options.version === 2
+          )
         })
-      );
+      )
 
-      done();
-    }, 5);
+      done()
+    }, 5)
   },
 
   'can publish messages to a user': function (done) {
-    client.message('user/123').publish('hello world', function() {
+    client.message('user/123').publish('hello world', function () {
       assert.ok(
-        MockEngine.current._written.some(function(message) {
-          return (message.op == 'publish' &&
-            message.to == 'message:/dev/user/123' &&
-            message.value == 'hello world'
-          );
+        MockEngine.current._written.some(function (message) {
+          return (message.op === 'publish' &&
+          message.to === 'message:/dev/user/123' &&
+          message.value === 'hello world'
+          )
         })
-      );
+      )
 
-      done();
-    }, 5);
+      done()
+    }, 5)
   },
 
-  'if a authentication token is set, it gets sent on each operation': function(done) {
-    client.configure({ userId: 123, accountName: 'dev', auth: 'AUTH', userType: 2 });
-    client.message('user/123').publish('hello world');
+  'if a authentication token is set, it gets sent on each operation': function (done) {
+    client.configure({ userId: 123, accountName: 'dev', auth: 'AUTH', userType: 2 })
+    client.message('user/123').publish('hello world')
 
-    setTimeout(function() {
+    setTimeout(function () {
       assert.ok(
-        MockEngine.current._written.some(function(message) {
-          return (message.op == 'publish' &&
-            message.to == 'message:/dev/user/123' &&
-            message.value == 'hello world' &&
-            message.auth == 'AUTH'
-          );
+        MockEngine.current._written.some(function (message) {
+          return (message.op === 'publish' &&
+          message.to === 'message:/dev/user/123' &&
+          message.value === 'hello world' &&
+          message.auth === 'AUTH'
+          )
         })
-      );
-      done();
-    }, 10);
+      )
+      done()
+    }, 10)
   },
 
-  'synchronization batch filters out duplicate messages to the same channel by time': function(done) {
-    var received = [],
-        msg1, msg2, response1, response2;
-    client.on('foo', function(msg) {
-      received.push(msg);
-    });
+  'synchronization batch filters out duplicate messages to the same channel by time': function (done) {
+    var received = []
+    var msg1
+    var msg2
+    var response1
+    var response2
+    client.on('foo', function (msg) {
+      received.push(msg)
+    })
     msg1 = {
       op: 'subscribe',
       to: 'foo',
@@ -333,9 +336,9 @@ exports['given a new presence'] = {
         3
       ],
       time: 1
-    };
-    response1 = new Response(msg1);
-    client._batch(response1);
+    }
+    response1 = new Response(msg1)
+    client._batch(response1)
 
     msg2 = {
       op: 'subscribe',
@@ -346,23 +349,23 @@ exports['given a new presence'] = {
         JSON.stringify({ value: 'c' }),
         3,
         JSON.stringify({ value: 'd' }),
-        600,
+        600
       ],
       time: 2
-    };
-    response2 = new Response(msg2);
-    client._batch(response2);
+    }
+    response2 = new Response(msg2)
+    client._batch(response2)
 
-    setTimeout(function() {
-      assert.equal(4, received.length);
-      done();
-    }, 10);
+    setTimeout(function () {
+      assert.equal(4, received.length)
+      done()
+    }, 10)
   }
-};
+}
 
 // When this module is the script being run, run the tests:
-if (module == require.main) {
-  var mocha = require('child_process').spawn('mocha', [ '--colors', '--ui', 'exports', '--reporter', 'spec', __filename ]);
-  mocha.stdout.pipe(process.stdout);
-  mocha.stderr.pipe(process.stderr);
+if (module === require.main) {
+  var mocha = require('child_process').spawn('mocha', [ '--colors', '--ui', 'exports', '--reporter', 'spec', __filename ])
+  mocha.stdout.pipe(process.stdout)
+  mocha.stderr.pipe(process.stderr)
 }

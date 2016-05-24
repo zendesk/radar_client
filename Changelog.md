@@ -1,3 +1,16 @@
+### 0.15.4
+* [PR #71](https://github.com/zendesk/radar_client/pull/71) - Second try: flexible minor, patch specifier for radar_message dependency
+
+### 0.15.3
+* [PR #70](https://github.com/zendesk/radar_client/pull/70) - Loosen version range on radar_message dependency
+
+### 0.15.2
+* [PR #67](https://github.com/zendesk/radar_client/pull/67) - Reformat to standardjs
+* [PR #66](https://github.com/zendesk/radar_client/pull/66) - Fix license metadata in package.json
+* [PR #69](https://github.com/zendesk/radar_client/pull/69) - Replace gulejs with gulp
+* [PR #65](https://github.com/zendesk/radar_client/pull/65) - Do not store presence offline on client state
+* [PR #64](https://github.com/zendesk/radar_client/pull/64) - fake test timers with sinon.js
+
 ### 0.15.1
 * fix: send nameSync only once per session.
 * Replace gluejs implementation of build script.
