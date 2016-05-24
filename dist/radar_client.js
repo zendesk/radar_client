@@ -1,3 +1,4 @@
+console.log('BIG MERGE radar_client')
 var RadarClient =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
