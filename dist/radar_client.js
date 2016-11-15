@@ -434,7 +434,7 @@ var RadarClient =
 					time = response.getAttr('time');
 
 			if (!response.isValid()) {
-					console.log(1267, 'invalid batched', to, value, time)
+
 					this.logger().info('response is invalid:', response.getMessage());
 					return false;
 			}
@@ -455,6 +455,7 @@ var RadarClient =
 							newest = time;
 					}
 			}
+			this.emitNext(to, {'endofsynced': true});			
 	};
 
 	Client.prototype._createManager = function () {
