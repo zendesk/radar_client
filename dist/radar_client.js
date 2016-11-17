@@ -1,3 +1,4 @@
+console.log('radar client version: 11')
 var RadarClient =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
