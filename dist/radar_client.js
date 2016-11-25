@@ -1,4 +1,3 @@
-console.log('radar client version: 11')
 var RadarClient =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -435,7 +434,6 @@ var RadarClient =
 					time = response.getAttr('time');
 
 			if (!response.isValid()) {
-
 					this.logger().info('response is invalid:', response.getMessage());
 					return false;
 			}
@@ -450,13 +448,12 @@ var RadarClient =
 					data = JSON.parse(value[index]);
 					time = value[index + 1];
 					data.synced = true;
-
 					this.emitNext(to, data);
 					if (time > newest) {
 							newest = time;
 					}
 			}
-			this.emitNext(to, {'endofsynced': true});			
+			//this.emitNext(to, {'endofsynced': true});
 	};
 
 	Client.prototype._createManager = function () {
@@ -621,11 +618,16 @@ var RadarClient =
 
 	  switch (op) {
 	    case 'err':
-	         message = response.getMessage()
-		 if (message.value === 'auth') {
-		    this.emit('auth/expire', message)
-		    break
-		 }
+				message = response.getMessage()
+				if (message.value === 'auth') {
+				  this.emit('auth/expire', message)
+				  break
+				}
+				if (message.value === 'block') {
+					to = response.message.origin.to
+					this.emitNext(to, {'block': true});
+				  break
+				}
 	    case 'ack':
 	    case 'get':
 	      this.emitNext(op, response.getMessage())
@@ -635,7 +637,7 @@ var RadarClient =
 	      this._batch(response)
 	      break
 
-            case 'synced':
+      case 'synced':
 	      this._batched(response)
 	      break
 
@@ -711,6 +713,12 @@ var RadarClient =
 	    if(!ev) { this._events = {}; }
 	    else { this._events[ev] && (this._events[ev] = []); }
 	  },
+
+
+
+
+
+
 	  emit: function(ev) {
 	    this._events || (this._events = {});
 	    var args = Array.prototype.slice.call(arguments, 1), i, e = this._events[ev] || [];
