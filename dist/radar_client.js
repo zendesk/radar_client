@@ -46,16 +46,20 @@ var RadarClient =
 /***/ function(module, exports, __webpack_require__) {
 
 	var Client = __webpack_require__(1)
-	var instance = new Client()
+	//var instance = new Client()
 	var Backoff = __webpack_require__(7)
 
-	instance._log = __webpack_require__(6)
-	instance.Backoff = Backoff
+	var create = function() {
+			var instance = new Client();
+			instance._log = __webpack_require__(6)
+			instance.Backoff = Backoff
+			return instance;
+	};
 
 	// This module makes radar_client a singleton to prevent multiple connections etc.
 
-	module.exports = instance
-
+	//module.exports = instance
+	module.exports = create
 
 /***/ },
 /* 1 */
@@ -276,6 +280,35 @@ var RadarClient =
 	  return this._write(request)
 	}
 
+	Client.prototype.synced = function(scope, options, callback) {
+			var request, onResponse, v1Presence;
+
+			callback = _chooseFunction(options, callback);
+			options = _nullIfFunction(options);
+
+			request = Request.buildSynced(scope, options);
+
+			v1Presence = !options && request.isPresence();
+			onResponse = function(message) {
+					var response = new Response(message);
+					if (response && response.isFor(request)) {
+							if (v1Presence) {
+									response.forceV1Response();
+							}
+							if (callback) {
+									callback(response.getMessage());
+							}
+							return true;
+					}
+					return false;
+			};
+
+			this.when('get', onResponse);
+
+			// sync does not return ACK (it sends back a data message)
+			return this._write(request);
+	};
+
 	// get returns the actual value of the operation
 	Client.prototype.get = function (scope, options, callback) {
 	  var request
@@ -333,6 +366,9 @@ var RadarClient =
 
 	Client.prototype._write = function (request, callback) {
 	  var self = this
+	  var token = this._configuration.token || null;
+	  var tokenId = this._configuration.tokenId || null;
+	  var clientTimeID = Date.now();
 
 	  if (callback) {
 	    request.setAttr('ack', this._ackCounter++)
@@ -342,12 +378,21 @@ var RadarClient =
 	      var response = new Response(message)
 	      self.logger().debug('ack', response)
 	      if (!response.isAckFor(request)) { return false }
-	      callback(request.getMessage())
 
+	      var reqMessage = request.getMessage();
+	      reqMessage.token = token;
+	      reqMessage.tokenId = tokenId;
+	      reqMessage.clientTimeID = clientTimeID;
+
+	      callback(reqMessage);
 	      return true
 	    })
 	  }
 
+	  var reqMessage = request.getMessage();
+	  reqMessage.token = token;
+	  reqMessage.tokenId = tokenId;
+	  reqMessage.clientTimeID = clientTimeID;
 	  this.emit('authenticateMessage', request.getMessage())
 
 	  return this
@@ -382,6 +427,34 @@ var RadarClient =
 	  }
 	  this._channelSyncTimes[to] = newest
 	}
+
+	Client.prototype._batched = function(response) {
+			var to = response.getAttr('to'),
+					value = response.getAttr('value'),
+					time = response.getAttr('time');
+
+			if (!response.isValid()) {
+					this.logger().info('response is invalid:', response.getMessage());
+					return false;
+			}
+
+			var index = 0,
+					data,
+					length = value.length,
+					newest = time,
+					current = this._channelSyncTimes[to] || 0;
+
+			for (; index < length; index = index + 2) {
+					data = JSON.parse(value[index]);
+					time = value[index + 1];
+					data.synced = true;
+					this.emitNext(to, data);
+					if (time > newest) {
+							newest = time;
+					}
+			}
+			//this.emitNext(to, {'endofsynced': true});
+	};
 
 	Client.prototype._createManager = function () {
 	  var self = this
@@ -464,9 +537,10 @@ var RadarClient =
 	      return true
 
 	    case 'sync':
+	    case 'synced':
 	    case 'subscribe':
 	      // A catch for when *subscribe* is called after *sync*
-	      if (this._subscriptions[to] !== 'sync') {
+	      if (this._subscriptions[to] != 'sync' || this._subscriptions[to] != 'synced') {
 	        this._subscriptions[to] = op
 	      }
 	      return true
@@ -530,7 +604,8 @@ var RadarClient =
 	    if (!memorized || ack) {
 	      this._queuedRequests.push(request)
 	    }
-	    this.manager.connectWhenAble()
+	    // ZB, it is not needed
+	    //this.manager.connectWhenAble()
 	  }
 	}
 
@@ -543,6 +618,16 @@ var RadarClient =
 
 	  switch (op) {
 	    case 'err':
+				message = response.getMessage()
+				if (message.value === 'auth') {
+				  this.emit('auth/expire', message)
+				  break
+				}
+				if (message.value === 'block') {
+					to = response.message.origin.to
+					this.emitNext(to, {'block': true});
+				  break
+				}
 	    case 'ack':
 	    case 'get':
 	      this.emitNext(op, response.getMessage())
@@ -550,6 +635,10 @@ var RadarClient =
 
 	    case 'sync':
 	      this._batch(response)
+	      break
+
+      case 'synced':
+	      this._batched(response)
 	      break
 
 	    default:
@@ -624,6 +713,12 @@ var RadarClient =
 	    if(!ev) { this._events = {}; }
 	    else { this._events[ev] && (this._events[ev] = []); }
 	  },
+
+
+
+
+
+
 	  emit: function(ev) {
 	    this._events || (this._events = {});
 	    var args = Array.prototype.slice.call(arguments, 1), i, e = this._events[ev] || [];
@@ -670,8 +765,8 @@ var RadarClient =
 	  this.prefix = this._buildScopePrefix(typeName, scope, client.configuration('accountName'))
 	}
 
-	var props = [ 'set', 'get', 'subscribe', 'unsubscribe', 'publish', 'push', 'sync',
-	  'on', 'once', 'when', 'removeListener', 'removeAllListeners', 'nameSync']
+	var props = [ 'set', 'get', 'subscribe', 'unsubscribe', 'publish', 'push', 'sync', 'synced',
+	 'on', 'once', 'when', 'removeListener', 'removeAllListeners', 'nameSync']
 
 	var init = function (name) {
 	  Scope.prototype[name] = function () {
@@ -850,8 +945,14 @@ var RadarClient =
 	  this.failures = 0
 	}
 
-	Backoff.durations = [1000, 2000, 4000, 8000, 16000, 32000] // seconds (ticks)
-	Backoff.fallback = 60000
+	//Backoff.durations = [1000, 2000, 4000, 8000, 16000, 32000] // seconds (ticks)
+	//Backoff.fallback = 60000
+	var durations = [3000, 3000, 3000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000];
+	durations = durations.concat([2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000]);
+	durations = durations.concat([4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000]);
+	durations = durations.concat([10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000]);
+	Backoff.durations = durations
+	Backoff.fallback = 20000;
 
 	Backoff.prototype.get = function () {
 	  return Backoff.durations[this.failures] || Backoff.fallback
@@ -1102,10 +1203,10 @@ var RadarClient =
 
 	var opTable = {
 	  control: ['nameSync', 'disconnect'],
-	  message: ['publish', 'subscribe', 'sync', 'unsubscribe'],
-	  presence: ['get', 'set', 'subscribe', 'sync', 'unsubscribe'],
-	  status: ['get', 'set', 'subscribe', 'sync', 'unsubscribe'],
-	  stream: ['get', 'push', 'subscribe', 'sync', 'unsubscribe']
+	  message: ['publish', 'subscribe', 'sync', 'synced', 'unsubscribe'],
+	  presence: ['get', 'set', 'subscribe', 'sync', 'synced', 'unsubscribe'],
+	  status: ['get', 'set', 'subscribe', 'sync', 'synced', 'unsubscribe'],
+	  stream: ['get', 'push', 'subscribe', 'sync', 'synced', 'unsubscribe']
 	};
 
 	var Request = function (message) {
@@ -1165,6 +1266,18 @@ var RadarClient =
 	    request.forceV2Sync(options);
 	  }
 	  return request;
+	};
+
+	Request.buildSynced = function(scope, options) {
+			var message = {
+					op: 'synced',
+					to: scope
+			};
+			var request = new Request(message).setOptions(options);
+			if (request.isPresence()) {
+					request.forceV2Sync(options);
+			}
+			return request;
 	};
 
 	Request.buildSubscribe = function (scope, options) {
