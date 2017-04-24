@@ -2,10 +2,14 @@ var assert = require('assert')
 var RadarClient = require('../lib/radar_client.js')
 var MockEngine = require('./lib/engine.js')
 var Response = require('radar_message').Response
+var Backoff = require('../lib/backoff.js')
 var client
 
 exports['before connecting'] = {
   before: function (done) {
+    // speed up some tests
+    Backoff.maxSplay = 100
+    Backoff.durations = [ 100, 200, 400 ]
     RadarClient.setBackend(MockEngine)
     done()
   },
@@ -104,7 +108,6 @@ exports['after reconnecting'] = {
   },
 
   'should resend queued presences': function (done) {
-    this.timeout(4000)
     var connected = false
 
     client.presence('tickets/21').set('online')
@@ -133,7 +136,6 @@ exports['after reconnecting'] = {
   },
 
   'should resend queued subscriptions': function (done) {
-    this.timeout(4000)
     var connected = false
 
     client.presence('tickets/21').subscribe()
