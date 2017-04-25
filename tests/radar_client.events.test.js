@@ -53,8 +53,8 @@ exports['given a new presence'] = {
     }, 10)
   },
 
-  'forwards backoff events from manager': function(done) {
-    this.client.once('backoff', function(time, step) {
+  'forwards backoff events from manager': function (done) {
+    this.client.once('backoff', function (time, step) {
       done()
     })
     this.client.manager.emit('backoff', 10, 1)

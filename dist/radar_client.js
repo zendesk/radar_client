@@ -446,6 +446,10 @@ var RadarClient =
 	    self._restoreRequired = true
 	    self._identitySetRequired = true
 	  })
+
+	  manager.on('backoff', function (time, step) {
+	    self.emit('backoff', time, step)
+	  })
 	}
 
 	// Memorize subscriptions and presence states; return "true" for a message that
