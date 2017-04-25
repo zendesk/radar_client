@@ -43,7 +43,7 @@ var RadarClient =
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var Client = __webpack_require__(1)
 	var instance = new Client()
@@ -57,9 +57,9 @@ var RadarClient =
 	module.exports = instance
 
 
-/***/ },
+/***/ }),
 /* 1 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	/* globals setImmediate */
 	var MicroEE = __webpack_require__(2)
@@ -446,6 +446,10 @@ var RadarClient =
 	    self._restoreRequired = true
 	    self._identitySetRequired = true
 	  })
+
+	  manager.on('backoff', function (time, step) {
+	    self.emit('backoff', time, step)
+	  })
 	}
 
 	// Memorize subscriptions and presence states; return "true" for a message that
@@ -602,9 +606,9 @@ var RadarClient =
 	module.exports = Client
 
 
-/***/ },
+/***/ }),
 /* 2 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	function M() { this._events = {}; }
 	M.prototype = {
@@ -623,6 +627,9 @@ var RadarClient =
 	  removeAllListeners: function(ev) {
 	    if(!ev) { this._events = {}; }
 	    else { this._events[ev] && (this._events[ev] = []); }
+	  },
+	  listeners: function(ev) {
+	    return (this._events ? this._events[ev] || [] : []);
 	  },
 	  emit: function(ev) {
 	    this._events || (this._events = {});
@@ -655,15 +662,15 @@ var RadarClient =
 	module.exports = M;
 
 
-/***/ },
+/***/ }),
 /* 3 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = eio;
 
-/***/ },
+/***/ }),
 /* 4 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	function Scope (typeName, scope, client) {
 	  this.client = client
@@ -693,9 +700,9 @@ var RadarClient =
 	module.exports = Scope
 
 
-/***/ },
+/***/ }),
 /* 5 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var log = __webpack_require__(6)('radar_state')
 	var MicroEE = __webpack_require__(2)
@@ -725,17 +732,13 @@ var RadarClient =
 
 	    callbacks: {
 	      onevent: function (event, from, to) {
-	        log.debug('before-' + event + ', from: ' + from + ', to: ' + to,
-	          Array.prototype.slice.call(arguments))
+	        log.debug('from ' + from + ' -> ' + to + ', event: ' + event)
 
 	        this.emit('event', event)
 	        this.emit(event, arguments)
 	      },
 
 	      onstate: function (event, from, to) {
-	        log.debug('event-state-' + event + ', from: ' + from + ', to: ' + to,
-	          Array.prototype.slice.call(arguments))
-
 	        this.emit('enterState', to)
 	        this.emit(to, arguments)
 	      },
@@ -755,15 +758,17 @@ var RadarClient =
 	      },
 
 	      ondisconnected: function (event, from, to) {
-	        backoff.increment()
-
 	        if (this._timer) {
 	          clearTimeout(this._timer)
 	          delete this._timer
 	        }
 
 	        var time = backoff.get()
+	        backoff.increment()
+
+	        this.emit('backoff', time, backoff.failures)
 	        log.debug('reconnecting in ' + time + 'msec')
+
 	        this._timer = setTimeout(function () {
 	          delete machine._timer
 	          if (machine.is('disconnected')) {
@@ -836,15 +841,15 @@ var RadarClient =
 	module.exports = { create: create }
 
 
-/***/ },
+/***/ }),
 /* 6 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = Minilog;
 
-/***/ },
+/***/ }),
 /* 7 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	function Backoff () {
 	  this.failures = 0
@@ -852,9 +857,11 @@ var RadarClient =
 
 	Backoff.durations = [1000, 2000, 4000, 8000, 16000, 32000] // seconds (ticks)
 	Backoff.fallback = 60000
+	Backoff.maxSplay = 5000
 
 	Backoff.prototype.get = function () {
-	  return Backoff.durations[this.failures] || Backoff.fallback
+	  var splay = Math.ceil(Math.random() * Backoff.maxSplay)
+	  return splay + (Backoff.durations[this.failures] || Backoff.fallback)
 	}
 
 	Backoff.prototype.increment = function () {
@@ -872,9 +879,9 @@ var RadarClient =
 	module.exports = Backoff
 
 
-/***/ },
+/***/ }),
 /* 8 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	/*
 
@@ -1067,9 +1074,9 @@ var RadarClient =
 	  }; // StateMachine
 
 
-/***/ },
+/***/ }),
 /* 9 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	// Auto-generated file, overwritten by scripts/add_package_version.js
 
@@ -1078,9 +1085,9 @@ var RadarClient =
 	module.exports = getClientVersion
 
 
-/***/ },
+/***/ }),
 /* 10 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var Request = __webpack_require__(11),
 	    Response = __webpack_require__(12),
@@ -1094,9 +1101,9 @@ var RadarClient =
 	module.exports = RadarMessage;
 
 
-/***/ },
+/***/ }),
 /* 11 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var logger = __webpack_require__(6)('message:request');
 
@@ -1276,9 +1283,9 @@ var RadarClient =
 	module.exports = Request;
 
 
-/***/ },
+/***/ }),
 /* 12 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var logger = __webpack_require__(6)('message:response');
 
@@ -1358,9 +1365,9 @@ var RadarClient =
 	module.exports = Response;
 
 
-/***/ },
+/***/ }),
 /* 13 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	function Batch () {
 		var messages = Array.prototype.slice.call(arguments)
@@ -1390,5 +1397,5 @@ var RadarClient =
 	module.exports = Batch
 
 
-/***/ }
+/***/ })
 /******/ ]);

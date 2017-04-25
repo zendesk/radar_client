@@ -20,7 +20,9 @@ exports['given a backoff'] = {
   'durations increase as failures increase': function (done) {
     var b = this.b
     Backoff.durations.forEach(function (duration) {
-      assert.equal(duration, b.get())
+      var v = b.get()
+      assert(duration <= v)
+      assert(duration + Backoff.maxSplay > v)
       b.increment()
     })
     done()
@@ -28,11 +30,12 @@ exports['given a backoff'] = {
 
   'successful connection resets durations so that a random error doesnt cause a long wait': function (done) {
     var b = this.b
-    assert.equal(b.get(), 1000)
+    assert(b.get() >= 1000)
     b.increment()
-    assert.ok(b.get() > 1000)
+    assert(b.get() >= 2000)
     b.success()
-    assert.equal(b.get(), 1000)
+    var v = b.get()
+    assert(v >= 1000 && v < 6000)
     done()
   },
 
@@ -45,7 +48,7 @@ exports['given a backoff'] = {
     b.increment()
     b.increment()
     b.increment()
-    assert.equal(b.get(), 60000)
+    assert(b.get() > 60000)
     done()
   }
 

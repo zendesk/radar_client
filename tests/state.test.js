@@ -1,12 +1,23 @@
 var assert = require('assert')
 var StateMachine = require('../lib/state.js')
 var machine
+var Backoff = require('../lib/backoff.js')
 var sinon = require('sinon')
 var clock
 
+function maxBackoffStep (num) {
+  if (num < Backoff.durations.length) {
+    return Backoff.durations[num] + Backoff.maxSplay
+  } else {
+    return Backoff.fallback + Backoff.maxSplay
+  }
+}
+
 exports['given a state machine'] = {
   beforeEach: function () {
+    // create puts it in opened state.
     machine = StateMachine.create()
+    machine._backoff.success()
     clock = sinon.useFakeTimers()
   },
 
@@ -34,9 +45,6 @@ exports['given a state machine'] = {
   },
 
   'if the user calls disconnect the machine will reconnect after a delay': function (done) {
-    this.timeout(4000)
-
-    machine.open()
     machine.connect()
     assert.ok(machine.is('connecting'))
     machine.once('connect', function () {
@@ -44,12 +52,10 @@ exports['given a state machine'] = {
       done()
     })
     machine.disconnect()
-    clock.tick(2500)
+    clock.tick(maxBackoffStep(0))
   },
 
   'the first connection should begin connecting, after disconnected it should automatically reconnect': function (done) {
-    this.timeout(4000)
-    machine.open()
     machine.connect()
     assert.ok(machine.is('connecting'))
 
@@ -65,23 +71,20 @@ exports['given a state machine'] = {
     })
 
     machine.disconnect()
-    clock.tick(2500)
+    clock.tick(maxBackoffStep(0))
   },
 
-  'connections that hang should be detected after 10 seconds': function (done) {
-    this.timeout(14000)
-
+  'connections that hang should be detected after connect timeout': function (done) {
     machine.disconnect = function () {
       done()
     }
 
     machine.connect()
-    clock.tick(10001)
+    clock.tick(machine._connectTimeout + 1)
   },
 
   'should not get caught by timeout if connect fails for different reasons': function (done) {
     var once = true
-    this.timeout(20000)
     var disconnects = 0
 
     machine.on('disconnect', function () {
@@ -92,7 +95,7 @@ exports['given a state machine'] = {
       // Only 1 disconnect due to manager.disconnect()
       assert.equal(disconnects, 1)
       done()
-    }, 15000)
+    }, maxBackoffStep(0) + machine._connectTimeout)
 
     machine.on('connect', function () {
       if (once) {
@@ -104,19 +107,30 @@ exports['given a state machine'] = {
     })
     machine.connect()
 
-    clock.tick(15001)
+    clock.tick(1 + maxBackoffStep(0) + machine._connectTimeout)
   },
 
-  'connections that fail should cause exponential backoff, finally emit unavailable': function (done) {
-    this.timeout(65000)
-
+  'connections that fail should cause exponential backoff, emit backoff times, finally emit unavailable': function (done) {
     var available = true
-    var tries = 10
+    var tries = Backoff.durations.length + 1
+    var backoffs = []
 
-    machine.open()
+    machine.on('backoff', function (time, failures) {
+      backoffs.push(failures)
+      var step = failures - 1
 
-    machine.on('unavailable', function () {
+      assert(failures > 0)
+      assert(time > 0)
+      assert(time > (maxBackoffStep(step) - Backoff.maxSplay))
+      assert(time < (maxBackoffStep(step) + Backoff.maxSplay))
+    })
+
+    machine.once('unavailable', function () {
       available = false
+
+      assert(backoffs.length > 1)
+      assert(backoffs.length === machine._backoff.failures)
+      assert(backoffs.length === Backoff.durations.length)
       done()
     })
 
@@ -128,11 +142,17 @@ exports['given a state machine'] = {
 
     machine.connect()
 
-    clock.tick(64000)
+    // Wait for all the backoffs + splay, then wait for fallback + splay as well
+    var totalTimeToWait = 0
+    for (var i = 0; i < Backoff.durations.length; i++) {
+      totalTimeToWait += maxBackoffStep(i)
+    }
+    totalTimeToWait += Backoff.fallback + Backoff.maxSplay
+
+    clock.tick(1 + totalTimeToWait)
   },
 
   'closing will cancel the guard timer': function () {
-    machine.open()
     assert(!machine._guard)
     machine.connect()
     assert(machine._guard)

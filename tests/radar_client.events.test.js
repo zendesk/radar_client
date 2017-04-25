@@ -51,8 +51,14 @@ exports['given a new presence'] = {
     setTimeout(function () {
       done()
     }, 10)
-  }
+  },
 
+  'forwards backoff events from manager': function (done) {
+    this.client.once('backoff', function (time, step) {
+      done()
+    })
+    this.client.manager.emit('backoff', 10, 1)
+  }
 }
 
 // When this module is the script being run, run the tests:
