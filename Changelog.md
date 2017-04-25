@@ -1,3 +1,6 @@
+### 0.16.0
+* [PR #74](https://github.com/zendesk/radar_client/pull/74) - Add a random splay while backing off, also expose backoff events.
+
 ### 0.15.4
 * [PR #71](https://github.com/zendesk/radar_client/pull/71) - Second try: flexible minor, patch specifier for radar_message dependency
 
