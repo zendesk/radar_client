@@ -1,6 +1,6 @@
 var assert = require('assert')
 var RadarClient = require('../lib/radar_client.js')
-var MockEngine = require('./lib/engine.js')
+var MockEngine = require('./lib/engine.js')()
 var Request = require('radar_message').Request
 var Response = require('radar_message').Response
 var HOUR = 1000 * 60 * 60

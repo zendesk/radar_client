@@ -1,5 +1,5 @@
 var assert = require('assert')
-var MockEngine = require('./lib/engine.js')
+var MockEngine = require('./lib/engine.js')()
 var RadarClient = require('../lib/radar_client.js')
 var getClientVersion = require('../lib/client_version.js')
 var client
