@@ -28,17 +28,22 @@ Socket.prototype.close = function () {
 
 var current = new Socket()
 
-function wrap () {
+function wrap (delay) {
   current.removeAllListeners()
   current._opened = false
   setTimeout(function () {
     current.emit('open')
     current._opened = true
-  }, 5)
+  }, delay)
   return current
 }
 
-module.exports = {
-  Socket: wrap,
-  current: current
+var MockEngine = function (openDelay) {
+  openDelay = openDelay || 5
+  return {
+    Socket: function () { return wrap(openDelay) },
+    current: current
+  }
 }
+
+module.exports = MockEngine

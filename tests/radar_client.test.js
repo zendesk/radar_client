@@ -1,6 +1,6 @@
 var assert = require('assert')
 var RadarClient = require('../lib/radar_client.js')
-var MockEngine = require('./lib/engine.js')
+var MockEngine = require('./lib/engine.js')()
 var Response = require('radar_message').Response
 var Backoff = require('../lib/backoff.js')
 var client
