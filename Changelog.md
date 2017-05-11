@@ -1,3 +1,6 @@
+### 0.16.1
+* [PR #75](https://github.com/zendesk/radar_client/pull/75) - disconnect should clear any pending sockets
+
 ### 0.16.0
 * [PR #74](https://github.com/zendesk/radar_client/pull/74) - Add a random splay while backing off, also expose backoff events.
 

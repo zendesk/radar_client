@@ -445,6 +445,22 @@ var RadarClient =
 	  manager.on('disconnect', function () {
 	    self._restoreRequired = true
 	    self._identitySetRequired = true
+
+	    var socket = self._socket
+	    if (socket) {
+	      // If you reach disconnect with a socket obj,
+	      // it might be from startGuard (open timeout reached)
+	      // Clear out the current attempt to get a socket
+	      // and close it if it opens
+	      socket.removeAllListeners('message')
+	      socket.removeAllListeners('open')
+	      socket.removeAllListeners('close')
+	      socket.once('open', function () {
+	        self.logger().debug('socket open, closing it', socket.id)
+	        socket.close()
+	      })
+	      self._socket = null
+	    }
 	  })
 
 	  manager.on('backoff', function (time, step) {
@@ -1080,7 +1096,7 @@ var RadarClient =
 
 	// Auto-generated file, overwritten by scripts/add_package_version.js
 
-	function getClientVersion () { return '0.16.0' }
+	function getClientVersion () { return '0.16.1' }
 
 	module.exports = getClientVersion
 
