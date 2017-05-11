@@ -83,7 +83,7 @@ exports['given a state machine'] = {
     clock.tick(machine._connectTimeout + 1)
   },
 
-  'should not get caught by timeout if connect fails for different reasons': function (done) {
+  'should not get caught by timeout if connect takes too long': function (done) {
     var once = true
     var disconnects = 0
 
