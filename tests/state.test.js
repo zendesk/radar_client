@@ -158,6 +158,37 @@ exports['given a state machine'] = {
     assert(machine._guard)
     machine.close()
     assert(!machine._guard)
+  },
+
+  'should be able to attach a custom errorHandler': function () {
+    var handler = function () {}
+    machine.attachErrorHandler(handler)
+    assert.equal(machine.errorHandler, handler)
+  },
+
+  'should be able to override the custom errorHandler': function () {
+    var handler1 = function () {}
+    var handler2 = function () {}
+
+    machine.attachErrorHandler(handler1)
+    machine.attachErrorHandler(handler2)
+    assert.equal(machine.errorHandler, handler2)
+  },
+
+  'should only allow attaching a function as a custom state machine error handler': function () {
+    assert(!machine.errorHandler)
+
+    machine.attachErrorHandler(23)
+    assert(!machine.errorHandler)
+
+    machine.attachErrorHandler({})
+    assert(!machine.errorHandler)
+
+    machine.attachErrorHandler('error')
+    assert(!machine.errorHandler)
+
+    machine.attachErrorHandler(function () {})
+    assert(machine.errorHandler)
   }
 }
 
