@@ -584,7 +584,7 @@ var RadarClient =
 	}
 
 	Client.prototype._identitySet = function () {
-	  if (this._identitySetRequired) {
+	  if (this._identitySetRequired && this._socket) {
 	    this._identitySetRequired = false
 
 	    if (!this.name) {
