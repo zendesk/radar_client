@@ -1,4 +1,5 @@
 var assert = require('assert')
+var sinon = require('sinon')
 var RadarClient = require('../lib/radar_client.js')
 var MockEngine = require('./lib/engine.js')()
 var Request = require('radar_message').Request
@@ -99,6 +100,18 @@ exports.RadarClient = {
     'should store the passed hash as a configuration property': function () {
       client.configure({ accountName: 'test', userId: 123, userType: 2 })
       assert.deepEqual(client._configuration, { accountName: 'test', userId: 123, userType: 2 })
+    }
+  },
+
+  '.attachStateMachineErrorHandler': {
+    '.should attach error handler to the state manager': function () {
+      var errorHandler = function () {}
+      var attachErrorHandlerSpy = sinon.spy(client.manager, 'attachErrorHandler')
+
+      client.attachStateMachineErrorHandler(errorHandler)
+      assert.ok(attachErrorHandlerSpy.calledWith(errorHandler))
+
+      attachErrorHandlerSpy.restore()
     }
   },
 
@@ -651,14 +664,14 @@ exports.RadarClient = {
         'op': function () {
           var message = { to: 'status:/dev/ticket/1', value: 'x', time: new Date() / 1000 }
 
-          var response = new Response(message) // eslint-disable-line 
+          var response = new Response(message) // eslint-disable-line
           assert.deepEqual(client._channelSyncTimes, {})
         },
 
         'to': function () {
           var message = { op: 'subscribe', value: 'x', time: new Date() / 1000 }
 
-          var response = new Response(message) // eslint-disable-line 
+          var response = new Response(message) // eslint-disable-line
           assert.deepEqual(client._channelSyncTimes, {})
         },
 
