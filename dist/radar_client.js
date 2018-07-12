@@ -172,6 +172,10 @@ var RadarClient =
 	  }
 	}
 
+	Client.prototype.attachStateMachineErrorHandler = function (errorHandler) {
+	  this.manager.attachErrorHandler(errorHandler)
+	}
+
 	Client.prototype.currentUserId = function () {
 	  return this._configuration && this._configuration.userId
 	}
@@ -752,7 +756,11 @@ var RadarClient =
 	      log.warn('state-machine-error', arguments)
 
 	      if (err) {
-	        throw err
+	        if (this.errorHandler) {
+	          this.errorHandler(name, from, to, args, type, message, err)
+	        } else {
+	          throw err
+	        }
 	      }
 	    },
 
@@ -868,6 +876,14 @@ var RadarClient =
 	          machine.connectWhenAble()
 	        })
 	      }
+	    }
+	  }
+
+	  machine.attachErrorHandler = function (errorHandler) {
+	    if (typeof errorHandler === 'function') {
+	      this.errorHandler = errorHandler
+	    } else {
+	      log.warn('errorHandler must be a function')
 	    }
 	  }
 
@@ -1116,7 +1132,7 @@ var RadarClient =
 
 	// Auto-generated file, overwritten by scripts/add_package_version.js
 
-	function getClientVersion () { return '0.16.1' }
+	function getClientVersion () { return '0.16.2' }
 
 	module.exports = getClientVersion
 
