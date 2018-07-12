@@ -399,6 +399,14 @@ var RadarClient =
 	    var socket = self._socket = new self.backend.Socket(self._configuration)
 
 	    socket.once('open', function () {
+	      if (socket !== self._socket) {
+	        socket.removeAllListeners('message')
+	        socket.removeAllListeners('open')
+	        socket.removeAllListeners('close')
+	        socket.close()
+	        return
+	      }
+
 	      self.logger().debug('socket open', socket.id)
 	      manager.established()
 	    })
@@ -406,8 +414,6 @@ var RadarClient =
 	    socket.once('close', function (reason, description) {
 	      self.logger().debug('socket closed', socket.id, reason, description)
 	      socket.removeAllListeners('message')
-	      self._socket = null
-
 	      // Patch for polling-xhr continuing to poll after socket close (HTTP:POST
 	      // failure).  socket.transport is in error but not closed, so if a subsequent
 	      // poll succeeds, the transport remains open and polling until server closes
@@ -416,12 +422,22 @@ var RadarClient =
 	        socket.transport.close()
 	      }
 
-	      if (!manager.is('closed')) {
-	        manager.disconnect()
+	      if (socket === self._socket) {
+	        self._socket = null
+	        if (!manager.is('closed')) {
+	          manager.disconnect()
+	        }
 	      }
 	    })
 
 	    socket.on('message', function (message) {
+	      if (socket !== self._socket) {
+	        socket.removeAllListeners('message')
+	        socket.removeAllListeners('open')
+	        socket.removeAllListeners('close')
+	        socket.close()
+	        return
+	      }
 	      self._messageReceived(message)
 	    })
 
@@ -432,9 +448,13 @@ var RadarClient =
 	  })
 
 	  manager.on('activate', function () {
-	    self._identitySet()
-	    self._restore()
-	    self.emit('ready')
+	    if (self._socket === null) {
+	      manager.disconnect()
+	    } else {
+	      self._identitySet()
+	      self._restore()
+	      self.emit('ready')
+	    }
 	  })
 
 	  manager.on('authenticate', function () {
