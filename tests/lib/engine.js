@@ -10,7 +10,9 @@ var current = new State()
 MicroEE.mixin(State)
 
 var sockets = []
+var currentSocketId = 1
 function Socket () {
+  this.id = currentSocketId++
   sockets.push(this)
 }
 
