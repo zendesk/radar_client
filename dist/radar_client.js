@@ -452,12 +452,11 @@ var RadarClient =
 	  })
 
 	  manager.on('activate', function () {
-	    if (self._socket === null) {
-	      manager.disconnect()
-	    } else {
-	      self._identitySet()
+	    if (self._identitySet()) {
 	      self._restore()
 	      self.emit('ready')
+	    } else {
+	      manager.disconnect()
 	    }
 	  })
 
@@ -615,8 +614,14 @@ var RadarClient =
 	      this.name = this._uuidV4Generate()
 	    }
 
+	    var socketId = this.currentClientId()
+
 	    // Send msg that associates this.id with current name
-	    var association = { id: this._socket.id, name: this.name }
+	    if (!socketId) {
+	      return false
+	    }
+
+	    var association = { id: socketId, name: this.name }
 	    var clientVersion = getClientVersion()
 	    var options = { association: association, clientVersion: clientVersion }
 	    var self = this
@@ -624,6 +629,8 @@ var RadarClient =
 	    this.control('clientName').nameSync(options, function (message) {
 	      self.logger('nameSync message: ' + JSON.stringify(message))
 	    })
+
+	    return true
 	  }
 	}
 
