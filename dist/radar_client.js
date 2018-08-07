@@ -617,6 +617,8 @@ var RadarClient =
 	    var socketId = this.currentClientId()
 
 	    // Send msg that associates this.id with current name
+	    console.log(socketId, 'identitySet')
+	    console.log(this._socket, 'identitySet')
 	    if (!socketId) {
 	      return false
 	    }
