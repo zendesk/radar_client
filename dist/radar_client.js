@@ -445,6 +445,10 @@ var RadarClient =
 	      self._messageReceived(message)
 	    })
 
+	    socket.on('error', function (error) {
+	      self.emit('socketError', error)
+	    })
+
 	    manager.removeAllListeners('close')
 	    manager.once('close', function () {
 	      socket.close()
@@ -1132,7 +1136,7 @@ var RadarClient =
 
 	// Auto-generated file, overwritten by scripts/add_package_version.js
 
-	function getClientVersion () { return '0.16.3' }
+	function getClientVersion () { return '0.16.4' }
 
 	module.exports = getClientVersion
 
