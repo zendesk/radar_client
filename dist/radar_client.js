@@ -787,8 +787,12 @@ var RadarClient =
 	      },
 
 	      onstate: function (event, from, to) {
-	        this.emit('enterState', to)
-	        this.emit(to, arguments)
+	        var self = this
+	        var args = Array.prototype.slice.call(arguments)
+	        setImmediate(function () {
+	          self.emit('enterState', to)
+	          self.emit(to, args)
+	        })
 	      },
 
 	      onconnecting: function () {
