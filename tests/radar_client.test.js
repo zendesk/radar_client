@@ -72,7 +72,12 @@ exports['after reconnecting'] = {
   },
 
   'should send queued messages': function (done) {
+    var connecting = false
     var connected = false
+
+    client.once('connecting', function () {
+      connecting = true
+    })
 
     client.once('connect', function () {
       connected = true
@@ -89,6 +94,7 @@ exports['after reconnecting'] = {
     })
 
     client.once('ready', function () {
+      assert.ok(connecting)
       assert.ok(connected)
       assert.equal(client._queuedRequests.length, 0)
       assert.ok(
@@ -104,7 +110,6 @@ exports['after reconnecting'] = {
     client.manager.disconnect()
     assert.equal(client.currentState(), 'disconnected')
     client.status('tickets/21').set('online')
-    assert.equal(client.currentState(), 'connecting')
   },
 
   'should resend queued presences': function (done) {

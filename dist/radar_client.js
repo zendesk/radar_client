@@ -787,12 +787,8 @@ var RadarClient =
 	      },
 
 	      onstate: function (event, from, to) {
-	        var self = this
-	        var args = Array.prototype.slice.call(arguments)
-	        setImmediate(function () {
-	          self.emit('enterState', to)
-	          self.emit(to, args)
-	        })
+	        this.emit('enterState', to)
+	        this.emit(to, arguments)
 	      },
 
 	      onconnecting: function () {
@@ -878,10 +874,13 @@ var RadarClient =
 	  machine.connectWhenAble = function () {
 	    if (!(this.is('connected') || this.is('activated'))) {
 	      if (this.can('connect')) {
-	        this.connect()
+	        // Don't connect if we are waiting to reconnect
+	        if (!machine._timer) {
+	          this.connect()
+	        }
 	      } else {
 	        this.once('enterState', function () {
-	          machine.connectWhenAble()
+	          setImmediate(function () { machine.connectWhenAble() })
 	        })
 	      }
 	    }
@@ -1140,7 +1139,7 @@ var RadarClient =
 
 	// Auto-generated file, overwritten by scripts/add_package_version.js
 
-	function getClientVersion () { return '0.16.4' }
+	function getClientVersion () { return '0.16.5' }
 
 	module.exports = getClientVersion
 
