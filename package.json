@@ -32,27 +32,28 @@
     "url": "https://github.com/zendesk/radar_client.git"
   },
   "dependencies": {
-    "engine.io-client": "zendesk/engine.io-client#hhsu/1.4.2-xhr-polling-timeout",
-    "microee": "*",
-    "minilog": "*",
+    "engine.io-client": "^3.3.2",
+    "microee": "0.0.6",
+    "minilog": "^3.1.0",
     "radar_message": "^1.0.1",
-    "sfsm": "0.0.4"
+    "sfsm": "0.0.4",
+    "webpack-stream": "^5.2.1"
   },
   "devDependencies": {
-    "gulp": "^3.9.1",
+    "gulp": "^4.0.2",
     "gulp-rename": "^1.2.2",
-    "gulp-webpack": "^1.5.0",
     "jshint": "^2.8.0",
-    "mocha": "^2.3.3",
+    "mocha": "^6.2.0",
     "sinon": "^1.17.1",
-    "standard": "^6.0.5"
+    "standard": "^8.6.0"
   },
   "scripts": {
     "check-clean": "if [[ $(git diff --shortstat 2> /dev/null | tail -n1) != \"\" ]]; then npm run warn-dirty-tree && exit 1; fi",
     "check-modules": "if [ -z \"$SKIP_PACKAGE_CHECK\" ] && [ ./package.json -nt ./node_modules ]; then npm run warn-outdated && exit 1; else rm -rf ./node_modules/sfsm/demo; fi",
     "warn-outdated": "echo 'Your node_modules are out of date. Please run \"rm -rf node_modules && npm install\" in order to ensure you have the latest dependencies.'",
     "warn-dirty-tree": "echo 'Your repo tree is dirty.'",
-    "pretest": "npm run build && standard",
+    "lint": "standard",
+    "pretest": "npm run build && npm run lint",
     "test": "ls ./tests/*.test.js | xargs -n 1 -t -I {} sh -c 'TEST=\"{}\" npm run test-one'",
     "test-one": "./node_modules/.bin/mocha --ui exports --reporter spec --slow 2000ms --bail \"$TEST\"",
     "test-one-solo": "./node_modules/.bin/mocha --ui exports --reporter spec --slow 2000ms --bail",
