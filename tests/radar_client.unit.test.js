@@ -445,7 +445,8 @@ exports.RadarClient = {
         client.emit(scope, { op: 'online', to: scope, value: { 100: 2 } })
 
         var message = {
-          op: 'get', to: scope,
+          op: 'get',
+          to: scope,
           value: {
             100: { userType: 2, clients: {} },
             200: { userType: 0, clients: {} }
@@ -736,15 +737,15 @@ exports.RadarClient = {
 
     '._createManager': {
       'should create a manager that cannot open the same socket twice': function () {
-        var never_called_before = true
+        var neverCalledBefore = true
         var called = false
 
         client._createManager()
 
         client.manager.established = function () {
           called = true
-          assert(never_called_before)
-          never_called_before = false
+          assert(neverCalledBefore)
+          neverCalledBefore = false
         }
 
         client.manager.emit('connect')

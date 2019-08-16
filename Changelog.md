@@ -1,3 +1,6 @@
+### 0.16.5
+* [PR #82](https://github.com/zendesk/radar_client/pull/82) - Upgrade dependencies and Node.JS version.
+
 ### 0.16.1
 * [PR #75](https://github.com/zendesk/radar_client/pull/75) - disconnect should clear any pending sockets
 

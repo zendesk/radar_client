@@ -13,7 +13,7 @@ var fileContents = '// Auto-generated file, overwritten by' +
   'module.exports = getClientVersion\n'
 
 // Rewrite the file lib/version.js to contain a current getVersion()
-if (fs.exists(FILEPATH)) {
+if (fs.existsSync(FILEPATH)) {
   fs.unlinkSync(FILEPATH)
 }
 
