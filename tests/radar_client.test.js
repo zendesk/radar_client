@@ -76,9 +76,9 @@ exports['after reconnecting'] = {
 
     client.once('connect', function () {
       connected = true
-      assert.equal(MockEngine.current._written.length, 1)
-      assert.equal(client._queuedRequests.length, 1)
-      assert.deepEqual(client._queuedRequests[0].message, {
+      assert.strictEqual(MockEngine.current._written.length, 1)
+      assert.strictEqual(client._queuedRequests.length, 1)
+      assert.deepStrictEqual(client._queuedRequests[0].message, {
         op: 'set',
         to: 'status:/test/tickets/21',
         value: 'online',
@@ -90,7 +90,7 @@ exports['after reconnecting'] = {
 
     client.once('ready', function () {
       assert.ok(connected)
-      assert.equal(client._queuedRequests.length, 0)
+      assert.strictEqual(client._queuedRequests.length, 0)
       assert.ok(
         MockEngine.current._written.some(function (message) {
           return message.op === 'set' &&
@@ -102,9 +102,9 @@ exports['after reconnecting'] = {
     })
 
     client.manager.disconnect()
-    assert.equal(client.currentState(), 'disconnected')
+    assert.strictEqual(client.currentState(), 'disconnected')
     client.status('tickets/21').set('online')
-    assert.equal(client.currentState(), 'connecting')
+    assert.strictEqual(client.currentState(), 'connecting')
   },
 
   'should resend queued presences': function (done) {
@@ -114,13 +114,13 @@ exports['after reconnecting'] = {
 
     client.once('connect', function () {
       connected = true
-      assert.equal(Object.keys(client._presences).length, 1)
-      assert.equal(client._presences['presence:/test/tickets/21'], 'online')
+      assert.strictEqual(Object.keys(client._presences).length, 1)
+      assert.strictEqual(client._presences['presence:/test/tickets/21'], 'online')
     })
 
     client.once('ready', function () {
       assert.ok(connected)
-      assert.equal(Object.keys(client._presences).length, 1)
+      assert.strictEqual(Object.keys(client._presences).length, 1)
       assert.ok(
         MockEngine.current._written.some(function (message) {
           return message.op === 'set' &&
@@ -132,7 +132,7 @@ exports['after reconnecting'] = {
     })
 
     client.manager.disconnect()
-    assert.equal(client.currentState(), 'disconnected')
+    assert.strictEqual(client.currentState(), 'disconnected')
   },
 
   'should resend queued subscriptions': function (done) {
@@ -142,13 +142,13 @@ exports['after reconnecting'] = {
 
     client.once('connect', function () {
       connected = true
-      assert.equal(Object.keys(client._subscriptions).length, 1)
-      assert.equal(client._subscriptions['presence:/test/tickets/21'], 'subscribe')
+      assert.strictEqual(Object.keys(client._subscriptions).length, 1)
+      assert.strictEqual(client._subscriptions['presence:/test/tickets/21'], 'subscribe')
     })
 
     client.once('ready', function () {
       assert.ok(connected)
-      assert.equal(Object.keys(client._subscriptions).length, 1)
+      assert.strictEqual(Object.keys(client._subscriptions).length, 1)
       assert.ok(
         MockEngine.current._written.some(function (message) {
           return message.op === 'subscribe' &&
@@ -159,7 +159,7 @@ exports['after reconnecting'] = {
     })
 
     client.manager.disconnect()
-    assert.equal(client.currentState(), 'disconnected')
+    assert.strictEqual(client.currentState(), 'disconnected')
   }
 }
 
@@ -175,7 +175,7 @@ exports['given a new presence'] = {
   },
 
   'can configure my id': function (done) {
-    assert.equal('123', client._configuration.userId)
+    assert.strictEqual('123', client._configuration.userId)
     done()
   },
 
@@ -201,7 +201,7 @@ exports['given a new presence'] = {
       assert.ok(
         MockEngine.current._written.some(function (message) {
           return (
-          message.op === 'set' &&
+            message.op === 'set' &&
           message.to === 'presence:/dev/tickets/21' &&
           message.value === 'offline' &&
           message.key === '123'
@@ -252,7 +252,7 @@ exports['given a new presence'] = {
   },
 
   'can set options for a get operation': function (done) {
-    client.presence('tickets/21').get({version: 2}, function (results) {
+    client.presence('tickets/21').get({ version: 2 }, function (results) {
       assert.ok(
         MockEngine.current._written.some(function (message) {
           return (message.op === 'get' &&
@@ -359,7 +359,7 @@ exports['given a new presence'] = {
     client._batch(response2)
 
     setTimeout(function () {
-      assert.equal(4, received.length)
+      assert.strictEqual(4, received.length)
       done()
     }, 10)
   }
