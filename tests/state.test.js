@@ -93,7 +93,7 @@ exports['given a state machine'] = {
 
     setTimeout(function () {
       // Only 1 disconnect due to manager.disconnect()
-      assert.equal(disconnects, 1)
+      assert.strictEqual(disconnects, 1)
       done()
     }, maxBackoffStep(0) + machine._connectTimeout)
 
@@ -163,7 +163,7 @@ exports['given a state machine'] = {
   'should be able to attach a custom errorHandler': function () {
     var handler = function () {}
     machine.attachErrorHandler(handler)
-    assert.equal(machine.errorHandler, handler)
+    assert.strictEqual(machine.errorHandler, handler)
   },
 
   'should be able to override the custom errorHandler': function () {
@@ -172,7 +172,7 @@ exports['given a state machine'] = {
 
     machine.attachErrorHandler(handler1)
     machine.attachErrorHandler(handler2)
-    assert.equal(machine.errorHandler, handler2)
+    assert.strictEqual(machine.errorHandler, handler2)
   },
 
   'should only allow attaching a function as a custom state machine error handler': function () {

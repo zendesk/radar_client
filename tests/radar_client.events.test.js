@@ -10,20 +10,20 @@ exports['given a new presence'] = {
   'can set a event handler and receive messages': function (done) {
     var client = this.client
     client.once('presence:tickets:21', function (changes) {
-      assert.deepEqual([1], changes.online)
-      assert.deepEqual([], changes.offline)
+      assert.deepStrictEqual([1], changes.online)
+      assert.deepStrictEqual([], changes.offline)
     })
 
     // Send an online message
-    client.emit('presence:tickets:21', {online: [1], offline: []})
+    client.emit('presence:tickets:21', { online: [1], offline: [] })
 
     client.once('presence:tickets:21', function (changes) {
-      assert.deepEqual([], changes.online)
-      assert.deepEqual([1], changes.offline)
+      assert.deepStrictEqual([], changes.online)
+      assert.deepStrictEqual([1], changes.offline)
       done()
     })
 
-    client.emit('presence:tickets:21', {online: [], offline: [1]})
+    client.emit('presence:tickets:21', { online: [], offline: [1] })
   },
 
   'can remove a single callback': function (done) {
@@ -32,7 +32,7 @@ exports['given a new presence'] = {
       assert.ok(false)
     })
     client.removeAllListeners('presence:tickets:21')
-    client.emit('presence:tickets:21', {online: [1], offline: [2]})
+    client.emit('presence:tickets:21', { online: [1], offline: [2] })
     setTimeout(function () {
       done()
     }, 10)
@@ -47,7 +47,7 @@ exports['given a new presence'] = {
       assert.ok(false)
     })
     client.removeAllListeners('presence:tickets:21')
-    client.emit('presence:tickets:21', {online: [1], offline: [2]})
+    client.emit('presence:tickets:21', { online: [1], offline: [2] })
     setTimeout(function () {
       done()
     }, 10)

@@ -27,8 +27,8 @@ exports.RadarClient = {
       var configuration = { userId: 123, userData: { test: 1 }, accountName: 'dev' }
       client.configure(configuration)
       client.configuration('userData').test = 2
-      assert.equal(configuration.userData.test, 1)
-      assert.equal(client.configuration('userData').test, 1)
+      assert.strictEqual(configuration.userData.test, 1)
+      assert.strictEqual(client.configuration('userData').test, 1)
     }
   },
 
@@ -36,7 +36,7 @@ exports.RadarClient = {
     'should return the current socket id if a socket id is available': function (done) {
       client.configure({ userId: 123, accountName: 'dev' })
       client.alloc('test', function () {
-        assert.equal(client.currentClientId(), client._socket.id)
+        assert.strictEqual(client.currentClientId(), client._socket.id)
         done()
       })
     }
@@ -52,9 +52,9 @@ exports.RadarClient = {
     },
 
     'should add the channel name to the hash of users': function () {
-      assert.equal(client._uses.foo, undefined)
+      assert.strictEqual(client._uses.foo, undefined)
       client.alloc('foo')
-      assert.equal(client._uses.foo, true)
+      assert.strictEqual(client._uses.foo, true)
     },
 
     'should add a callback for ready if a callback is passed': function () {
@@ -62,8 +62,8 @@ exports.RadarClient = {
 
       client.on = function (name, callback) {
         called = true
-        assert.equal(name, 'ready')
-        assert.equal(typeof callback, 'function')
+        assert.strictEqual(name, 'ready')
+        assert.strictEqual(typeof callback, 'function')
       }
 
       client.alloc('foo', function () {})
@@ -74,32 +74,32 @@ exports.RadarClient = {
   '.dealloc': {
     'should delete the _uses property for a given channel name': function () {
       client.alloc('foo')
-      assert.equal(client._uses.foo, true)
+      assert.strictEqual(client._uses.foo, true)
       client.dealloc('foo')
-      assert.equal(client._uses.foo, undefined)
+      assert.strictEqual(client._uses.foo, undefined)
     },
 
     'should call close() on the manager if the are no open channels': function () {
       var called = true
       client.manager.close = function () { called = true }
       client.alloc('foo')
-      assert.equal(client._uses.foo, true)
+      assert.strictEqual(client._uses.foo, true)
       client.dealloc('foo')
-      assert.equal(client._uses.foo, undefined)
+      assert.strictEqual(client._uses.foo, undefined)
       assert.ok(called)
     }
   },
 
   '.configure': {
     'should not change the configuration if nothing is passed': function () {
-      assert.deepEqual(client._configuration, { accountName: '', userId: 0, userType: 0 })
+      assert.deepStrictEqual(client._configuration, { accountName: '', userId: 0, userType: 0 })
       client.configure()
-      assert.deepEqual(client._configuration, { accountName: '', userId: 0, userType: 0 })
+      assert.deepStrictEqual(client._configuration, { accountName: '', userId: 0, userType: 0 })
     },
 
     'should store the passed hash as a configuration property': function () {
       client.configure({ accountName: 'test', userId: 123, userType: 2 })
-      assert.deepEqual(client._configuration, { accountName: 'test', userId: 123, userType: 2 })
+      assert.deepStrictEqual(client._configuration, { accountName: 'test', userId: 123, userType: 2 })
     }
   },
 
@@ -119,19 +119,19 @@ exports.RadarClient = {
     '.message should return a scope with the appropriate prefix': function () {
       client.configure({ accountName: 'test' })
       var scope = client.message('chatter/1')
-      assert.equal(scope.prefix, 'message:/test/chatter/1')
+      assert.strictEqual(scope.prefix, 'message:/test/chatter/1')
     },
 
     '.presence should return a scope with the appropriate prefix': function () {
       client.configure({ accountName: 'test' })
       var scope = client.presence('chatter/1')
-      assert.equal(scope.prefix, 'presence:/test/chatter/1')
+      assert.strictEqual(scope.prefix, 'presence:/test/chatter/1')
     },
 
     '.status should return a scope with the appropriate prefix': function () {
       client.configure({ accountName: 'test' })
       var scope = client.status('chatter/1')
-      assert.equal(scope.prefix, 'status:/test/chatter/1')
+      assert.strictEqual(scope.prefix, 'status:/test/chatter/1')
     }
   },
 
@@ -142,14 +142,14 @@ exports.RadarClient = {
 
       client._write = function (request, fn) {
         called = true
-        assert.deepEqual(request.getMessage(), {
+        assert.deepStrictEqual(request.getMessage(), {
           op: 'set',
           to: 'status:/test/account/1',
           value: 'whatever',
           key: 123,
           type: 0
         })
-        assert.equal(fn, callback)
+        assert.strictEqual(fn, callback)
       }
 
       client.configure({ accountName: 'test', userId: 123, userType: 0 })
@@ -163,8 +163,8 @@ exports.RadarClient = {
       client.set('presence:/test/account/1', 'online')
       assert.ok(client._restoreRequired)
       assert.ok(!client.manager.is('activated'))
-      assert.equal(client._queuedRequests.length, 0)
-      assert.deepEqual(client._presences, { 'presence:/test/account/1': 'online' })
+      assert.strictEqual(client._queuedRequests.length, 0)
+      assert.deepStrictEqual(client._presences, { 'presence:/test/account/1': 'online' })
     },
 
     'should queue a presence set and require restore if there is a callback': function () {
@@ -173,8 +173,8 @@ exports.RadarClient = {
       client.set('presence:/test/account/1', 'online', function () {})
       assert.ok(client._restoreRequired)
       assert.ok(!client.manager.is('activated'))
-      assert.equal(client._queuedRequests.length, 1)
-      assert.deepEqual(client._presences, { 'presence:/test/account/1': 'online' })
+      assert.strictEqual(client._queuedRequests.length, 1)
+      assert.deepStrictEqual(client._presences, { 'presence:/test/account/1': 'online' })
     }
   },
 
@@ -185,12 +185,12 @@ exports.RadarClient = {
 
       client._write = function (request, fn) {
         called = true
-        assert.deepEqual(request.getMessage(), {
+        assert.deepStrictEqual(request.getMessage(), {
           op: 'publish',
           to: 'message:/test/account/1',
           value: 'whatever'
         })
-        assert.equal(fn, callback)
+        assert.strictEqual(fn, callback)
       }
 
       client.configure({ accountName: 'test', userId: 123, userType: 0 })
@@ -206,11 +206,11 @@ exports.RadarClient = {
 
       client._write = function (request, fn) {
         called = true
-        assert.deepEqual(request.getMessage(), {
+        assert.deepStrictEqual(request.getMessage(), {
           op: 'subscribe',
           to: 'status:/test/account/1'
         })
-        assert.equal(fn, callback)
+        assert.strictEqual(fn, callback)
       }
 
       client.configure({ accountName: 'test', userId: 123, userType: 0 })
@@ -224,8 +224,8 @@ exports.RadarClient = {
       client.subscribe('status:/test/account/1')
       assert.ok(client._restoreRequired)
       assert.ok(!client.manager.is('activated'))
-      assert.equal(client._queuedRequests.length, 0)
-      assert.deepEqual(client._subscriptions, { 'status:/test/account/1': 'subscribe' })
+      assert.strictEqual(client._queuedRequests.length, 0)
+      assert.deepStrictEqual(client._subscriptions, { 'status:/test/account/1': 'subscribe' })
     },
 
     'should queue a subscribe operation if disconnected and require restore if there is a callback': function () {
@@ -234,8 +234,8 @@ exports.RadarClient = {
       client.subscribe('status:/test/account/1', function () {})
       assert.ok(client._restoreRequired)
       assert.ok(!client.manager.is('activated'))
-      assert.equal(client._queuedRequests.length, 1)
-      assert.deepEqual(client._subscriptions, { 'status:/test/account/1': 'subscribe' })
+      assert.strictEqual(client._queuedRequests.length, 1)
+      assert.deepStrictEqual(client._subscriptions, { 'status:/test/account/1': 'subscribe' })
     },
 
     'should not queue a sync operation if disconnected, but require restore': function () {
@@ -244,8 +244,8 @@ exports.RadarClient = {
       client.sync('presence:/test/account/1')
       assert.ok(client._restoreRequired)
       assert.ok(!client.manager.is('activated'))
-      assert.equal(client._queuedRequests.length, 0)
-      assert.deepEqual(client._subscriptions, { 'presence:/test/account/1': 'sync' })
+      assert.strictEqual(client._queuedRequests.length, 0)
+      assert.deepStrictEqual(client._subscriptions, { 'presence:/test/account/1': 'sync' })
     }
   },
 
@@ -256,11 +256,11 @@ exports.RadarClient = {
 
       client._write = function (request, fn) {
         called = true
-        assert.deepEqual(request.getMessage(), {
+        assert.deepStrictEqual(request.getMessage(), {
           op: 'unsubscribe',
           to: 'status:/test/account/1'
         })
-        assert.equal(fn, callback)
+        assert.strictEqual(fn, callback)
       }
 
       client.configure({ accountName: 'test', userId: 123, userType: 0 })
@@ -274,8 +274,8 @@ exports.RadarClient = {
       client.unsubscribe('presence:/test/account/1')
       assert.ok(client._restoreRequired)
       assert.ok(!client.manager.is('activated'))
-      assert.equal(client._queuedRequests.length, 0)
-      assert.deepEqual(client._subscriptions, {})
+      assert.strictEqual(client._queuedRequests.length, 0)
+      assert.deepStrictEqual(client._subscriptions, {})
     },
 
     'should queue a message if the subscription was not in memory and require restore if there is a callback': function () {
@@ -284,8 +284,8 @@ exports.RadarClient = {
       client.unsubscribe('presence:/test/account/1', function () {})
       assert.ok(client._restoreRequired)
       assert.ok(!client.manager.is('activated'))
-      assert.equal(client._queuedRequests.length, 1)
-      assert.deepEqual(client._subscriptions, {})
+      assert.strictEqual(client._queuedRequests.length, 1)
+      assert.deepStrictEqual(client._subscriptions, {})
     }
   },
 
@@ -295,7 +295,7 @@ exports.RadarClient = {
 
       client._write = function (request) {
         called = true
-        assert.deepEqual(request.getMessage(), {
+        assert.deepStrictEqual(request.getMessage(), {
           op: 'get',
           to: 'status:/test/account/1'
         })
@@ -324,7 +324,7 @@ exports.RadarClient = {
       var message = { op: 'get', to: scope }
       var callback = function (msg) {
         passed = true
-        assert.deepEqual(msg, message)
+        assert.deepStrictEqual(msg, message)
       }
 
       client.when = function (operation, fn) {
@@ -362,7 +362,7 @@ exports.RadarClient = {
 
       client._write = function (request) {
         called = true
-        assert.deepEqual(request.getMessage(), {
+        assert.deepStrictEqual(request.getMessage(), {
           op: 'sync',
           to: 'status:/test/account/1'
         })
@@ -392,7 +392,7 @@ exports.RadarClient = {
         var message = { op: 'sync', to: scope }
         var callback = function (msg) {
           passed = true
-          assert.deepEqual(msg, message)
+          assert.deepStrictEqual(msg, message)
         }
 
         client.when = function (operation, fn) {
@@ -430,7 +430,7 @@ exports.RadarClient = {
         var scope = 'presence:/test/account/1'
 
         client.sync(scope, function (m) {
-          assert.deepEqual({
+          assert.deepStrictEqual({
             op: 'online',
             to: scope,
             value: {
@@ -463,19 +463,19 @@ exports.RadarClient = {
       'memorizing a sync/subscribe should work': function (done) {
         var request
 
-        assert.equal(0, Object.keys(client._subscriptions).length)
+        assert.strictEqual(0, Object.keys(client._subscriptions).length)
         request = Request.buildSubscribe('presence:/test/ticket/1')
         client._memorize(request)
-        assert.equal(1, Object.keys(client._subscriptions).length)
+        assert.strictEqual(1, Object.keys(client._subscriptions).length)
 
         request = Request.buildSync('status:/test/ticket/1')
         client._memorize(request)
-        assert.equal(2, Object.keys(client._subscriptions).length)
+        assert.strictEqual(2, Object.keys(client._subscriptions).length)
 
         request = Request.buildGet('status:/test/ticket/1')
         client._memorize(request)
         // Should be a no-op
-        assert.equal(2, Object.keys(client._subscriptions).length)
+        assert.strictEqual(2, Object.keys(client._subscriptions).length)
 
         done()
       },
@@ -483,18 +483,18 @@ exports.RadarClient = {
       'memorizing a set(online) and unmemorizing a set(offline) should work': function (done) {
         var request
 
-        assert.equal(0, Object.keys(client._presences).length)
+        assert.strictEqual(0, Object.keys(client._presences).length)
         request = Request.buildSet('presence:/foo/bar', 'online')
         client._memorize(request)
-        assert.equal('online', client._presences['presence:/foo/bar'])
-        assert.equal(1, Object.keys(client._presences).length)
+        assert.strictEqual('online', client._presences['presence:/foo/bar'])
+        assert.strictEqual(1, Object.keys(client._presences).length)
         // Duplicate should be ignored
         client._memorize(request)
-        assert.equal(1, Object.keys(client._presences).length)
+        assert.strictEqual(1, Object.keys(client._presences).length)
 
         request = Request.buildSet('presence:/foo/bar', 'offline')
         client._memorize(request)
-        assert.equal(0, Object.keys(client._presences).length)
+        assert.strictEqual(0, Object.keys(client._presences).length)
         done()
       },
 
@@ -504,15 +504,15 @@ exports.RadarClient = {
         client._memorize(request)
         request = Request.buildSync('status:/test/ticket/2')
         client._memorize(request)
-        assert.equal(2, Object.keys(client._subscriptions).length)
+        assert.strictEqual(2, Object.keys(client._subscriptions).length)
 
         // Unsubscribe
         request = Request.buildUnsubscribe('status:/test/ticket/1')
         client._memorize(request)
-        assert.equal(1, Object.keys(client._subscriptions).length)
+        assert.strictEqual(1, Object.keys(client._subscriptions).length)
         request = Request.buildUnsubscribe('status:/test/ticket/2')
         client._memorize(request)
-        assert.equal(0, Object.keys(client._subscriptions).length)
+        assert.strictEqual(0, Object.keys(client._subscriptions).length)
         done()
       },
 
@@ -520,39 +520,39 @@ exports.RadarClient = {
         // Simple duplicates
         var request = Request.buildSubscribe('status:/test/ticket/1')
         client._memorize(request)
-        assert.equal(1, Object.keys(client._subscriptions).length)
+        assert.strictEqual(1, Object.keys(client._subscriptions).length)
         client._memorize(request)
-        assert.equal(1, Object.keys(client._subscriptions).length)
+        assert.strictEqual(1, Object.keys(client._subscriptions).length)
 
         client._subscriptions = {}
         // Simple duplicates
         request = Request.buildSync('status:/test/ticket/2')
         client._memorize(request)
-        assert.equal(1, Object.keys(client._subscriptions).length)
+        assert.strictEqual(1, Object.keys(client._subscriptions).length)
         client._memorize(request)
-        assert.equal(1, Object.keys(client._subscriptions).length)
+        assert.strictEqual(1, Object.keys(client._subscriptions).length)
 
         client._subscriptions = {}
         // Sync after subscribe
         request = Request.buildSubscribe('status:/test/ticket/3')
         client._memorize(request)
-        assert.equal(1, Object.keys(client._subscriptions).length)
+        assert.strictEqual(1, Object.keys(client._subscriptions).length)
         request = Request.buildSync('status:/test/ticket/3')
         client._memorize(request)
-        assert.equal(1, Object.keys(client._subscriptions).length)
-        assert.equal('sync', client._subscriptions['status:/test/ticket/3'])
+        assert.strictEqual(1, Object.keys(client._subscriptions).length)
+        assert.strictEqual('sync', client._subscriptions['status:/test/ticket/3'])
 
         client._subscriptions = {}
         // Subscribe after sync
         request = Request.buildSync('status:/test/ticket/4')
         client._memorize(request)
-        assert.equal(1, Object.keys(client._subscriptions).length)
-        assert.equal('sync', client._subscriptions['status:/test/ticket/4'])
+        assert.strictEqual(1, Object.keys(client._subscriptions).length)
+        assert.strictEqual('sync', client._subscriptions['status:/test/ticket/4'])
         // When we sync and subscribe, it means just sync
         request = Request.buildSubscribe('status:/test/ticket/4')
         client._memorize(request)
-        assert.equal(1, Object.keys(client._subscriptions).length)
-        assert.equal('sync', client._subscriptions['status:/test/ticket/4'])
+        assert.strictEqual(1, Object.keys(client._subscriptions).length)
+        assert.strictEqual('sync', client._subscriptions['status:/test/ticket/4'])
 
         done()
       }
@@ -568,7 +568,7 @@ exports.RadarClient = {
         client._restoreRequired = true
         client.configure({ accountName: 'foo', userId: 123, userType: 2 })
         client.alloc('test', function () {
-          assert.equal(MockEngine.current._written.length, 2)
+          assert.strictEqual(MockEngine.current._written.length, 2)
           assert.ok(MockEngine.current._written.some(function (message) {
             return (message.op === 'set' &&
             message.to === 'presence:/foo/bar' &&
@@ -587,7 +587,7 @@ exports.RadarClient = {
         client._restoreRequired = true
         client.configure({ accountName: 'foo', userId: 123, userType: 2 })
         client.alloc('test', function () {
-          assert.equal(MockEngine.current._written.length, 3)
+          assert.strictEqual(MockEngine.current._written.length, 3)
           assert.ok(MockEngine.current._written.some(function (message) {
             return (message.op === 'subscribe' &&
             message.to === 'status:/foo/bar')
@@ -603,13 +603,13 @@ exports.RadarClient = {
     '._write': {
       'should emit an authenticateMessage event': function () {
         var called = false
-        var message = {op: 'subscribe', to: 'status:/account/scope/1'}
+        var message = { op: 'subscribe', to: 'status:/account/scope/1' }
         var request = Request.buildSubscribe(message.to)
 
         client.emit = function (name, data) {
           called = true
-          assert.equal(name, 'authenticateMessage')
-          assert.deepEqual(data, message)
+          assert.strictEqual(name, 'authenticateMessage')
+          assert.deepStrictEqual(data, message)
         }
 
         // client._write(request.getMessage())
@@ -624,12 +624,12 @@ exports.RadarClient = {
         var ackMessage = { value: -2 }
         var callback = function (msg) {
           passed = true
-          assert.deepEqual(msg, request.getMessage())
+          assert.deepStrictEqual(msg, request.getMessage())
         }
 
         client.when = function (name, fn) {
           called = true
-          assert.equal(name, 'ack')
+          assert.strictEqual(name, 'ack')
           ackMessage.op = 'ack'
           ackMessage.value = request.getAttr('ack')
           fn(ackMessage)
@@ -650,7 +650,7 @@ exports.RadarClient = {
 
         client.when = function (name, fn) {
           called = true
-          assert.equal(name, 'ack')
+          assert.strictEqual(name, 'ack')
           fn(response)
         }
 
@@ -666,32 +666,32 @@ exports.RadarClient = {
           var message = { to: 'status:/dev/ticket/1', value: 'x', time: new Date() / 1000 }
 
           var response = new Response(message) // eslint-disable-line
-          assert.deepEqual(client._channelSyncTimes, {})
+          assert.deepStrictEqual(client._channelSyncTimes, {})
         },
 
         'to': function () {
           var message = { op: 'subscribe', value: 'x', time: new Date() / 1000 }
 
           var response = new Response(message) // eslint-disable-line
-          assert.deepEqual(client._channelSyncTimes, {})
+          assert.deepStrictEqual(client._channelSyncTimes, {})
         },
 
         'value': function () {
-          var message = {op: 'subscribe', to: 'you', value: 'x'}
+          var message = { op: 'subscribe', to: 'you', value: 'x' }
           var response = new Response(message)
 
-          assert.equal(client._channelSyncTimes.you, undefined)
+          assert.strictEqual(client._channelSyncTimes.you, undefined)
           assert.ok(!client._batch(response))
-          assert.equal(client._channelSyncTimes.you, undefined)
+          assert.strictEqual(client._channelSyncTimes.you, undefined)
         },
 
         'time': function () {
           var message = { op: 'subscribe', to: 'you', value: 'x' }
           var response = new Response(message)
 
-          assert.equal(client._channelSyncTimes.you, undefined)
+          assert.strictEqual(client._channelSyncTimes.you, undefined)
           assert.ok(!client._batch(response))
-          assert.equal(client._channelSyncTimes.you, undefined)
+          assert.strictEqual(client._channelSyncTimes.you, undefined)
         }
       },
 
@@ -705,9 +705,9 @@ exports.RadarClient = {
         }
         var response = new Response(message)
 
-        assert.equal(client._channelSyncTimes.you, undefined)
-        assert.notEqual(client._batch(response), false)
-        assert.equal(client._channelSyncTimes.you, now)
+        assert.strictEqual(client._channelSyncTimes.you, undefined)
+        assert.notStrictEqual(client._batch(response), false)
+        assert.strictEqual(client._channelSyncTimes.you, now)
       },
 
       'should emit an event named for the "to" property value if there is a time that is greater than the current channelSyncTime': function () {
@@ -725,12 +725,12 @@ exports.RadarClient = {
 
         client.emitNext = function (name, data) {
           called = true
-          assert.equal(name, response.getAttr('to'))
-          assert.deepEqual(data, JSON.parse(response.getAttr('value')[0]))
+          assert.strictEqual(name, response.getAttr('to'))
+          assert.deepStrictEqual(data, JSON.parse(response.getAttr('value')[0]))
         }
 
-        assert.notEqual(client._batch(response), false)
-        assert.equal(client._channelSyncTimes.you, now)
+        assert.notStrictEqual(client._batch(response), false)
+        assert.strictEqual(client._channelSyncTimes.you, now)
         assert.ok(called)
       }
     },
@@ -787,7 +787,7 @@ exports.RadarClient = {
 
           client.emit = function (name) {
             called = true
-            assert.equal(name, state)
+            assert.strictEqual(name, state)
           }
 
           client._createManager()
@@ -801,7 +801,7 @@ exports.RadarClient = {
 
           client.emit = function (name) {
             called = true
-            assert.equal(name, event)
+            assert.strictEqual(name, event)
           }
 
           client._createManager()
@@ -853,7 +853,7 @@ exports.RadarClient = {
 
             client._messageReceived = function (msg) {
               called = true
-              assert.equal(msg, message)
+              assert.strictEqual(msg, message)
             }
 
             client.manager.emit('connect')
@@ -874,11 +874,11 @@ exports.RadarClient = {
 
               count++
               if (count === 1) {
-                assert.equal(name, 'authenticateMessage')
+                assert.strictEqual(name, 'authenticateMessage')
               }
 
               if (count === 2) {
-                assert.equal(name, 'ready')
+                assert.strictEqual(name, 'ready')
               }
             }
 
@@ -936,8 +936,8 @@ exports.RadarClient = {
         client._socket = {
           sendPacket: function (name, data) {
             called = true
-            assert.equal(name, 'message')
-            assert.equal(data, JSON.stringify(request.getMessage()))
+            assert.strictEqual(name, 'message')
+            assert.strictEqual(data, JSON.stringify(request.getMessage()))
           }
         }
 
@@ -950,7 +950,7 @@ exports.RadarClient = {
 
         client.configure({})
         client._sendMessage(request)
-        assert.deepEqual(request, client._queuedRequests[0])
+        assert.deepStrictEqual(request, client._queuedRequests[0])
       },
 
       'should ignore the message if the client has not been configured': function () {
@@ -958,7 +958,7 @@ exports.RadarClient = {
 
         assert.ok(!client._isConfigured)
         client._sendMessage(request)
-        assert.equal(client._queuedRequests.length, 0)
+        assert.strictEqual(client._queuedRequests.length, 0)
       }
     },
 
@@ -974,8 +974,8 @@ exports.RadarClient = {
           client.emitNext = function (name, data) {
             if (name === 'message:in') return
             called = true
-            assert.equal(name, message.op)
-            assert.deepEqual(data, message)
+            assert.strictEqual(name, message.op)
+            assert.deepStrictEqual(data, message)
           }
 
           client._messageReceived(json)
@@ -993,8 +993,8 @@ exports.RadarClient = {
           client.emitNext = function (name, data) {
             if (name === 'message:in') return
             called = true
-            assert.equal(name, message.op)
-            assert.deepEqual(data, message)
+            assert.strictEqual(name, message.op)
+            assert.deepStrictEqual(data, message)
           }
 
           client._messageReceived(json)
@@ -1012,8 +1012,8 @@ exports.RadarClient = {
           client.emitNext = function (name, data) {
             if (name === 'message:in') return
             called = true
-            assert.equal(name, message.op)
-            assert.deepEqual(data, message)
+            assert.strictEqual(name, message.op)
+            assert.deepStrictEqual(data, message)
           }
 
           client._messageReceived(json)
@@ -1030,7 +1030,7 @@ exports.RadarClient = {
 
           client._batch = function (msg) {
             called = true
-            assert.deepEqual(msg.message, message)
+            assert.deepStrictEqual(msg.message, message)
           }
 
           client._messageReceived(json)
@@ -1049,8 +1049,8 @@ exports.RadarClient = {
             if (name === 'message:in') return
 
             called = true
-            assert.equal(name, message.to)
-            assert.deepEqual(data, message)
+            assert.strictEqual(name, message.to)
+            assert.deepStrictEqual(data, message)
           }
 
           client._messageReceived(json)

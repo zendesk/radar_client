@@ -22,7 +22,7 @@ exports['given an instance of Radar client'] = {
 
   'calls to operations do not cause errors before the client is configured, but dont write either': function (done) {
     client.status('test/foo').set('bar')
-    assert.equal(MockEngine.current._written.length, 0)
+    assert.strictEqual(MockEngine.current._written.length, 0)
     done()
   },
 
@@ -31,8 +31,8 @@ exports['given an instance of Radar client'] = {
     client.status('test/foo').set('bar')
 
     client.on('ready', function () {
-      assert.equal(MockEngine.current._written[0].op, 'nameSync')
-      assert.equal(MockEngine.current._written[0].to, 'control:/dev/clientName')
+      assert.strictEqual(MockEngine.current._written[0].op, 'nameSync')
+      assert.strictEqual(MockEngine.current._written[0].to, 'control:/dev/clientName')
       done()
     })
   },
@@ -52,7 +52,7 @@ exports['given an instance of Radar client'] = {
     client.status('test/foo').set('bar')
 
     client.on('ready', function () {
-      assert.equal(MockEngine.current._written.length, 2)
+      assert.strictEqual(MockEngine.current._written.length, 2)
       done()
     })
   },
@@ -109,8 +109,8 @@ exports['given an instance of Radar client'] = {
     setTimeout(function () {
       // Ready state == 'activated'
       assert.ok(client.manager.is('activated'))
-      assert.equal(readyCount, 1)
-      assert.equal(allocDoneCount, 1)
+      assert.strictEqual(readyCount, 1)
+      assert.strictEqual(allocDoneCount, 1)
       // If the connect code would trigger, then these would not run the
       // on('ready') action immediately.  If the action is run immediately, we
       // know that the connection code was skipped.
@@ -118,8 +118,8 @@ exports['given an instance of Radar client'] = {
       client.alloc('foo')
       client.alloc('foo', onAlloc)
       client.alloc('foo')
-      assert.equal(readyCount, 4)
-      assert.equal(allocDoneCount, 2)
+      assert.strictEqual(readyCount, 4)
+      assert.strictEqual(allocDoneCount, 2)
       done()
     }, 10)
   },

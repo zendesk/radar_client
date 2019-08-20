@@ -56,7 +56,7 @@ exports['before connecting'] = {
           }
         }
 
-        assert.equal(openSockets, 1)
+        assert.strictEqual(openSockets, 1)
         done()
       }, 150)
     })
