@@ -14,7 +14,7 @@ exports['before connecting'] = {
   before: function (done) {
     // make sure the first backoff will leave enough time
     Backoff.maxSplay = 100
-    Backoff.durations = [ 200, 300, 400 ]
+    Backoff.durations = [200, 300, 400]
     RadarClient.setBackend(MockEngine)
     done()
   },

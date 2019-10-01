@@ -25,7 +25,7 @@ Socket.prototype.sendPacket = function (nop, data) {
   }
   // ACKs should be returned immediately
   if (message.ack) {
-    this.emit('message', JSON.stringify({ 'op': 'ack', 'value': message.ack }))
+    this.emit('message', JSON.stringify({ op: 'ack', value: message.ack }))
   }
 }
 
