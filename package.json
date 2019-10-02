@@ -32,7 +32,7 @@
     "url": "https://github.com/zendesk/radar_client.git"
   },
   "dependencies": {
-    "engine.io-client": "~3.4.0",
+    "engine.io-client": "^3.4.0",
     "microee": "0.0.6",
     "minilog": "^3.1.0",
     "radar_message": "^1.0.1",
@@ -41,11 +41,10 @@
   },
   "devDependencies": {
     "gulp": "^4.0.2",
-    "gulp-rename": "^1.2.2",
-    "jshint": "^2.8.0",
+    "gulp-rename": "^1.4.0",
     "mocha": "^6.2.0",
-    "sinon": "^1.17.1",
-    "standard": "~14.3.1"
+    "sinon": "^7.5.0",
+    "standard": "^14.3.1"
   },
   "scripts": {
     "check-clean": "if [[ $(git diff --shortstat 2> /dev/null | tail -n1) != \"\" ]]; then npm run warn-dirty-tree && exit 1; fi",
