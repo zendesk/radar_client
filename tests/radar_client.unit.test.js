@@ -115,7 +115,7 @@ exports.RadarClient = {
     }
   },
 
-  'scopes': {
+  scopes: {
     '.message should return a scope with the appropriate prefix': function () {
       client.configure({ accountName: 'test' })
       var scope = client.message('chatter/1')
@@ -459,7 +459,7 @@ exports.RadarClient = {
   },
 
   'internal methods': {
-    '_memorize': {
+    _memorize: {
       'memorizing a sync/subscribe should work': function (done) {
         var request
 
@@ -558,7 +558,7 @@ exports.RadarClient = {
       }
     },
 
-    '_restore': {
+    _restore: {
       'restore presences': function (done) {
         MockEngine.current._written = []
         var request = Request.buildSet('presence:/foo/bar', 'online')
@@ -662,21 +662,21 @@ exports.RadarClient = {
 
     '._batch': {
       'should ignore messages without the appropriate properties': {
-        'op': function () {
+        op: function () {
           var message = { to: 'status:/dev/ticket/1', value: 'x', time: new Date() / 1000 }
 
           var response = new Response(message) // eslint-disable-line
           assert.deepStrictEqual(client._channelSyncTimes, {})
         },
 
-        'to': function () {
+        to: function () {
           var message = { op: 'subscribe', value: 'x', time: new Date() / 1000 }
 
           var response = new Response(message) // eslint-disable-line
           assert.deepStrictEqual(client._channelSyncTimes, {})
         },
 
-        'value': function () {
+        value: function () {
           var message = { op: 'subscribe', to: 'you', value: 'x' }
           var response = new Response(message)
 
@@ -685,7 +685,7 @@ exports.RadarClient = {
           assert.strictEqual(client._channelSyncTimes.you, undefined)
         },
 
-        'time': function () {
+        time: function () {
           var message = { op: 'subscribe', to: 'you', value: 'x' }
           var response = new Response(message)
 
@@ -700,7 +700,7 @@ exports.RadarClient = {
         var message = {
           op: 'subscribe',
           to: 'you',
-          value: [ '{}', now ],
+          value: ['{}', now],
           time: now
         }
         var response = new Response(message)
@@ -716,7 +716,7 @@ exports.RadarClient = {
         var message = {
           op: 'subscribe',
           to: 'you',
-          value: [ '{ "something": 1 }', now ],
+          value: ['{ "something": 1 }', now],
           time: now
         }
         var response = new Response(message)
@@ -781,7 +781,7 @@ exports.RadarClient = {
       },
 
       'should create a manager that listens for the appropriate events': {
-        'enterState': function () {
+        enterState: function () {
           var state = 'test'
           var called = false
 
@@ -795,7 +795,7 @@ exports.RadarClient = {
           assert.ok(called)
         },
 
-        'event': function () {
+        event: function () {
           var event = 'test'
           var called = false
 
@@ -810,7 +810,7 @@ exports.RadarClient = {
         },
 
         'connect and create a socket with the appropriate listeners': {
-          'open': function () {
+          open: function () {
             var called = false
 
             client._createManager()
@@ -829,7 +829,7 @@ exports.RadarClient = {
             assert.ok(called)
           },
 
-          'close': function () {
+          close: function () {
             var called = false
 
             client._createManager()
@@ -845,7 +845,7 @@ exports.RadarClient = {
             assert.ok(called)
           },
 
-          'message': function () {
+          message: function () {
             var called = false
             var message = { test: 1 }
 
@@ -864,7 +864,7 @@ exports.RadarClient = {
           }
         },
 
-        'activate': {
+        activate: {
           'and emits "authenticateMessage", "ready"': function () {
             var called = false
             var count = 0
@@ -911,7 +911,7 @@ exports.RadarClient = {
           }
         },
 
-        'authenticate': function () {
+        authenticate: function () {
           var called = false
 
           client._createManager()
@@ -964,7 +964,7 @@ exports.RadarClient = {
 
     '._messageReceived': {
       'handles incoming messages from the socket connection for': {
-        'err': function () {
+        err: function () {
           var called = false
           var message = {
             op: 'err'
@@ -982,7 +982,7 @@ exports.RadarClient = {
           assert.ok(called)
         },
 
-        'ack': function () {
+        ack: function () {
           var called = false
           var message = {
             op: 'ack',
@@ -1001,7 +1001,7 @@ exports.RadarClient = {
           assert.ok(called)
         },
 
-        'get': function () {
+        get: function () {
           var called = false
           var message = {
             op: 'get',
@@ -1020,7 +1020,7 @@ exports.RadarClient = {
           assert.ok(called)
         },
 
-        'sync': function () {
+        sync: function () {
           var called = false
           var message = {
             op: 'sync',
