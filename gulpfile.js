@@ -5,6 +5,7 @@ var rename = require('gulp-rename')
 gulp.task('default', function () {
   return gulp.src('lib/index.js')
     .pipe(webpack({
+      mode: 'development',
       output: {
         libraryTarget: 'var', // export global variable
         library: 'RadarClient'
