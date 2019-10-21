@@ -15,7 +15,9 @@ gulp.task('default', function () {
       },
       node: {
         setImmediate: false
-      }
+      },
+      mode: 'development',
+      devtool: 'inline-source-map'
     }))
     .pipe(rename('radar_client.js'))
     .pipe(gulp.dest('dist/'))
