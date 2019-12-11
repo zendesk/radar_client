@@ -1,4 +1,7 @@
-### 0.16.6
+### 0.16.7
+* [PR #87](https://github.com/zendesk/radar_client/pull/87) - Bumps serialize-javascript to close a vulnerability
+
+### 0.16.6
 * [PR #84](https://github.com/zendesk/radar_client/pull/84) - Updates all dependencies to current latest versions
 * [PR #83](https://github.com/zendesk/radar_client/pull/83) - Updates stadard to v12
 
