@@ -1,3 +1,5 @@
+![CI](https://github.com/zendesk/radar_client/workflows/CI/badge.svg)
+
 # Radar Client
 
 High level API and backend for writing web apps that use real-time information.
