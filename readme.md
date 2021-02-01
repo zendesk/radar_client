@@ -6,9 +6,6 @@ High level API and backend for writing web apps that use real-time information.
 
 The radar server code is here: https://github.com/zendesk/radar
 
-[![Build Status](https://secure.travis-ci.org/zendesk/radar_client.png?branch=master)](https://travis-ci.org/zendesk/radar_client)
-
-
 ## Documentation
 
 See http://radar.zendesk.com/ for detailed documentation.
