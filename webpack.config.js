@@ -7,6 +7,7 @@ module.exports = {
     'engine.io-client': 'eio'
   },
   mode: 'production',
+  target: 'es5',
   output: {
     filename: 'radar_client.js',
     library: 'RadarClient',
