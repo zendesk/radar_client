@@ -36,15 +36,14 @@
     "microee": "^0.0.6",
     "minilog": "^3.1.0",
     "radar_message": "^1.3.2",
-    "sfsm": "^0.0.4",
-    "webpack-stream": "^5.2.1"
+    "sfsm": "^0.0.4"
   },
   "devDependencies": {
-    "gulp": "^4.0.2",
-    "gulp-rename": "^2.0.0",
     "mocha": "^7.2.0",
     "sinon": "^9.2.4",
-    "standard": "^14.3.4"
+    "standard": "^14.3.4",
+    "webpack": "^4.46.0",
+    "webpack-cli": "^4.7.2"
   },
   "scripts": {
     "check-clean": "if [[ $(git diff --shortstat 2> /dev/null | tail -n1) != \"\" ]]; then npm run warn-dirty-tree && exit 1; fi",
@@ -57,7 +56,7 @@
     "test-one": "./node_modules/.bin/mocha --ui exports --reporter spec --slow 2000ms --bail \"$TEST\"",
     "test-one-solo": "./node_modules/.bin/mocha --ui exports --reporter spec --slow 2000ms --bail",
     "prebuild": "npm run check-modules",
-    "build": "npm run version-build; gulp",
+    "build": "npm run version-build; webpack",
     "version-build": "node scripts/add_client_version.js"
   },
   "standard": {
