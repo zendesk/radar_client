@@ -1,15 +1,15 @@
-var MicroEE = require('microee')
-var log = require('minilog')('test')
+const MicroEE = require('microee')
+const log = require('minilog')('test')
 
 function State () {
   this._written = []
 }
 
-var current = new State()
+const current = new State()
 
 MicroEE.mixin(State)
 
-var sockets = []
+const sockets = []
 function Socket () {
   sockets.push(this)
 }
@@ -17,7 +17,7 @@ function Socket () {
 MicroEE.mixin(Socket)
 
 Socket.prototype.sendPacket = function (nop, data) {
-  var message = JSON.parse(data)
+  const message = JSON.parse(data)
   current._written.push(message)
   log(message)
   if (message.op === 'get' || message.op === 'sync') {
@@ -30,7 +30,7 @@ Socket.prototype.sendPacket = function (nop, data) {
 }
 
 Socket.prototype.close = function () {
-  var self = this
+  const self = this
   self._state = 'closing'
   setTimeout(function () {
     self._state = 'closed'
@@ -39,7 +39,7 @@ Socket.prototype.close = function () {
 }
 
 function wrap (delay) {
-  var s = new Socket()
+  const s = new Socket()
   s._state = 'opening'
   setTimeout(function () {
     s.emit('open')
@@ -48,7 +48,7 @@ function wrap (delay) {
   return s
 }
 
-var MockEngine = function (openDelay) {
+const MockEngine = function (openDelay) {
   openDelay = openDelay || 5
   return {
     Socket: function () { return wrap(openDelay) },

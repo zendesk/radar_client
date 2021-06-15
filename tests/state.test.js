@@ -1,9 +1,9 @@
-var assert = require('assert')
-var StateMachine = require('../lib/state.js')
-var machine
-var Backoff = require('../lib/backoff.js')
-var sinon = require('sinon')
-var clock
+const assert = require('assert')
+const StateMachine = require('../lib/state.js')
+let machine
+const Backoff = require('../lib/backoff.js')
+const sinon = require('sinon')
+let clock
 
 function maxBackoffStep (num) {
   if (num < Backoff.durations.length) {
@@ -26,7 +26,7 @@ exports['given a state machine'] = {
   },
 
   'calling start twice should not cause two connections': function (done) {
-    var connecting = false
+    let connecting = false
 
     machine.on('connect', function () {
       assert.ok(!connecting)
@@ -59,7 +59,7 @@ exports['given a state machine'] = {
     machine.connect()
     assert.ok(machine.is('connecting'))
 
-    var disconnected = false
+    let disconnected = false
 
     machine.once('disconnected', function () {
       disconnected = true
@@ -84,8 +84,8 @@ exports['given a state machine'] = {
   },
 
   'should not get caught by timeout if connect takes too long': function (done) {
-    var once = true
-    var disconnects = 0
+    let once = true
+    let disconnects = 0
 
     machine.on('disconnect', function () {
       disconnects++
@@ -111,13 +111,13 @@ exports['given a state machine'] = {
   },
 
   'connections that fail should cause exponential backoff, emit backoff times, finally emit unavailable': function (done) {
-    var available = true
-    var tries = Backoff.durations.length + 1
-    var backoffs = []
+    let available = true
+    let tries = Backoff.durations.length + 1
+    const backoffs = []
 
     machine.on('backoff', function (time, failures) {
       backoffs.push(failures)
-      var step = failures - 1
+      const step = failures - 1
 
       assert(failures > 0)
       assert(time > 0)
@@ -143,8 +143,8 @@ exports['given a state machine'] = {
     machine.connect()
 
     // Wait for all the backoffs + splay, then wait for fallback + splay as well
-    var totalTimeToWait = 0
-    for (var i = 0; i < Backoff.durations.length; i++) {
+    let totalTimeToWait = 0
+    for (let i = 0; i < Backoff.durations.length; i++) {
       totalTimeToWait += maxBackoffStep(i)
     }
     totalTimeToWait += Backoff.fallback + Backoff.maxSplay
@@ -161,14 +161,14 @@ exports['given a state machine'] = {
   },
 
   'should be able to attach a custom errorHandler': function () {
-    var handler = function () {}
+    const handler = function () {}
     machine.attachErrorHandler(handler)
     assert.strictEqual(machine.errorHandler, handler)
   },
 
   'should be able to override the custom errorHandler': function () {
-    var handler1 = function () {}
-    var handler2 = function () {}
+    const handler1 = function () {}
+    const handler2 = function () {}
 
     machine.attachErrorHandler(handler1)
     machine.attachErrorHandler(handler2)
@@ -194,7 +194,7 @@ exports['given a state machine'] = {
 
 // When this module is the script being run, run the tests:
 if (module === require.main) {
-  var mocha = require('child_process').spawn('mocha', ['--colors', '--ui', 'exports', '--reporter', 'spec', __filename])
+  const mocha = require('child_process').spawn('mocha', ['--colors', '--ui', 'exports', '--reporter', 'spec', __filename])
   mocha.stdout.pipe(process.stdout)
   mocha.stderr.pipe(process.stderr)
 }
