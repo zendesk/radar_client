@@ -1,5 +1,10 @@
+### 0.16.10
+* [PR #97](https://github.com/zendesk/radar_client/pull/97) - Dev dependencies update
+* [PR #96](https://github.com/zendesk/radar_client/pull/96) - Replaces Gulp with Webpack
+
 ### 0.16.9
-* [PR #91](https://github.com/zendesk/radar_client/pull/91) - Replaces Gulp and Webpack-Stream with Webpack 5
+* [PR #95](https://github.com/zendesk/radar_client/pull/95) - Replaces Travis with Github Actions
+* [PR #94](https://github.com/zendesk/radar_client/pull/94) - Package update
 
 ### 0.16.8
 * [PR #90](https://github.com/zendesk/radar_client/pull/90) - Updates some dev dependencies

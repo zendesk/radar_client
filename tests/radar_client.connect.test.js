@@ -1,10 +1,10 @@
-var assert = require('assert')
-var RadarClient = require('../lib/radar_client.js')
+const assert = require('assert')
+const RadarClient = require('../lib/radar_client.js')
 // With a delay
-var MockEngine = require('./lib/engine.js')(150)
-var Backoff = require('../lib/backoff.js')
-var Minilog = require('minilog')
-var client
+const MockEngine = require('./lib/engine.js')(150)
+const Backoff = require('../lib/backoff.js')
+const Minilog = require('minilog')
+let client
 
 if (process.env.verbose === '1') {
   Minilog.pipe(Minilog.backends.nodeConsole.formatWithStack).pipe(Minilog.backends.nodeConsole)
@@ -49,8 +49,8 @@ exports['before connecting'] = {
     client.on('ready', function () {
       // Wait for 150 so any pending sockets can open
       setTimeout(function () {
-        var openSockets = 0
-        for (var i = 0; i < MockEngine.sockets.length; i++) {
+        let openSockets = 0
+        for (let i = 0; i < MockEngine.sockets.length; i++) {
           if (MockEngine.sockets[i]._state === 'open' || MockEngine.sockets[i]._state === 'opening') {
             openSockets++
           }

@@ -1,8 +1,8 @@
-var assert = require('assert')
-var MockEngine = require('./lib/engine.js')()
-var RadarClient = require('../lib/radar_client.js')
-var getClientVersion = require('../lib/client_version.js')
-var client
+const assert = require('assert')
+const MockEngine = require('./lib/engine.js')()
+const RadarClient = require('../lib/radar_client.js')
+const getClientVersion = require('../lib/client_version.js')
+let client
 
 RadarClient.setBackend(MockEngine)
 
@@ -95,8 +95,8 @@ exports['given an instance of Radar client'] = {
   },
 
   'multiple alloc calls just trigger the callback': function (done) {
-    var readyCount = 0
-    var allocDoneCount = 0
+    let readyCount = 0
+    let allocDoneCount = 0
     client.on('ready', function () {
       readyCount++
     })
@@ -149,7 +149,7 @@ exports['given an instance of Radar client'] = {
 
 // When this module is the script being run, run the tests:
 if (module === require.main) {
-  var mocha = require('child_process').spawn('mocha', ['--colors', '--ui', 'exports', '--reporter', 'spec', __filename])
+  const mocha = require('child_process').spawn('mocha', ['--colors', '--ui', 'exports', '--reporter', 'spec', __filename])
   mocha.stdout.pipe(process.stdout)
   mocha.stderr.pipe(process.stderr)
 }

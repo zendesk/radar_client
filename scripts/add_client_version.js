@@ -1,11 +1,11 @@
 // Add the package version to radar_client.js prior to building dist
-var version = require('../package.json').version
-var fs = require('fs')
+const version = require('../package.json').version
+const fs = require('fs')
 
-var FILEPATH = 'lib/client_version.js'
+const FILEPATH = 'lib/client_version.js'
 
 // Create the string to write
-var fileContents = '// Auto-generated file, overwritten by' +
+const fileContents = '// Auto-generated file, overwritten by' +
   ' scripts/add_package_version.js\n\n' +
   "function getClientVersion () { return '" +
   version +
@@ -18,7 +18,7 @@ if (fs.existsSync(FILEPATH)) {
 }
 
 // Write the client version to a new instance of the file
-var stream = fs.createWriteStream(FILEPATH)
+const stream = fs.createWriteStream(FILEPATH)
 stream.once('open', function () {
   stream.write(fileContents)
   stream.end()

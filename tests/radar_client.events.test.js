@@ -1,5 +1,5 @@
-var assert = require('assert')
-var RadarClient = require('../lib/radar_client.js')
+const assert = require('assert')
+const RadarClient = require('../lib/radar_client.js')
 
 exports['given a new presence'] = {
   beforeEach: function (done) {
@@ -8,7 +8,7 @@ exports['given a new presence'] = {
   },
 
   'can set a event handler and receive messages': function (done) {
-    var client = this.client
+    const client = this.client
     client.once('presence:tickets:21', function (changes) {
       assert.deepStrictEqual([1], changes.online)
       assert.deepStrictEqual([], changes.offline)
@@ -27,7 +27,7 @@ exports['given a new presence'] = {
   },
 
   'can remove a single callback': function (done) {
-    var client = this.client
+    const client = this.client
     client.once('presence:tickets:21', function () {
       assert.ok(false)
     })
@@ -39,7 +39,7 @@ exports['given a new presence'] = {
   },
 
   'can remove all listeners from an event by string': function (done) {
-    var client = this.client
+    const client = this.client
     client.once('presence:tickets:21', function () {
       assert.ok(false)
     })
@@ -63,7 +63,7 @@ exports['given a new presence'] = {
 
 // When this module is the script being run, run the tests:
 if (module === require.main) {
-  var mocha = require('child_process').spawn('mocha', ['--colors', '--ui', 'exports', '--reporter', 'spec', __filename])
+  const mocha = require('child_process').spawn('mocha', ['--colors', '--ui', 'exports', '--reporter', 'spec', __filename])
   mocha.stdout.pipe(process.stdout)
   mocha.stderr.pipe(process.stderr)
 }

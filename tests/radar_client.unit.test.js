@@ -1,11 +1,11 @@
-var assert = require('assert')
-var sinon = require('sinon')
-var RadarClient = require('../lib/radar_client.js')
-var MockEngine = require('./lib/engine.js')()
-var Request = require('radar_message').Request
-var Response = require('radar_message').Response
-var HOUR = 1000 * 60 * 60
-var client
+const assert = require('assert')
+const sinon = require('sinon')
+const RadarClient = require('../lib/radar_client.js')
+const MockEngine = require('./lib/engine.js')()
+const Request = require('radar_message').Request
+const Response = require('radar_message').Response
+const HOUR = 1000 * 60 * 60
+let client
 
 exports.RadarClient = {
   beforeEach: function () {
@@ -18,13 +18,13 @@ exports.RadarClient = {
 
   '.configuration': {
     'should return a deep copy of the configuration value for the key provided': function () {
-      var configuration = { userId: 123, userData: { test: 1 }, accountName: 'dev' }
+      const configuration = { userId: 123, userData: { test: 1 }, accountName: 'dev' }
       client.configure(configuration)
       assert.notStrictEqual(configuration.userData, client.configuration('userData'))
     },
 
     'should never allow the configuration to be altered by reference': function () {
-      var configuration = { userId: 123, userData: { test: 1 }, accountName: 'dev' }
+      const configuration = { userId: 123, userData: { test: 1 }, accountName: 'dev' }
       client.configure(configuration)
       client.configuration('userData').test = 2
       assert.strictEqual(configuration.userData.test, 1)
@@ -44,7 +44,7 @@ exports.RadarClient = {
 
   '.alloc': {
     'should start the manager': function () {
-      var called = false
+      let called = false
       client.manager.start = function () { called = true }
       client.configure({ userId: 123, accountName: 'dev' })
       client.alloc('foo')
@@ -58,7 +58,7 @@ exports.RadarClient = {
     },
 
     'should add a callback for ready if a callback is passed': function () {
-      var called = false
+      let called = false
 
       client.on = function (name, callback) {
         called = true
@@ -80,7 +80,7 @@ exports.RadarClient = {
     },
 
     'should call close() on the manager if the are no open channels': function () {
-      var called = true
+      let called = true
       client.manager.close = function () { called = true }
       client.alloc('foo')
       assert.strictEqual(client._uses.foo, true)
@@ -105,8 +105,8 @@ exports.RadarClient = {
 
   '.attachStateMachineErrorHandler': {
     '.should attach error handler to the state manager': function () {
-      var errorHandler = function () {}
-      var attachErrorHandlerSpy = sinon.spy(client.manager, 'attachErrorHandler')
+      const errorHandler = function () {}
+      const attachErrorHandlerSpy = sinon.spy(client.manager, 'attachErrorHandler')
 
       client.attachStateMachineErrorHandler(errorHandler)
       assert.ok(attachErrorHandlerSpy.calledWith(errorHandler))
@@ -118,27 +118,27 @@ exports.RadarClient = {
   scopes: {
     '.message should return a scope with the appropriate prefix': function () {
       client.configure({ accountName: 'test' })
-      var scope = client.message('chatter/1')
+      const scope = client.message('chatter/1')
       assert.strictEqual(scope.prefix, 'message:/test/chatter/1')
     },
 
     '.presence should return a scope with the appropriate prefix': function () {
       client.configure({ accountName: 'test' })
-      var scope = client.presence('chatter/1')
+      const scope = client.presence('chatter/1')
       assert.strictEqual(scope.prefix, 'presence:/test/chatter/1')
     },
 
     '.status should return a scope with the appropriate prefix': function () {
       client.configure({ accountName: 'test' })
-      var scope = client.status('chatter/1')
+      const scope = client.status('chatter/1')
       assert.strictEqual(scope.prefix, 'status:/test/chatter/1')
     }
   },
 
   '.set': {
     'should call _write() with a set operation definition hash': function () {
-      var called = false
-      var callback = function () {}
+      let called = false
+      const callback = function () {}
 
       client._write = function (request, fn) {
         called = true
@@ -180,8 +180,8 @@ exports.RadarClient = {
 
   '.publish': {
     'should call _write() with a publish operation definition hash': function () {
-      var called = false
-      var callback = function () {}
+      let called = false
+      const callback = function () {}
 
       client._write = function (request, fn) {
         called = true
@@ -201,8 +201,8 @@ exports.RadarClient = {
 
   '.subscribe': {
     'should call _write() with a subscribe operation definition hash': function () {
-      var called = false
-      var callback = function () {}
+      let called = false
+      const callback = function () {}
 
       client._write = function (request, fn) {
         called = true
@@ -251,8 +251,8 @@ exports.RadarClient = {
 
   '.unsubscribe': {
     'should call _write() with a unsubscribe operation definition hash': function () {
-      var called = false
-      var callback = function () {}
+      let called = false
+      const callback = function () {}
 
       client._write = function (request, fn) {
         called = true
@@ -291,7 +291,7 @@ exports.RadarClient = {
 
   '.get': {
     'should call _write() with a get operation definition hash': function () {
-      var called = false
+      let called = false
 
       client._write = function (request) {
         called = true
@@ -307,7 +307,7 @@ exports.RadarClient = {
     },
 
     'should listen for the next get response operation': function () {
-      var called = false
+      let called = false
 
       client.when = function (operation, fn) {
         called = true
@@ -318,11 +318,11 @@ exports.RadarClient = {
     },
 
     'should pass a function that will call the callback function for the get response operation with the scope provided': function () {
-      var called = false
-      var passed = false
-      var scope = 'status:/test/account/1'
-      var message = { op: 'get', to: scope }
-      var callback = function (msg) {
+      let called = false
+      let passed = false
+      const scope = 'status:/test/account/1'
+      const message = { op: 'get', to: scope }
+      const callback = function (msg) {
         passed = true
         assert.deepStrictEqual(msg, message)
       }
@@ -338,10 +338,10 @@ exports.RadarClient = {
     },
 
     'should pass a function that will not call the callback function for a get response operation with a different scope': function () {
-      var called = false
-      var passed = true
-      var message = { op: 'get', to: 'status:/test/account/2' }
-      var callback = function (msg) {
+      let called = false
+      let passed = true
+      const message = { op: 'get', to: 'status:/test/account/2' }
+      const callback = function (msg) {
         passed = false
       }
 
@@ -358,7 +358,7 @@ exports.RadarClient = {
 
   '.sync': {
     'should call _write() with a sync operation definition hash': function () {
-      var called = false
+      let called = false
 
       client._write = function (request) {
         called = true
@@ -375,7 +375,7 @@ exports.RadarClient = {
 
     'with options': {
       'should listen for the next get response operation': function () {
-        var called = false
+        let called = false
 
         client.when = function (operation, fn) {
           called = true
@@ -386,11 +386,11 @@ exports.RadarClient = {
       },
 
       'should pass a function that will call the callback function for the get response operation with the scope provided': function () {
-        var called = false
-        var passed = false
-        var scope = 'presence:/test/account/1'
-        var message = { op: 'sync', to: scope }
-        var callback = function (msg) {
+        let called = false
+        let passed = false
+        const scope = 'presence:/test/account/1'
+        const message = { op: 'sync', to: scope }
+        const callback = function (msg) {
           passed = true
           assert.deepStrictEqual(msg, message)
         }
@@ -406,11 +406,11 @@ exports.RadarClient = {
       },
 
       'should pass a function that will not call the callback function for a get response operation with a different scope': function () {
-        var called = false
-        var passed = true
-        var message = { op: 'sync', to: 'presence:/test/account/2' }
-        var response = new Response(message)
-        var callback = function (msg) {
+        let called = false
+        let passed = true
+        const message = { op: 'sync', to: 'presence:/test/account/2' }
+        const response = new Response(message)
+        const callback = function (msg) {
           passed = false
         }
 
@@ -427,7 +427,7 @@ exports.RadarClient = {
 
     'without options on a presence': {
       'should force v2, translate result from v2 to v1': function (done) {
-        var scope = 'presence:/test/account/1'
+        const scope = 'presence:/test/account/1'
 
         client.sync(scope, function (m) {
           assert.deepStrictEqual({
@@ -444,7 +444,7 @@ exports.RadarClient = {
         // Previous online emits should not affect the callback
         client.emit(scope, { op: 'online', to: scope, value: { 100: 2 } })
 
-        var message = {
+        const message = {
           op: 'get',
           to: scope,
           value: {
@@ -461,7 +461,7 @@ exports.RadarClient = {
   'internal methods': {
     _memorize: {
       'memorizing a sync/subscribe should work': function (done) {
-        var request
+        let request
 
         assert.strictEqual(0, Object.keys(client._subscriptions).length)
         request = Request.buildSubscribe('presence:/test/ticket/1')
@@ -481,7 +481,7 @@ exports.RadarClient = {
       },
 
       'memorizing a set(online) and unmemorizing a set(offline) should work': function (done) {
-        var request
+        let request
 
         assert.strictEqual(0, Object.keys(client._presences).length)
         request = Request.buildSet('presence:/foo/bar', 'online')
@@ -500,7 +500,7 @@ exports.RadarClient = {
 
       'memorizing a unsubscribe should remove any sync/subscribe': function (done) {
         // Set up
-        var request = Request.buildSubscribe('status:/test/ticket/1')
+        let request = Request.buildSubscribe('status:/test/ticket/1')
         client._memorize(request)
         request = Request.buildSync('status:/test/ticket/2')
         client._memorize(request)
@@ -518,7 +518,7 @@ exports.RadarClient = {
 
       'duplicated subscribes and syncs should only be stored once and sync is more important than subscribe': function (done) {
         // Simple duplicates
-        var request = Request.buildSubscribe('status:/test/ticket/1')
+        let request = Request.buildSubscribe('status:/test/ticket/1')
         client._memorize(request)
         assert.strictEqual(1, Object.keys(client._subscriptions).length)
         client._memorize(request)
@@ -561,7 +561,7 @@ exports.RadarClient = {
     _restore: {
       'restore presences': function (done) {
         MockEngine.current._written = []
-        var request = Request.buildSet('presence:/foo/bar', 'online')
+        let request = Request.buildSet('presence:/foo/bar', 'online')
         client._memorize(request)
         request = Request.buildSet('presence:/foo/bar2', 'offline')
         client._memorize(request)
@@ -580,7 +580,7 @@ exports.RadarClient = {
 
       'restore subscriptions': function (done) {
         MockEngine.current._written = []
-        var request = Request.buildSubscribe('status:/foo/bar')
+        let request = Request.buildSubscribe('status:/foo/bar')
         client._memorize(request)
         request = Request.buildSubscribe('message:/foo/bar2')
         client._memorize(request)
@@ -602,9 +602,9 @@ exports.RadarClient = {
     },
     '._write': {
       'should emit an authenticateMessage event': function () {
-        var called = false
-        var message = { op: 'subscribe', to: 'status:/account/scope/1' }
-        var request = Request.buildSubscribe(message.to)
+        let called = false
+        const message = { op: 'subscribe', to: 'status:/account/scope/1' }
+        const request = Request.buildSubscribe(message.to)
 
         client.emit = function (name, data) {
           called = true
@@ -618,11 +618,11 @@ exports.RadarClient = {
       },
 
       'should register an ack event handler that calls the callback function once the appropriate ack message has been received': function () {
-        var called = false
-        var passed = false
-        var request = Request.buildSubscribe('status:/account/scope/1')
-        var ackMessage = { value: -2 }
-        var callback = function (msg) {
+        let called = false
+        let passed = false
+        const request = Request.buildSubscribe('status:/account/scope/1')
+        const ackMessage = { value: -2 }
+        const callback = function (msg) {
           passed = true
           assert.deepStrictEqual(msg, request.getMessage())
         }
@@ -641,12 +641,12 @@ exports.RadarClient = {
       },
 
       'should register an ack event handler that does not call the callback function for ack messages with a different value': function () {
-        var called = false
-        var passed = true
-        var request = Request.buildSubscribe('status:/account/scope/1')
-        var ackMessage = { op: 'ack', value: -2 }
-        var response = new Response(ackMessage)
-        var callback = function (msg) { passed = false }
+        let called = false
+        let passed = true
+        const request = Request.buildSubscribe('status:/account/scope/1')
+        const ackMessage = { op: 'ack', value: -2 }
+        const response = new Response(ackMessage)
+        const callback = function (msg) { passed = false }
 
         client.when = function (name, fn) {
           called = true
@@ -663,22 +663,22 @@ exports.RadarClient = {
     '._batch': {
       'should ignore messages without the appropriate properties': {
         op: function () {
-          var message = { to: 'status:/dev/ticket/1', value: 'x', time: new Date() / 1000 }
+          const message = { to: 'status:/dev/ticket/1', value: 'x', time: new Date() / 1000 }
 
           var response = new Response(message) // eslint-disable-line
           assert.deepStrictEqual(client._channelSyncTimes, {})
         },
 
         to: function () {
-          var message = { op: 'subscribe', value: 'x', time: new Date() / 1000 }
+          const message = { op: 'subscribe', value: 'x', time: new Date() / 1000 }
 
           var response = new Response(message) // eslint-disable-line
           assert.deepStrictEqual(client._channelSyncTimes, {})
         },
 
         value: function () {
-          var message = { op: 'subscribe', to: 'you', value: 'x' }
-          var response = new Response(message)
+          const message = { op: 'subscribe', to: 'you', value: 'x' }
+          const response = new Response(message)
 
           assert.strictEqual(client._channelSyncTimes.you, undefined)
           assert.ok(!client._batch(response))
@@ -686,8 +686,8 @@ exports.RadarClient = {
         },
 
         time: function () {
-          var message = { op: 'subscribe', to: 'you', value: 'x' }
-          var response = new Response(message)
+          const message = { op: 'subscribe', to: 'you', value: 'x' }
+          const response = new Response(message)
 
           assert.strictEqual(client._channelSyncTimes.you, undefined)
           assert.ok(!client._batch(response))
@@ -696,14 +696,14 @@ exports.RadarClient = {
       },
 
       'should not ignore messages that have all the appropriate properties': function () {
-        var now = new Date()
-        var message = {
+        const now = new Date()
+        const message = {
           op: 'subscribe',
           to: 'you',
           value: ['{}', now],
           time: now
         }
-        var response = new Response(message)
+        const response = new Response(message)
 
         assert.strictEqual(client._channelSyncTimes.you, undefined)
         assert.notStrictEqual(client._batch(response), false)
@@ -711,15 +711,15 @@ exports.RadarClient = {
       },
 
       'should emit an event named for the "to" property value if there is a time that is greater than the current channelSyncTime': function () {
-        var called = false
-        var now = new Date()
-        var message = {
+        let called = false
+        const now = new Date()
+        const message = {
           op: 'subscribe',
           to: 'you',
           value: ['{ "something": 1 }', now],
           time: now
         }
-        var response = new Response(message)
+        const response = new Response(message)
 
         client._channelSyncTimes.you = now - HOUR
 
@@ -737,8 +737,8 @@ exports.RadarClient = {
 
     '._createManager': {
       'should create a manager that cannot open the same socket twice': function () {
-        var neverCalledBefore = true
-        var called = false
+        let neverCalledBefore = true
+        let called = false
 
         client._createManager()
 
@@ -757,7 +757,7 @@ exports.RadarClient = {
       },
 
       'should create a manager that stops listening to messages from a socket when the socket emits the close event': function () {
-        var called = false
+        let called = false
 
         client._createManager()
 
@@ -766,7 +766,7 @@ exports.RadarClient = {
         client._socket.emit('open')
 
         client._socket.on('message', function (data) {
-          var json = JSON.parse(data)
+          const json = JSON.parse(data)
           called = json.open
           assert(json.open)
         })
@@ -782,8 +782,8 @@ exports.RadarClient = {
 
       'should create a manager that listens for the appropriate events': {
         enterState: function () {
-          var state = 'test'
-          var called = false
+          const state = 'test'
+          let called = false
 
           client.emit = function (name) {
             called = true
@@ -796,8 +796,8 @@ exports.RadarClient = {
         },
 
         event: function () {
-          var event = 'test'
-          var called = false
+          const event = 'test'
+          let called = false
 
           client.emit = function (name) {
             called = true
@@ -811,7 +811,7 @@ exports.RadarClient = {
 
         'connect and create a socket with the appropriate listeners': {
           open: function () {
-            var called = false
+            let called = false
 
             client._createManager()
 
@@ -830,7 +830,7 @@ exports.RadarClient = {
           },
 
           close: function () {
-            var called = false
+            let called = false
 
             client._createManager()
 
@@ -846,8 +846,8 @@ exports.RadarClient = {
           },
 
           message: function () {
-            var called = false
-            var message = { test: 1 }
+            let called = false
+            const message = { test: 1 }
 
             client._createManager()
 
@@ -866,8 +866,8 @@ exports.RadarClient = {
 
         activate: {
           'and emits "authenticateMessage", "ready"': function () {
-            var called = false
-            var count = 0
+            let called = false
+            let count = 0
 
             client.emit = function (name) {
               called = true
@@ -889,8 +889,8 @@ exports.RadarClient = {
           },
 
           'and _write()s the messages asynchronously': function (done) {
-            var count = 0
-            var called = 0
+            let count = 0
+            let called = 0
 
             while (count < 10) {
               client._queuedRequests.push({ test: count++ })
@@ -912,7 +912,7 @@ exports.RadarClient = {
         },
 
         authenticate: function () {
-          var called = false
+          let called = false
 
           client._createManager()
 
@@ -928,8 +928,8 @@ exports.RadarClient = {
 
     '._sendMessage': {
       'should call sendPacket() on the _socket if the manager is activated': function () {
-        var called = false
-        var request = Request.buildSubscribe('status:/test/ticket/1')
+        let called = false
+        const request = Request.buildSubscribe('status:/test/ticket/1')
 
         client.manager.is = function (state) { return state === 'activated' }
 
@@ -946,7 +946,7 @@ exports.RadarClient = {
       },
 
       'should queue the message if the client has been configured, but is not activated': function () {
-        var request = Request.buildSet('status:/test/ticket/1', 'any_value')
+        const request = Request.buildSet('status:/test/ticket/1', 'any_value')
 
         client.configure({})
         client._sendMessage(request)
@@ -954,7 +954,7 @@ exports.RadarClient = {
       },
 
       'should ignore the message if the client has not been configured': function () {
-        var request = Request.buildSet('status:/test/ticket/1', 'any_value')
+        const request = Request.buildSet('status:/test/ticket/1', 'any_value')
 
         assert.ok(!client._isConfigured)
         client._sendMessage(request)
@@ -965,11 +965,11 @@ exports.RadarClient = {
     '._messageReceived': {
       'handles incoming messages from the socket connection for': {
         err: function () {
-          var called = false
-          var message = {
+          let called = false
+          const message = {
             op: 'err'
           }
-          var json = JSON.stringify(message)
+          const json = JSON.stringify(message)
 
           client.emitNext = function (name, data) {
             if (name === 'message:in') return
@@ -983,12 +983,12 @@ exports.RadarClient = {
         },
 
         ack: function () {
-          var called = false
-          var message = {
+          let called = false
+          const message = {
             op: 'ack',
             value: 1
           }
-          var json = JSON.stringify(message)
+          const json = JSON.stringify(message)
 
           client.emitNext = function (name, data) {
             if (name === 'message:in') return
@@ -1002,12 +1002,12 @@ exports.RadarClient = {
         },
 
         get: function () {
-          var called = false
-          var message = {
+          let called = false
+          const message = {
             op: 'get',
             to: 'staus:/test/ticket/1'
           }
-          var json = JSON.stringify(message)
+          const json = JSON.stringify(message)
 
           client.emitNext = function (name, data) {
             if (name === 'message:in') return
@@ -1021,12 +1021,12 @@ exports.RadarClient = {
         },
 
         sync: function () {
-          var called = false
-          var message = {
+          let called = false
+          const message = {
             op: 'sync',
             to: 'staus:/test/ticket/1'
           }
-          var json = JSON.stringify(message)
+          const json = JSON.stringify(message)
 
           client._batch = function (msg) {
             called = true
@@ -1038,12 +1038,12 @@ exports.RadarClient = {
         },
 
         'everything else': function () {
-          var called = false
-          var message = {
+          let called = false
+          const message = {
             op: 'something',
             to: 'wherever'
           }
-          var json = JSON.stringify(message)
+          const json = JSON.stringify(message)
 
           client.emitNext = function (name, data) {
             if (name === 'message:in') return

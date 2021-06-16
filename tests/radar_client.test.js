@@ -1,9 +1,9 @@
-var assert = require('assert')
-var RadarClient = require('../lib/radar_client.js')
-var MockEngine = require('./lib/engine.js')()
-var Response = require('radar_message').Response
-var Backoff = require('../lib/backoff.js')
-var client
+const assert = require('assert')
+const RadarClient = require('../lib/radar_client.js')
+const MockEngine = require('./lib/engine.js')()
+const Response = require('radar_message').Response
+const Backoff = require('../lib/backoff.js')
+let client
 
 exports['before connecting'] = {
   before: function (done) {
@@ -72,7 +72,7 @@ exports['after reconnecting'] = {
   },
 
   'should send queued messages': function (done) {
-    var connected = false
+    let connected = false
 
     client.once('connect', function () {
       connected = true
@@ -108,7 +108,7 @@ exports['after reconnecting'] = {
   },
 
   'should resend queued presences': function (done) {
-    var connected = false
+    let connected = false
 
     client.presence('tickets/21').set('online')
 
@@ -136,7 +136,7 @@ exports['after reconnecting'] = {
   },
 
   'should resend queued subscriptions': function (done) {
-    var connected = false
+    let connected = false
 
     client.presence('tickets/21').subscribe()
 
@@ -318,15 +318,11 @@ exports['given a new presence'] = {
   },
 
   'synchronization batch filters out duplicate messages to the same channel by time': function (done) {
-    var received = []
-    var msg1
-    var msg2
-    var response1
-    var response2
+    const received = []
     client.on('foo', function (msg) {
       received.push(msg)
     })
-    msg1 = {
+    const msg1 = {
       op: 'subscribe',
       to: 'foo',
       value: [
@@ -339,10 +335,10 @@ exports['given a new presence'] = {
       ],
       time: 1
     }
-    response1 = new Response(msg1)
+    const response1 = new Response(msg1)
     client._batch(response1)
 
-    msg2 = {
+    const msg2 = {
       op: 'subscribe',
       to: 'foo',
       value: [
@@ -355,7 +351,7 @@ exports['given a new presence'] = {
       ],
       time: 2
     }
-    response2 = new Response(msg2)
+    const response2 = new Response(msg2)
     client._batch(response2)
 
     setTimeout(function () {
@@ -367,7 +363,7 @@ exports['given a new presence'] = {
 
 // When this module is the script being run, run the tests:
 if (module === require.main) {
-  var mocha = require('child_process').spawn('mocha', ['--colors', '--ui', 'exports', '--reporter', 'spec', __filename])
+  const mocha = require('child_process').spawn('mocha', ['--colors', '--ui', 'exports', '--reporter', 'spec', __filename])
   mocha.stdout.pipe(process.stdout)
   mocha.stderr.pipe(process.stderr)
 }
