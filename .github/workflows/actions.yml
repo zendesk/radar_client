@@ -7,8 +7,8 @@ jobs:
     strategy:
       matrix:
         version:
+          - 16
           - 18
-          - 19
     steps:
     - uses: zendesk/checkout@v3
     - uses: zendesk/setup-node@v3
