@@ -35,15 +35,15 @@
     "engine.io-client": "^6.2.3",
     "microee": "^0.0.6",
     "minilog": "^3.1.0",
-    "radar_message": "^1.3.2",
+    "radar_message": "^1.3.5",
     "sfsm": "^0.0.4"
   },
   "devDependencies": {
-    "mocha": "^9.0.0",
-    "sinon": "^11.1.1",
-    "standard": "^16.0.3",
-    "webpack": "^5.38.1",
-    "webpack-cli": "^4.7.2"
+    "mocha": "^9.2.2",
+    "sinon": "^11.1.2",
+    "standard": "^16.0.4",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^4.10.0"
   },
   "scripts": {
     "check-clean": "if [[ $(git diff --shortstat 2> /dev/null | tail -n1) != \"\" ]]; then npm run warn-dirty-tree && exit 1; fi",
