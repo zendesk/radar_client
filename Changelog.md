@@ -1,3 +1,6 @@
+### 0.17.0
+* [PR #100](https://github.com/zendesk/radar_client/pull/100) - upgrade engineio client
+
 ### 0.16.10
 * [PR #97](https://github.com/zendesk/radar_client/pull/97) - Dev dependencies update
 * [PR #96](https://github.com/zendesk/radar_client/pull/96) - Replaces Gulp with Webpack
