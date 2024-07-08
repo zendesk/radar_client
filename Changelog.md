@@ -1,3 +1,6 @@
+### 0.17.2
+* [PR #109](https://github.com/zendesk/radar_client/pull/109) - upgrade engineio client
+
 ### 0.17.0
 * [PR #100](https://github.com/zendesk/radar_client/pull/100) - upgrade engineio client
 
