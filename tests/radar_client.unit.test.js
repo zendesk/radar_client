@@ -934,9 +934,8 @@ exports.RadarClient = {
         client.manager.is = function (state) { return state === 'activated' }
 
         client._socket = {
-          send: function (name, data) {
+          send: function (data) {
             called = true
-            assert.strictEqual(name, 'message')
             assert.strictEqual(data, JSON.stringify(request.getMessage()))
           }
         }
