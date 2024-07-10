@@ -16,7 +16,7 @@ function Socket () {
 
 MicroEE.mixin(Socket)
 
-Socket.prototype.sendPacket = function (nop, data) {
+Socket.prototype.send = function (data) {
   const message = JSON.parse(data)
   current._written.push(message)
   log(message)

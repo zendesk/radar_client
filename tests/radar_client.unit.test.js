@@ -927,16 +927,15 @@ exports.RadarClient = {
     },
 
     '._sendMessage': {
-      'should call sendPacket() on the _socket if the manager is activated': function () {
+      'should call send() on the _socket if the manager is activated': function () {
         let called = false
         const request = Request.buildSubscribe('status:/test/ticket/1')
 
         client.manager.is = function (state) { return state === 'activated' }
 
         client._socket = {
-          sendPacket: function (name, data) {
+          send: function (data) {
             called = true
-            assert.strictEqual(name, 'message')
             assert.strictEqual(data, JSON.stringify(request.getMessage()))
           }
         }
