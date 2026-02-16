@@ -1,0 +1,47 @@
+name: Claude Auto Review
+
+on:
+  pull_request:
+    types: [opened, ready_for_review]
+
+jobs:
+  auto-review:
+    if: github.event.pull_request.draft == false
+    runs-on: [ self-hosted, zendesk-stable ]
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+      actions: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Automatic PR Review
+        uses: anthropics/claude-code-action@beta
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          use_bedrock: true
+          direct_prompt: |
+            Review this PR briefly and only leave comments for issues that
+            require changes before merge (correctness, security, performance with evidence,
+            missing/incorrect tests, required docs). Do not leave style/nit comments.
+            NO NEED to comment what have been doing well in the PR, focus on what need to be changed.
+
+            Do not repeat items that have already been addressed or previously commented.
+            If an earlier issue is now resolved, say nothing about it.
+            For follow-up pushes, only comment on NEW blocking issues introduced by the latest changes.
+
+            Keep each comment to one line with a concrete fix suggestion when possible.
+        env:
+          CLAUDE_CODE_USE_BEDROCK: true
+          CLAUDE_CODE_SKIP_BEDROCK_AUTH: true
+          ANTHROPIC_MODEL: us.anthropic.claude-sonnet-4-20250514-v1:0
+          ANTHROPIC_BEDROCK_BASE_URL: https://ai-gateway.zende.sk/bedrock
+          ANTHROPIC_AUTH_TOKEN: ${{ secrets.ANTHROPIC_API_TOKEN }}
+
+          # To bypass the validation script, which just checks to see if they exist
+          # https://zendesk.slack.com/archives/C05Q3UJCG14/p1755763610577519?thread_ts=1755742180.499569&cid=C05Q3UJCG14
+          AWS_REGION: "us-east-1"
+          AWS_ACCESS_KEY_ID: "fake"
+          AWS_SECRET_ACCESS_KEY: "fake"
