@@ -7,7 +7,7 @@ on:
 jobs:
   auto-review:
     if: github.event.pull_request.draft == false
-    runs-on: ubuntu-22.04
+    runs-on: [ self-hosted, zendesk-stable ]
     permissions:
       contents: write
       pull-requests: write
