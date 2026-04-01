@@ -46,6 +46,10 @@
     "webpack": "^5.92.1",
     "webpack-cli": "^4.10.0"
   },
+  "overrides": {
+    "serialize-javascript": "7.0.5",
+    "diff": "8.0.4"
+  },
   "scripts": {
     "check-clean": "if [[ $(git diff --shortstat 2> /dev/null | tail -n1) != \"\" ]]; then npm run warn-dirty-tree && exit 1; fi",
     "check-modules": "if [ -z \"$SKIP_PACKAGE_CHECK\" ] && [ ./package.json -nt ./node_modules ]; then npm run warn-outdated && exit 1; else rm -rf ./node_modules/sfsm/demo; fi",
