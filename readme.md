@@ -8,7 +8,7 @@ The radar server code is here: https://github.com/zendesk/radar
 
 ## Documentation
 
-See http://radar.zendesk.com/ for detailed documentation.
+See https://radar.zendesk.com/ for detailed documentation.
 
 ## How to contribute
 
