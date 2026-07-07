@@ -48,7 +48,9 @@
   },
   "overrides": {
     "serialize-javascript": "7.0.5",
-    "diff": "8.0.4"
+    "diff": "8.0.4",
+    "fast-uri": "^3.1.2",
+    "ws": "^8.21.0"
   },
   "scripts": {
     "check-clean": "if [[ $(git diff --shortstat 2> /dev/null | tail -n1) != \"\" ]]; then npm run warn-dirty-tree && exit 1; fi",
