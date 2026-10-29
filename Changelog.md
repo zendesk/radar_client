@@ -1,3 +1,7 @@
+### 0.18.3
+* [PR #127](https://github.com/zendesk/radar_client/pull/127) - Fix dependency vulnerabilities via package.json overrides (fast-uri, browserslist, js-yaml; dev/build tooling only)
+* [PR #128](https://github.com/zendesk/radar_client/pull/128) - Version bump; regenerate dist/ so getClientVersion() reports the correct version
+
 ### 0.17.2
 * [PR #109](https://github.com/zendesk/radar_client/pull/109) - upgrade engineio client
 
